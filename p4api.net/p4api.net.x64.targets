@@ -1,0 +1,8 @@
+<Project>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)p4bridge.dll">
+      <Link>p4bridge.dll</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+</Project>

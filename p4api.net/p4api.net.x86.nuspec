@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>p4api.net.x86</id>
+    <version>$version$</version>
+    <title>$title$</title>
+    <authors>$author$</authors>
+    <owners>$author$</owners>
+    <projectUrl>https://www.perforce.com/downloads/helix-core-api-net</projectUrl>
+    <iconUrl>https://www.perforce.com/sites/default/files/image/2018-12/icon-helix-core-simple-64-64.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>$description$</description>
+    <copyright>Copyright 2018</copyright>
+    <tags>perforce helix vcs scm p4 p4api p4api.net</tags>
+	<license type="file">LICENSE.txt</license>
+  </metadata>
+  <files>
+    <file src="..\bin\Release\p4bridge.dll" target="build" />
+	<file src="p4api.net.x86.targets" target="build" />
+	<file src="..\LICENSE.txt" target="" />
+</files>
+</package>

@@ -1,0 +1,71 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+    <!-- The configuration and platform will be used to determine which
+         assemblies to include from solution and project documentation
+         sources -->
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{9c2e213b-c99b-4bd2-88df-b2bc66bbcc6c}</ProjectGuid>
+    <SHFBSchemaVersion>2015.6.5.0</SHFBSchemaVersion>
+    <!-- AssemblyName, Name, and RootNamespace are not used by SHFB but Visual
+         Studio adds them anyway -->
+    <AssemblyName>Documentation</AssemblyName>
+    <RootNamespace>Documentation</RootNamespace>
+    <Name>Documentation</Name>
+    <!-- SHFB properties -->
+    <OutputPath>.\p4api.net_reference\</OutputPath>
+    <HtmlHelpName>p4api.net Documentation</HtmlHelpName>
+    <Language>en-US</Language>
+    <DocumentationSources>
+      <DocumentationSource sourceFile="..\bin\Release\p4api.net.dll" />
+      <DocumentationSource sourceFile="..\bin\Release\p4api.net.xml" />
+    </DocumentationSources>
+    <HelpTitle>Perforce .NET API</HelpTitle>
+    <FrameworkVersion>.NET Framework 4.5</FrameworkVersion>
+    <HelpFileFormat>HtmlHelp1, Website</HelpFileFormat>
+    <HtmlSdkLinkType>Msdn</HtmlSdkLinkType>
+    <BinaryTOC>True</BinaryTOC>
+    <NamingMethod>MemberName</NamingMethod>
+    <IndentHtml>True</IndentHtml>
+    <Preliminary>False</Preliminary>
+    <NamespaceSummaries>
+      <NamespaceSummaryItem name="(global)" isDocumented="False" />
+      <NamespaceSummaryItem name="Perforce.P4" isDocumented="True" />
+    </NamespaceSummaries>
+    <VisibleItems>InheritedMembers, InheritedFrameworkMembers, Protected, SealedProtected</VisibleItems>
+    <MissingTags>AutoDocumentCtors, AutoDocumentDispose</MissingTags>
+    <!-- <PresentationStyle>vs2005</PresentationStyle> -->
+    <FeedbackEMailAddress>manual%40perforce.com</FeedbackEMailAddress>
+  </PropertyGroup>
+  <!-- There are no properties for these groups.  AnyCPU needs to appear in
+       order for Visual Studio to perform the build.  The others are optional
+       common platform types that may appear. -->
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|Win32' ">
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|Win32' ">
+  </PropertyGroup>
+  <ItemGroup>
+    <ContentLayout Include="Perforce_Layout.content" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Getting more help.aml" />
+    <None Include="Introduction.aml" />
+    <None Include="P4 API.NET.aml" />
+  </ItemGroup>
+  <!-- Import the SHFB build targets -->
+  <Import Project="$(SHFBROOT)\SandcastleHelpFileBuilder.targets" />
+</Project>

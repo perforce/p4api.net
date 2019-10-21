@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{1305ABF0-EEA0-464F-99D5-7FD5BE5E4956}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Perforce.P4</RootNamespace>
+    <AssemblyName>p4api.net</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>..\bin\Debug\p4api.net.xml</DocumentationFile>
+    <NoWarn>1591</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>..\bin\Release\p4api.net.xml</DocumentationFile>
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>..\bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DocumentationFile>..\bin\Debug\p4api.net.xml</DocumentationFile>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisIgnoreBuiltInRuleSets>true</CodeAnalysisIgnoreBuiltInRuleSets>
+    <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
+    <NoWarn>1591</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <OutputPath>..\bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <DocumentationFile>..\bin\Release\p4api.net.xml</DocumentationFile>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisIgnoreBuiltInRuleSets>true</CodeAnalysisIgnoreBuiltInRuleSets>
+    <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
+    <CodeAnalysisFailOnMissingRules>true</CodeAnalysisFailOnMissingRules>
+    <NoWarn>1591</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>..\bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DocumentationFile>..\bin\Debug\p4api.net.xml</DocumentationFile>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisIgnoreBuiltInRuleSets>true</CodeAnalysisIgnoreBuiltInRuleSets>
+    <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
+    <NoWarn>1591</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+    <OutputPath>..\bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <DocumentationFile>..\bin\Release\p4api.net.xml</DocumentationFile>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisIgnoreBuiltInRuleSets>true</CodeAnalysisIgnoreBuiltInRuleSets>
+    <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
+    <CodeAnalysisFailOnMissingRules>true</CodeAnalysisFailOnMissingRules>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'LocalRelease|AnyCPU'">
+    <OutputPath>bin\LocalRelease\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <DocumentationFile>..\bin\Release\p4api.net.xml</DocumentationFile>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'LocalRelease|x64'">
+    <OutputPath>..\bin\x64\LocalRelease\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <DocumentationFile>..\bin\Release\p4api.net.XML</DocumentationFile>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisIgnoreBuiltInRuleSets>true</CodeAnalysisIgnoreBuiltInRuleSets>
+    <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
+    <CodeAnalysisFailOnMissingRules>true</CodeAnalysisFailOnMissingRules>
+    <NoWarn>1591</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'LocalRelease|x86'">
+    <OutputPath>..\bin\LocalRelease\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <DocumentationFile>..\bin\LocalRelease\p4api.net.xml</DocumentationFile>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisIgnoreBuiltInRuleSets>true</CodeAnalysisIgnoreBuiltInRuleSets>
+    <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="BridgeInterfaceClasses.cs" />
+    <Compile Include="Debug.cs" />
+    <Compile Include="FileDiff.cs" />
+    <Compile Include="errors\clientmain.cs" />
+    <Compile Include="errors\clientservice.cs" />
+    <Compile Include="errors\mergetest.cs" />
+    <Compile Include="errors\msgclient.cs" />
+    <Compile Include="errors\msgdb.cs" />
+    <Compile Include="errors\msgdm.cs" />
+    <Compile Include="errors\msghelp.cs" />
+    <Compile Include="errors\msglbr.cs" />
+    <Compile Include="errors\msgos.cs" />
+    <Compile Include="errors\msgrpc.cs" />
+    <Compile Include="errors\msgserver.cs" />
+    <Compile Include="errors\msgspec.cs" />
+    <Compile Include="errors\msgsupp.cs" />
+    <Compile Include="P4ServerMT.cs" />
+    <Compile Include="Repository.ServerMetaData.cs" />
+    <Compile Include="P4CommandResult.cs" />
+    <Compile Include="BranchSpec.cs" />
+    <Compile Include="Changelist.cs" />
+    <Compile Include="Client.cs" />
+    <Compile Include="ClientMetadata.cs" />
+    <Compile Include="Connection.cs" />
+    <Compile Include="Credential.cs" />
+    <Compile Include="Depot.cs" />
+    <Compile Include="DepotFileDiff.cs" />
+    <Compile Include="Repository.BranchSpec.cs" />
+    <Compile Include="Repository.ClientMetadata.cs" />
+    <Compile Include="Repository.Job.cs" />
+    <Compile Include="Group.cs" />
+    <Compile Include="Repository.Depot.cs" />
+    <Compile Include="Repository.Group.cs" />
+    <Compile Include="Repository.Changelist.cs" />
+    <Compile Include="Counter.cs" />
+    <Compile Include="File.cs" />
+    <Compile Include="FileAnnotation.cs" />
+    <Compile Include="FileHistory.cs" />
+    <Compile Include="FileIntegrationRecord.cs" />
+    <Compile Include="FileLineMatch.cs" />
+    <Compile Include="FileMetaData.cs" />
+    <Compile Include="FileResolveRecord.cs" />
+    <Compile Include="FileSpec.cs" />
+    <Compile Include="FileType.cs" />
+    <Compile Include="P4Server.internal.cs" />
+    <Compile Include="LogFile.cs" />
+    <Compile Include="P4Server.cs" />
+    <Compile Include="P4Bridge.cs" />
+    <Compile Include="P4Command.cs" />
+    <Compile Include="P4Exception.cs" />
+    <Compile Include="P4MapApi.cs" />
+    <Compile Include="Fix.cs" />
+    <Compile Include="FormBase.cs" />
+    <Compile Include="FormSpec.cs" />
+    <Compile Include="Job.cs" />
+    <Compile Include="Label.cs" />
+    <Compile Include="Options.cs" />
+    <Compile Include="PathSpec.cs" />
+    <Compile Include="ProtectionEntry.cs" />
+    <Compile Include="ProtectionTable.cs" />
+    <Compile Include="Repository.Client.cs" />
+    <Compile Include="Repository.cs" />
+    <Compile Include="Repository.Label.cs" />
+    <Compile Include="Repository.Stream.cs" />
+    <Compile Include="Repository.User.cs" />
+    <Compile Include="Server.cs" />
+    <Compile Include="SimpleList.cs" />
+    <Compile Include="Stream.cs" />
+    <Compile Include="StreamMetaData.cs" />
+    <Compile Include="StringEnum.cs" />
+    <Compile Include="SubmitResults.cs" />
+    <Compile Include="TriggerTable.cs" />
+    <Compile Include="TypeMap.cs" />
+    <Compile Include="User.cs" />
+    <Compile Include="VersionSpec.cs" />
+    <Compile Include="ViewMap.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="StringList.cs" />
+    <Compile Include="TaggedObject.cs" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <WCFMetadata Include="Service References\" />
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>
+</PostBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PreBuildEvent>
+    </PreBuildEvent>
+  </PropertyGroup>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
