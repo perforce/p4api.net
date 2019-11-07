@@ -2373,11 +2373,6 @@ namespace p4api.net.unit.test
             value = P4Server.Get("P4FOOBAR");
             Assert.AreEqual(expected, value);
 
-            expected = "D:\\login_АБВГ.bat";
-            P4Server.Set("P4FOOBAR", expected);
-            value = P4Server.Get("P4FOOBAR");
-            Assert.AreEqual(expected, value);
-
             P4Server.Set("P4FOOBAR", null);
             value = P4Server.Get("P4FOOBAR");
             Assert.IsNull(value);

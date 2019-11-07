@@ -1886,14 +1886,13 @@ namespace Perforce.P4
         static public String Get(string var)
         {
             IntPtr pval = IntPtr.Zero;
-            using (PinnedByteArray pData = MarshalStringToIntPtr(Encoding.UTF8, var))
+            using (PinnedByteArray pData = MarshalStringToIntPtr(Encoding.Default, var))
             {
                 pval = P4Bridge.GetW(pData);
             }
             if (pval != IntPtr.Zero)
             {
-                string val = MarshalPtrToStringUtf8_Int(pval);
-                P4Bridge.ReleaseString(pval);
+                string val = MarshalAndRelease(pval);
                 return val;
             }
             return null;
@@ -1907,8 +1906,8 @@ namespace Perforce.P4
         /// <returns></returns>
         public static void Set(string var, string val)
         {
-            using (PinnedByteArray pData1 = MarshalStringToIntPtr(Encoding.UTF8, var),
-                                    pData2 = MarshalStringToIntPtr(Encoding.UTF8, val))
+            using (PinnedByteArray pData1 = MarshalStringToIntPtr(Encoding.Default, var),
+                                    pData2 = MarshalStringToIntPtr(Encoding.Default, val))
             {
                 P4Bridge.SetW(pData1, pData2);
             }
