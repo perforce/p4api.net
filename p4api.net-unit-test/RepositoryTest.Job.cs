@@ -69,7 +69,7 @@ namespace p4api.net.unit.test
 
 						newGuy = rep.CreateJob(u, null);
 
-						equalJob = rep.GetJob(u.Id);
+						equalJob = rep.GetJob(newGuy.Id);
 
 						Assert.IsNotNull(equalJob);
 						Assert.AreEqual("job000002", newGuy.Id);
@@ -82,7 +82,7 @@ namespace p4api.net.unit.test
 
                         newGuy = rep.CreateJob(u, new Options(JobCmdFlags.Input));
 
-                        equalJob = rep.GetJob(u.Id);
+                        equalJob = rep.GetJob(newGuy.Id);
 
                         Assert.IsNotNull(equalJob);
                         Assert.AreEqual("job000003", newGuy.Id);
@@ -265,9 +265,12 @@ namespace p4api.net.unit.test
 						Job u = rep.GetJob(targetJob, null);
 
 						Assert.IsNotNull(u);
-						Assert.AreEqual(targetJob, u.Id);                       
-                      
-  					}
+						Assert.AreEqual(targetJob, u.Id);
+
+                        u = rep.GetJob("", null);
+                        Assert.IsNotNull(u);
+                        Assert.AreEqual("new", u.Id);
+                    }
 				}
 				finally
 				{
@@ -277,10 +280,66 @@ namespace p4api.net.unit.test
 			}
 		}
 
-		/// <summary>
-		///A test for GetJobs
+        /// <summary>
+		///A test for GetJobjob079425A
 		///</summary>
 		[TestMethod()]
+        public void GetJobTestjob079425A()
+        {
+            GetJobTestjob079425(false);
+        }
+        /// <summary>
+        ///A test for GetJobjob079425U
+        ///</summary>
+        [TestMethod()]
+        public void GetJobTestjob079425U()
+        {
+            GetJobTestjob079425(true);
+        }
+        /// <summary>
+		///A test for GetJob
+		///</summary>
+        public void GetJobTestjob079425(bool unicode)
+        {
+            string uri = "localhost:6666";
+            string user = "admin";
+            string pass = string.Empty;
+            string ws_client = "admin_space";
+
+            string targetJob = "job100001";
+
+            Process p4d = Utilities.DeployP4TestServer(TestDir, 6, unicode);
+            Server server = new Server(new ServerAddress(uri));
+            try
+            {
+                Repository rep = new Repository(server);
+
+                using (Connection con = rep.Connection)
+                {
+                    con.UserName = user;
+                    con.Client = new Client();
+                    con.Client.Name = ws_client;
+
+                    bool connected = con.Connect(null);
+                    Assert.IsTrue(connected);
+
+                    Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+
+                    Job u = rep.GetJob(targetJob, null);
+
+                    Assert.IsNull(u);
+                }
+            }
+            finally
+            {
+                Utilities.RemoveTestServer(p4d, TestDir);
+            }
+        }
+
+        /// <summary>
+        ///A test for GetJobs
+        ///</summary>
+        [TestMethod()]
 		public void GetJobsTest()
 		{
 			bool unicode = false;

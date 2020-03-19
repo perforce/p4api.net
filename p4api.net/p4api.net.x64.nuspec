@@ -3,19 +3,19 @@
   <metadata>
     <id>p4api.net.x64</id>
     <version>$version$</version>
-    <title>$title$</title>
-    <authors>$author$</authors>
-    <owners>$author$</owners>
+    <title>p4api.net.x64</title>
+    <authors>Perforce Software, Inc.</authors>
+    <owners>Perforce</owners>
     <projectUrl>https://www.perforce.com/downloads/helix-core-api-net</projectUrl>
     <iconUrl>https://www.perforce.com/sites/default/files/image/2018-12/icon-helix-core-simple-64-64.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>$description$</description>
-    <copyright>Copyright 2018</copyright>
+    <description>Helix Core API for .NET x64</description>
+    <copyright>Copyright 2020</copyright>
     <tags>perforce helix vcs scm p4 p4api p4api.net</tags>
 	<license type="file">LICENSE.txt</license>
   </metadata>
   <files>
-    <file src="..\bin\Release\p4bridge.dll" target="build" />
+    <file src="..\bin\Release\x64\p4bridge.dll" target="build" />
 	<file src="p4api.net.x64.targets" target="build" />
 	<file src="..\LICENSE.txt" target="" />	
 </files>

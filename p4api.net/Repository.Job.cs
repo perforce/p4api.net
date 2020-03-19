@@ -225,7 +225,15 @@ namespace Perforce.P4
 				throw new ArgumentNullException("job");
 
 			}
-			P4Command cmd = new P4Command(this, "job", true, job);
+            // first confirm the job exists
+            if (!string.IsNullOrEmpty(job))
+            {
+                JobsCmdOptions opts = new JobsCmdOptions(JobsCmdFlags.LongDescriptions, "Job=" + job, 1);
+                if (GetJobs(opts, null) == null)
+                    return null;
+            }
+
+            P4Command cmd = new P4Command(this, "job", true, job);
 
 			if (options == null)
 			{

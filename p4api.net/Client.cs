@@ -395,8 +395,8 @@ namespace Perforce.P4
         /// </summary>
 		public IList<string> AltRoots { get; set; }
 
-		private ClientOptionEnum _options;
-
+        private ClientOptionEnum _options = ClientOption.None;
+        
         /// <summary>
         /// Options for the Client command
         /// </summary>
@@ -409,9 +409,9 @@ namespace Perforce.P4
         /// <summary>
         /// Options for the Client about submit behavior
         /// </summary>
-		public ClientSubmitOptions SubmitOptions { get; set; }
+		public ClientSubmitOptions SubmitOptions = new ClientSubmitOptions(false, SubmitType.SubmitUnchanged);
 
-		private StringEnum<LineEnd> _lineEnd;
+        private StringEnum<LineEnd> _lineEnd = LineEnd.Local;
 
         /// <summary>
         /// Property to access line ending settings
@@ -889,7 +889,7 @@ namespace Perforce.P4
 				tmpServerIDStr = FormBase.FormatMultilineField(ServerID.ToString());
 				tmpServerIDStr = "ServerID:\t" + tmpServerIDStr + "\n" + "\n";
 			}
-			String value = String.Format(ClientSpecFormat, Name,
+            String value = String.Format(ClientSpecFormat, Name,
 				FormatDateTime(Updated),
 				FormatDateTime(Accessed),
 				OwnerName, Host, tmpDescStr, Root, tmpAltRootsStr,

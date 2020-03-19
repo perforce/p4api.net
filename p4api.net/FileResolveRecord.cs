@@ -288,11 +288,11 @@ namespace Perforce.P4
 
 			if (obj.ContainsKey("startToRev"))
 			{
-				int.TryParse(obj["startToRev"], out startRev);
+				int.TryParse(obj["startToRev"].Trim('#'), out startRev);
 			}
 			if (obj.ContainsKey("endToRev"))
 			{
-				int.TryParse(obj["endToRev"], out endRev);
+				int.TryParse(obj["endToRev"].Trim('#'), out endRev);
 			}
 			if (obj.ContainsKey("clientFile"))
 			{
@@ -316,11 +316,11 @@ namespace Perforce.P4
 
 			if (obj.ContainsKey("startFromRev"))
 			{
-				int.TryParse(obj["startFromRev"], out startRev);
+				int.TryParse(obj["startFromRev"].Trim('#'), out startRev);
 			}
 			if (obj.ContainsKey("endFromRev"))
 			{
-				int.TryParse(obj["endFromRev"], out endRev);
+				int.TryParse(obj["endFromRev"].Trim('#'), out endRev);
 			}
 			if (obj.ContainsKey("fromFile"))
 			{

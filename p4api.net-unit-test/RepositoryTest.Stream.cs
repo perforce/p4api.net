@@ -821,7 +821,74 @@ namespace p4api.net.unit.test
                 unicode = !unicode;
             }
         }
-        
+
+        /// <summary>
+        ///A test for GetStreamjob072025
+        ///</summary>
+        [TestMethod()]
+        public void GetStreamTestjob072025A()
+        {
+            GetStreamTestjob072025(false);
+        }
+        /// <summary>
+        ///A test for GetStreamjob072025
+        ///</summary>
+        [TestMethod()]
+        public void GetStreamTestjob072025U()
+        {
+            GetStreamTestjob072025(true);
+        }
+        /// <summary>
+        ///A test for GetStreamjob072025
+        ///</summary>
+        public void GetStreamTestjob072025(bool unicode)
+        {
+            string uri = "localhost:6666";
+            string user = "admin";
+            string pass = string.Empty;
+            string ws_client = "admin_space";
+
+            Process p4d = null;
+
+            try
+            {
+                p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
+                Server server = new Server(new ServerAddress(uri));
+
+                Repository rep = new Repository(server);
+
+                using (Connection con = rep.Connection)
+                {
+                    con.UserName = user;
+                    con.Client = new Client();
+                    con.Client.Name = ws_client;
+
+                    bool connected = con.Connect(null);
+                    Assert.IsTrue(connected);
+
+                    Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+
+                    string targetStream = "//Rocket/GUI";
+
+                    Stream s = rep.GetStream(targetStream);
+
+                    Assert.IsNotNull(s);
+
+                    Assert.AreEqual(targetStream, s.Id);
+
+                    // get a stream spec for a stream that doesn't exist
+                    string targetStream1 = "//Rocket/GUI2";
+                    Stream s1 = rep.GetStream(targetStream1,
+                        new StreamCmdOptions(StreamCmdFlags.None, "//Rocket/MAIN", StreamType.Development.ToString()));
+                    Assert.IsNotNull(s1);
+                    Assert.AreEqual(targetStream1, s1.Id);
+                }
+            }
+            finally
+            {
+                Utilities.RemoveTestServer(p4d, TestDir);
+            }
+        }
 
         /// <summary>
         ///A test for GetStream

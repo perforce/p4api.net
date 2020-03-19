@@ -50,8 +50,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2019, 2, 185, 9614
- PRODUCTVERSION 2019, 2, 185, 9614
+ FILEVERSION 2020, 1, 193, 5313
+ PRODUCTVERSION 2020, 1, 193, 5313
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -68,12 +68,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Perforce Software, Inc."
             VALUE "FileDescription", "Perforce .NET API Bridge"
-            VALUE "FileVersion", "2019.2.185.9614"
+            VALUE "FileVersion", "2020.1.193.5313"
             VALUE "InternalName", "p4bridge.dll"
-            VALUE "LegalCopyright", "Copyright (C) 2019 Perforce Software, Inc."
+            VALUE "LegalCopyright", "Copyright (C) 2020 Perforce Software, Inc."
             VALUE "OriginalFilename", "p4bridge.dll"
             VALUE "ProductName", "Perforce .NET API Bridge"
-            VALUE "ProductVersion", "2019.2.185.9614"
+            VALUE "ProductVersion", "2020.1.193.5313"
         END
     END
     BLOCK "VarFileInfo"

@@ -1159,6 +1159,7 @@ namespace p4api.net.unit.test
 
             try
             {
+                //int checkpoint = unicode ? 19 : 21;
                 p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
                 using (P4Server target = new P4Server(server, user, pass, ws_client))
                 {
@@ -1310,6 +1311,7 @@ namespace p4api.net.unit.test
 
             try
             {
+                int checkpoint = unicode ? 19 : 21;
                 p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
                 using (P4Server target = new P4Server(server, user, pass, ws_client))
                 {
@@ -2438,6 +2440,39 @@ namespace p4api.net.unit.test
         }
 
         /// <summary>
+        ///A test for IsIgnoredjob100206
+        ///</summary>
+        [TestMethod()]
+        public void IsIgnoredTestjob100206()
+        {
+            string oldIgnore = P4Server.Get("P4IGNORE");
+
+            try
+            {
+                P4Server.Set("P4IGNORE", ".p4ignore");
+                string val = P4Server.Get("P4IGNORE");
+                Assert.AreEqual(val, ".p4ignore");
+
+                Environment.CurrentDirectory = "C:\\MyTestDir";
+                Directory.CreateDirectory("C:\\MyTestDir\\NoIgnore");
+                System.IO.File.Create("C:\\MyTestDir\\.p4ignore").Dispose();
+                System.IO.File.AppendAllText("C:\\MyTestDir\\.p4ignore", ".p4ignore");
+
+                Assert.IsTrue(P4Server.IsIgnored("C:\\MyTestDir\\.p4ignore"));
+                Environment.CurrentDirectory = "C:\\MyTestDir";
+                Assert.IsTrue(P4Server.IsIgnored(".p4ignore"));
+                Environment.CurrentDirectory = "C:\\MyTestDir\\NoIgnore";
+                Assert.IsFalse(P4Server.IsIgnored(".p4ignore"));
+            }
+
+            finally
+            {
+                P4Server.Set("P4IGNORE", oldIgnore);
+                System.IO.File.Delete("C:\\MyTestDir\\.p4ignore");
+            }
+        }
+
+        /// <summary>
         ///A test for GetConfig()
         ///</summary>
         [TestMethod()]
@@ -2518,6 +2553,136 @@ namespace p4api.net.unit.test
                 {
                     System.IO.File.Delete(Path.Combine(adminSpace, "MyCode\\myP4Config.txt"));
                 }
+            }
+        }
+
+        /// <summary>
+        ///A test for GetConfigjob100191A()
+        ///</summary>
+        [TestMethod()]
+        public void GetConfigTestjob100191A()
+        {
+            GetConfigTestjob100191(false);
+        }
+        /// <summary>
+        ///A test for GetConfigjob100191U()
+        ///</summary>
+        [TestMethod()]
+        public void GetConfigTestjob100191U()
+        {
+            GetConfigTestjob100191(true);
+        }
+        public void GetConfigTestjob100191(bool unicode)
+        {
+
+
+            string oldConfig = P4Server.Get("P4CONFIG");
+
+            string uri = "localhost:6666";
+            string user = "admin";
+            string pass = string.Empty;
+            string ws_client = "admin_space";
+
+            Process p4d = null;
+
+            string adminSpace = "";
+
+            try
+            {
+                p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
+                var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
+                adminSpace = Path.Combine(clientRoot, "admin_space");
+
+                Server server = new Server(new ServerAddress(uri));
+
+                Repository rep = new Repository(server);
+
+                using (Connection con = rep.Connection)
+                {
+                    // create some directories
+                    Directory.CreateDirectory("C:\\top_level\\mid_level\\bottom_level");
+
+                    string topLevel = "C:\\top_level\\p4config";
+                    string midLevel = "C:\\top_level\\mid_level\\p4config";
+                    string bottomLevel = "C:\\top_level\\mid_level\\bottom_level\\p4config";
+                    // create some config files
+                    System.IO.File.Create(topLevel).Dispose();
+                    System.IO.File.Create(midLevel).Dispose();
+                    System.IO.File.Create(bottomLevel).Dispose();
+
+                    System.IO.File.AppendAllText(topLevel, "P4PORT=6666\r\nP4USER=admin\r\nP4CLIENT=admin_space");
+                    System.IO.File.AppendAllText(midLevel, "P4PORT=6666\r\nP4USER=admin\r\nP4CLIENT=admin_space");
+                    System.IO.File.AppendAllText(bottomLevel, "P4PORT=6666\r\nP4USER=admin\r\nP4CLIENT=admin_space");
+
+                    P4Server.Set("P4CONFIG", "p4config");
+
+                    Options options = new Options();
+                    options["cwd"] = "C:\\top_level\\mid_level\\bottom_level";
+                    Directory.SetCurrentDirectory("C:\\top_level\\mid_level\\bottom_level");
+                    con.Connect(options);
+
+                    string config1 = con.GetP4ConfigFile();
+                    Assert.AreEqual(config1, bottomLevel);
+                    config1 = con.GetP4ConfigFile("C:\\top_level\\mid_level\\bottom_level");
+                    Assert.AreEqual(config1, bottomLevel);
+                    config1 = P4Server.GetConfig("C:\\top_level\\mid_level\\bottom_level");
+                    Assert.AreEqual(config1, bottomLevel);
+
+                    con.Disconnect();
+                    options["cwd"] = "C:\\top_level\\mid_level";
+                    Directory.SetCurrentDirectory("C:\\top_level\\mid_level");
+                    con.Connect(options);
+
+                    string config2 = con.GetP4ConfigFile();
+                    Assert.AreEqual(config2, midLevel);
+                    config2 = con.GetP4ConfigFile("C:\\top_level\\mid_level");
+                    Assert.AreEqual(config2, midLevel);
+                    config2 = P4Server.GetConfig("C:\\top_level\\mid_level");
+                    Assert.AreEqual(config2, midLevel);
+
+                    con.Disconnect();
+                    options["cwd"] = "C:\\top_level";
+                    Directory.SetCurrentDirectory("C:\\top_level");
+                    con.Connect(options);
+
+                    string config3 = con.GetP4ConfigFile();
+                    Assert.AreEqual(config3, topLevel);
+                    config3 = con.GetP4ConfigFile("C:\\top_level");
+                    Assert.AreEqual(config3, topLevel);
+                    config3 = P4Server.GetConfig("C:\\top_level");
+                    Assert.AreEqual(config3, topLevel);
+
+                    //delete the config files
+                    System.IO.File.Delete("C:\\top_level\\mid_level\\bottom_level\\p4config");
+                    System.IO.File.Delete("C:\\top_level\\mid_level\\p4config");
+                    System.IO.File.Delete("C:\\top_level\\p4config");
+
+                    con.Disconnect();
+                    options["cwd"] = "C:\\top_level";
+                    con.Connect(options);
+
+                    string config4 = con.GetP4ConfigFile();
+                    Assert.AreEqual(config4, "noconfig");
+                    config4 = con.GetP4ConfigFile("C:\\top_level");
+                    Assert.AreEqual(config4, "noconfig");
+                    config4 = P4Server.GetConfig("C:\\top_level");
+                    Assert.AreEqual(config4, "noconfig");
+
+                    con.Disconnect();
+                    Directory.SetCurrentDirectory("C:\\");
+                }
+            }
+            finally
+            {
+                Utilities.RemoveTestServer(p4d, TestDir);
+
+                P4Server.Set("P4CONFIG", oldConfig);
+
+
+                // delete the directories
+                Directory.Delete("C:\\top_level\\mid_level\\bottom_level");
+                Directory.Delete("C:\\top_level\\mid_level");
+                Directory.Delete("C:\\top_level");
             }
         }
 

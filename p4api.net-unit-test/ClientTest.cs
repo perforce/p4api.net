@@ -208,6 +208,43 @@ namespace p4api.net.unit.test
         }
 
         /// <summary>
+        ///A test for ToStringjob084053
+        ///</summary>
+        [TestMethod()]
+        public void ToStringTestjob084053()
+        {
+            Client target = new Client();
+            target.Name = "clientName";
+            target.Updated = new DateTime(2010, 1, 2, 3, 4, 5);
+            target.Accessed = new DateTime(2011, 2, 3, 4, 5, 6);
+            target.OwnerName = "JoeOwner";
+            // Don't set target.Options, target.SubmitOptions, and target.LineEnd
+            // to confirm default values are set on Client creation.
+            target.Root = "C:\\clientname";
+            target.Host = "MissManners";
+            target.Description = "Miss Manners client";
+            target.AltRoots = new List<string>();
+            target.AltRoots.Add("C:\\alt0");
+            target.AltRoots.Add("C:\\alt1");
+            target.ServerID = "perforce:1666";
+            target.Stream = "//Stream/main";
+            target.StreamAtChange = "111";
+
+            target.ViewMap = new ViewMap(new string[]
+            {
+                "	//depot/main/p4/... //dbarbee_win-dbarbee/main/p4/...",
+                "-//usr/... //dbarbee_win-dbarbee/usr/...",
+                "+//spec/... //dbarbee_win-dbarbee/spec/..."
+            });
+
+            string expected =
+                "Client:\tclientName\n\nUpdate:\t2010/01/02 03:04:05\n\nAccess:\t2011/02/03 04:05:06\n\nOwner:\tJoeOwner\n\nHost:\tMissManners\n\nDescription:\n\tMiss Manners client\n\nRoot:\tC:\\clientname\n\nAltRoots:\n\tC:\\alt0\n\tC:\\alt1\n\nOptions:\tnoallwrite noclobber nocompress unlocked nomodtime normdir\n\nSubmitOptions:\tsubmitunchanged\n\nLineEnd:\tLocal\n\nStream:\t//Stream/main\n\nStreamAtChange:\t111\n\nServerID:\tperforce:1666\n\nView:\n\t//depot/main/p4/... //dbarbee_win-dbarbee/main/p4/...\n\t-//usr/... //dbarbee_win-dbarbee/usr/...\n\t+//spec/... //dbarbee_win-dbarbee/spec/...\n";
+            string actual;
+            actual = target.ToString();
+            Assert.AreEqual(expected, actual);
+        }
+
+        /// <summary>
         ///A test for ToString
         ///</summary>
         [TestMethod()]
@@ -2653,6 +2690,95 @@ namespace p4api.net.unit.test
                 unicode = !unicode;
             }
         }
+
+        /// <summary>
+        ///A test for GetResolveFilesjob085495A
+        ///</summary>
+        [TestMethod()]
+        public void GetResolvedFilesTestjob085495A()
+        {
+            GetResolvedFilesTestjob085495(false);
+        }
+
+        /// <summary>
+        ///A test for GetResolveFiles
+        ///</summary>
+        public void GetResolvedFilesTestjob085495(bool unicode)
+        {
+            string uri = "localhost:6666";
+            string user = "admin";
+            string pass = string.Empty;
+            string ws_client = "admin_space";
+
+            Process p4d = null;
+
+            try
+            {
+                p4d = Utilities.DeployP4TestServer(TestDir, 2, unicode);
+                var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
+                var adminSpace = Path.Combine(clientRoot, "admin_space");
+                Directory.CreateDirectory(adminSpace);
+                Server server = new Server(new ServerAddress(uri));
+                Repository rep = new Repository(server);
+
+                using (Connection con = rep.Connection)
+                {
+                    con.UserName = user;
+                    con.Client = new Client();
+                    con.Client.Name = ws_client;
+                    Assert.AreEqual(con.Status, ConnectionStatus.Disconnected);
+                    Assert.AreEqual(con.Server.State, ServerState.Unknown);
+                    Assert.IsTrue(con.Connect(null));
+                    Assert.AreEqual(con.Server.State, ServerState.Online);
+                    Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+                    Assert.AreEqual("admin", con.Client.OwnerName);
+                    Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
+
+                    FileSpec fromFile = new FileSpec(new LocalPath(Path.Combine(adminSpace, "TestData\\*.txt")),
+                        null);
+                    Options sFlags = new Options(
+                        SubmitFilesCmdFlags.None,
+                        -1,
+                        null,
+                        "Check It In!",
+                        null
+                    );
+                    SubmitResults sr = null;
+                    try
+                    {
+                        sr = con.Client.SubmitFiles(sFlags, fromFile);
+                    }
+                    catch
+                    {
+                    } // will fail because we need to resolve
+
+                    Options rFlags = new Options(
+                        ResolveFilesCmdFlags.AutomaticForceMergeMode | ResolveFilesCmdFlags.PreviewOnly, -1);
+                    IList<FileResolveRecord> records = con.Client.ResolveFiles(rFlags, fromFile);
+                    Assert.IsNotNull(records);
+
+                    rFlags = new Options(
+                        ResolveFilesCmdFlags.AutomaticForceMergeMode, -1);
+                    records = con.Client.ResolveFiles(rFlags, fromFile);
+                    Assert.IsNotNull(records);
+
+                    Options opts = new Options(GetResolvedFilesCmdFlags.IncludeBaseRevision);
+                    IList<FileResolveRecord> rFiles = con.Client.GetResolvedFiles(opts, null);
+
+                    Assert.IsNotNull(rFiles);
+                    Assert.AreEqual(rFiles.Count, 2);
+                    Assert.AreEqual(rFiles[0].FromFileSpec.Version, new VersionRange(1, 2));
+                    Assert.AreEqual(rFiles[0].FromFileSpec.Version, new VersionRange(1, 2));
+                    Assert.AreEqual(rFiles[1].FromFileSpec.Version, new VersionRange(1, 2));
+                    Assert.AreEqual(rFiles[1].FromFileSpec.Version, new VersionRange(1, 2));
+                }
+            }
+            finally
+            {
+                Utilities.RemoveTestServer(p4d, TestDir);
+            }
+        }
+
 
         /// <summary>
         ///A test for ReconcileFiles

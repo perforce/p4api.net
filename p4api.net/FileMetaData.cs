@@ -156,6 +156,10 @@ namespace Perforce.P4
 		/// File was reverted.
 		/// </summary>
 		Reverted = 33,
+		/// <summary>
+		/// File was archived.
+		/// </summary>
+		Archive = 34,
 	}
 
 	/// <summary>

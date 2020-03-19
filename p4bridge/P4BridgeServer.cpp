@@ -772,7 +772,8 @@ char *GetInfo(char* lpstrVffInfo, char *InfoItem)
         szResult = NULL;
     }
     
-	return szResult;
+	// if szResult is NULL return an empty string
+	return szResult == nullptr ? "" : szResult;
 }
 
 /*******************************************************************************
@@ -1496,10 +1497,16 @@ string P4BridgeServer::get_config_Int(const char * cwd)
 	LOG_DEBUG1(4, "Set enviroLocal to %s", cwd);
 	enviroLocal.Config(StrRef(cwd));
 
-	const StrPtr& p = enviroLocal.GetConfig();
-	LOG_DEBUG1(4, "enviroLocal config is %s", p.Text());
+	StrBuf sb = enviroLocal.GetConfig();
+	LOG_DEBUG1(4, "enviroLocal config is %s", sb.Text());
 
-	return p.Text();
+	if (sb == "noconfig")
+	return sb.Text();
+
+	const StrArray* ret = enviroLocal.GetConfigs();
+	const StrBuf* sbp = ret->Get(0);
+	LOG_DEBUG1(4, "enviroLocal config is %s", sbp->Text());
+		return sbp->Text();
 }
 
 string P4BridgeServer::get_config(const char * cwd)
@@ -1534,7 +1541,15 @@ string P4BridgeServer::get_config_Int()
 	// and apparently we want something more responsive
 	LOG_DEBUG1(4, "pCon CWD: %s", pCon->GetCwd().Text());
 	const StrPtr& ret = pCon->GetConfig();
-	return ret.Text();
+	StrBuf sb = pCon->GetConfig(); ;// = ret;
+
+	if (sb == "noconfig")
+		return ret.Text();
+	
+	const StrArray* retA = pCon->GetConfigs();
+	const StrBuf* sbp = retA->Get(0);
+	LOG_DEBUG1(4, "pCon CWD: %s", sbp->Text());
+	return sbp->Text();
 }
 
 string P4BridgeServer::get_config()

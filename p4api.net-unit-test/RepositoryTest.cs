@@ -277,6 +277,84 @@ namespace p4api.net.unit.test
             }
         }
 
+        /// <summary>
+        ///A test for GetArchiveFileActionTestA
+        ///</summary>
+        [TestMethod()]
+        public void GetArchiveFileActionTestA()
+        {
+            GetArchiveFileActionTest(false);
+        }
+
+        /// <summary>
+        ///A test for GetArchiveFileActionTestU
+        ///</summary>
+        [TestMethod()]
+        public void GetArchiveFileActionTestU()
+        {
+            GetArchiveFileActionTest(true);
+        }
+
+        /// <summary>
+        ///A test for GetArchiveFileActionTest
+        ///</summary>
+        public void GetArchiveFileActionTest(bool unicode)
+        {
+            string uri = "localhost:6666";
+            string user = "admin";
+            string pass = string.Empty;
+            string ws_client = "admin_space";
+
+
+                Process p4d = Utilities.DeployP4TestServer(TestDir, 2, unicode);
+                Server server = new Server(new ServerAddress(uri));
+            try
+            {
+                Repository rep = new Repository(server);
+
+                using (Connection con = rep.Connection)
+                {
+                    con.UserName = user;
+                    con.Client = new Client();
+                    con.Client.Name = ws_client;
+
+                    bool connected = con.Connect(null);
+                    Assert.IsTrue(connected);
+
+                    Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+
+                    Depot depot = new Depot("Archive", DepotType.Archive, DateTime.Now, null, "admin",
+                        "desc", ".p4s", "Archive/...", "//Archive/1", null);
+                    depot.Id = "Archive";
+                    depot.Type = DepotType.Archive;
+                    rep.CreateDepot(depot);
+
+                    Options options = new Options();
+                    options["-D"] = "Archive";
+
+                    P4Command cmd = new P4Command(con, "archive", true, "//depot/TheirCode/...");
+                    try
+                    {
+                        cmd.Run(options);
+                    }
+                    catch (P4Exception)
+                    {
+
+                    }
+
+                    FileSpec fs = new FileSpec(new DepotPath("//depot/TheirCode/Silly.bmp"), null);
+                    IList<FileSpec> lfs = new List<FileSpec>();
+                    lfs.Add(fs);
+
+                    IList<FileMetaData> fmd = rep.GetFileMetaData(lfs, null);
+                    Assert.AreEqual(fmd[0].HeadAction, FileAction.Archive);
+                }
+            }
+            finally
+            {
+                Utilities.RemoveTestServer(p4d, TestDir, resetDepot: true, unicode: unicode);
+            }
+        }
 
         /// <summary>
         ///A test for GetDepotFilesInRangeTest
@@ -2635,6 +2713,84 @@ namespace p4api.net.unit.test
             }
         }
 
+        /// <summary>
+        ///A test for GetProtectionTablejob079134A
+        ///</summary>
+        [TestMethod()]
+        public void GetProtectionTableTestjob079134A()
+        {
+            GetProtectionTableTestjob079134(false);
+        }
+
+        /// <summary>
+        ///A test for GetProtectionTablejob079134U
+        ///</summary>
+        [TestMethod()]
+        public void GetProtectionTableTestjob079134U()
+        {
+            GetProtectionTableTestjob079134(true);
+        }
+
+        /// <summary>
+        ///A test for GetProtectionTablejob079134
+        ///</summary>
+        public void GetProtectionTableTestjob079134(bool unicode)
+        {
+            string uri = "localhost:6666";
+            string user = "admin";
+            string pass = string.Empty;
+            string ws_client = "admin_space";
+
+
+                Process p4d = Utilities.DeployP4TestServer(TestDir, 4, unicode);
+                Server server = new Server(new ServerAddress(uri));
+            try
+            {
+                Repository rep = new Repository(server);
+
+                using (Connection con = rep.Connection)
+                {
+                    con.UserName = user;
+                    con.Client = new Client();
+                    con.Client.Name = ws_client;
+
+                    bool connected = con.Connect(null);
+                    Assert.IsTrue(connected);
+
+                    Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+
+                    IList<ProtectionEntry> target = rep.GetProtectionTable();
+
+                    Assert.IsNotNull(target);
+                    bool foundit = false;
+
+
+                    foreach (ProtectionEntry pte in target)
+                    {
+                        if (pte.Mode == ProtectionMode.Admin
+                            &&
+                            pte.Type == EntryType.User
+                            &&
+                            pte.Name == "Alex"
+                            &&
+                            pte.Host == "*"
+                            &&
+                            pte.Path == "//MyCode2/ReadMe.txt")
+                        {
+                            foundit = true;
+                            break;
+                        }
+
+                    }
+                    Assert.IsTrue(foundit);
+
+                }
+            }
+            finally
+            {
+                Utilities.RemoveTestServer(p4d, TestDir);
+            }
+        }
         /// <summary>
         ///A test for GetTriggerTable
         ///</summary>

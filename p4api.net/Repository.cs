@@ -3707,9 +3707,139 @@ namespace Perforce.P4
         ///		</code>
         /// </example>
         /// <seealso cref="GetProtectionTableCmdFlags"/>
+        [Obsolete("Use GetProtectionTable()")]
         public IList<ProtectionEntry> GetProtectionTable(Options options)
         {
-            P4.P4Command protectCmd = new P4Command(this, "protect", true, "-o");
+           return GetProtectionTable();
+        }
+
+        /// <summary>
+        /// Get the repository's protection table. 
+        /// </summary>    
+        /// <returns></returns>
+        /// <remarks>
+        /// <br/><b>p4 help protect</b>
+        /// <br/> 
+        /// <br/>     protect -- Modify protections in the server namespace
+        /// <br/> 
+        /// <br/>     p4 protect
+        /// <br/>     p4 protect -o
+        /// <br/>     p4 protect -i
+        /// <br/> 
+        /// <br/> 	'p4 protect' edits the protections table in a text form.
+        /// <br/> 
+        /// <br/> 	Each line in the table contains a protection mode, a group/user
+        /// <br/> 	indicator, the group/user name, client host ID and a depot file
+        /// <br/> 	path pattern. Users receive the highest privilege that is granted
+        /// <br/> 	on any line.
+        /// <br/> 
+        /// <br/> 	Note: remote depots are accessed using the pseudo-user 'remote'.
+        /// <br/> 	To control access from other servers that define your server as
+        /// <br/> 	a remote server, grant appropriate permissions to the 'remote' user.
+        /// <br/> 
+        /// <br/> 	     Mode:   The permission level or right being granted or denied.
+        /// <br/> 		     Each permission level includes all the permissions above
+        /// <br/> 		     it, except for 'review'. Each permission only includes
+        /// <br/> 		     the specific right and no lesser rights.  This approach
+        /// <br/> 		     enables you to deny individual rights without having to
+        /// <br/> 		     re-grant lesser rights. Modes prefixed by '=' are rights.
+        /// <br/> 		     All other modes are permission levels.
+        /// <br/> 
+        /// <br/>       Valid modes are:
+        /// <br/> 
+        /// <br/> 		     list   - users can see names but not contents of files;
+        /// <br/> 			      users can see all non-file related metadata
+        /// <br/> 			      (clients, users, changelists, jobs, etc.)
+        /// <br/> 
+        /// <br/> 		     read   - users can sync, diff, and print files
+        /// <br/> 
+        /// <br/> 		     open   - users can open files (add, edit. delete,
+        /// <br/> 			      integrate)
+        /// <br/> 
+        /// <br/> 		     write  - users can submit open files
+        /// <br/> 
+        /// <br/> 		     admin  - permits those administrative commands and
+        /// <br/> 			      command options that don't affect the server's
+        /// <br/> 			      security.
+        /// <br/> 
+        /// <br/> 		     super  - access to all commands and command options.
+        /// <br/> 
+        /// <br/> 		     review - permits access to the 'p4 review' command;
+        /// <br/> 			      implies read access
+        /// <br/> 
+        /// <br/> 		     =read  - if this right is denied, users can't sync,
+        /// <br/> 			      diff, or print files
+        /// <br/> 
+        /// <br/> 		     =branch - if this right is denied, users are not
+        /// <br/> 			       permitted to use files as a source
+        /// <br/> 			       for 'p4 integrate'
+        /// <br/> 
+        /// <br/> 		     =open   = if this right is denied, users cannot open
+        /// <br/> 			       files (add, edit, delete, integrate)
+        /// <br/> 
+        /// <br/> 		     =write  = if this right is denied, users cannot submit
+        /// <br/> 			       open files
+        /// <br/> 
+        /// <br/> 	     Group/User indicator: specifies the grantee is a group or user.
+        /// <br/> 
+        /// <br/> 	     Name:   A Perforce group or user name; can include wildcards.
+        /// <br/> 
+        /// <br/> 	     Host:   The IP address of a client host; can include wildcards.
+        /// <br/> 
+        /// <br/> 	             The server can distinguish connections coming from a
+        /// <br/> 	             proxy, broker, or replica. The server prepends the string
+        /// <br/> 	             'proxy-' to the IP address of the true client of such
+        /// <br/> 	             a connection when the server enforces the protections.
+        /// <br/> 
+        /// <br/> 	             Specify the 'proxy-' prefix for the IP address in the
+        /// <br/> 	             Host: field in the protections table to indicate the
+        /// <br/> 	             protections that should thus apply.
+        /// <br/> 
+        /// <br/> 	             For example, 'proxy-*' applies to all connections from
+        /// <br/> 	             all proxies, brokers, and replicas, while
+        /// <br/> 	             'proxy-10.0.0.5' identifies a client machine with an IP
+        /// <br/> 	             address of 10.0.0.5 which is connecting to p4d through
+        /// <br/> 	             a proxy, broker, or replica.
+        /// <br/> 
+        /// <br/> 	             If you wish to write a single set of protections entries
+        /// <br/> 	             which apply both to directly-connected clients as well
+        /// <br/> 	             as to those which connect via a proxy, broker, or
+        /// <br/> 	             replica, you can omit the 'proxy-' prefix and also set
+        /// <br/> 	             dm.proxy.protects=0. In this case, the 'proxy-' prefix
+        /// <br/> 	             is not prepended to the IP address of connections which
+        /// <br/> 	             are made via a proxy, replica or broker.  Note that in
+        /// <br/> 	             this scenario, all intermediate proxies, brokers, and
+        /// <br/> 	             replicas should be at release 2012.1 or higher.
+        /// <br/> 
+        /// <br/> 	     Path:   The part of the depot to which access is being granted
+        /// <br/> 	             or denied.  To deny access to a depot path, preface the
+        /// <br/> 	             path with a "-" character. These exclusionary mappings
+        /// <br/> 	             apply to all access levels, even if only one access
+        /// <br/> 	             level is specified in the first field.
+        /// <br/> 
+        /// <br/> 	The -o flag writes the protection table	to the standard output.
+        /// <br/> 	The user's editor is not invoked.
+        /// <br/> 
+        /// <br/> 	The -i flag reads the protection table from the standard input.
+        /// <br/> 	The user's editor is not invoked.
+        /// <br/> 
+        /// <br/> 	After protections are defined, 'p4 protect' requires 'super'
+        /// <br/> 	access.
+        /// <br/> 
+        /// <br/> 
+        /// </remarks>
+        /// <example>
+        ///		To get the protections table:
+        ///		<code> 
+        ///			IList&lt;ProtectionEntry&gt; target = Repository.GetProtectionTable(opts);
+        ///		</code>
+        /// </example>
+        /// <seealso cref="GetProtectionTableCmdFlags"/>
+        public IList<ProtectionEntry> GetProtectionTable()
+        {
+            GetProtectionTableCmdOptions options = new GetProtectionTableCmdOptions(GetProtectionTableCmdFlags.Output);
+           
+            P4.P4Command protectCmd = new P4Command(this, "protect", true);
             P4.P4CommandResult r = protectCmd.Run(options);
             if (r.Success != true)
             {

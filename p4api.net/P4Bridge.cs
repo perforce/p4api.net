@@ -35,30 +35,58 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 using System;
 using System.Collections;
+using System.IO;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
-
+using System.ComponentModel;
 namespace Perforce.P4
 {
+
     public class P4Debugging
     {
-        /* object allocation debugging functions, mostly for testing */
-        [DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl)]
+		const string bridgeDll = "p4bridge.dll";
+		static P4Debugging()
+		{
+			Assembly p4apinet = Assembly.GetExecutingAssembly();
+			PortableExecutableKinds peKind;
+			ImageFileMachine machine;
+			p4apinet.ManifestModule.GetPEKind(out peKind, out machine);
+
+			// only set this path if it is Any CPU (ILOnly)
+			if (peKind.ToString() == "ILOnly")
+			{
+				string currentArchSubPath = "x86";
+
+				// Is this a 64 bits process?
+				if (IntPtr.Size == 8)
+				{
+					currentArchSubPath = "x64";
+				}
+				SetDllDirectory(currentArchSubPath);
+			}
+		}
+
+		[DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+		static extern bool SetDllDirectory(string lpPathName);
+
+		/* object allocation debugging functions, mostly for testing */
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl)]
         public static extern int GetAllocObjCount();
 
-        [DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl)]
         public static extern int GetAllocObj(int type);
 
-        [DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr GetAllocObjName(int type);
 
-        [DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl)]
         public static extern void SetLogFunction(P4CallBacks.LogMessageDelegate logfn);
 
-        [DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl)]
         public static extern long GetStringAllocs();
 
-        [DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl)]
         public static extern long GetStringReleases();
 
 
@@ -223,11 +251,38 @@ namespace Perforce.P4
 	/// </summary>
 	internal class P4Bridge
 	{
-		/***********************************************************************
-		 * 
-		 * DllImports
-		 * 
-		 **********************************************************************/
+
+/***********************************************************************
+ * 
+ * DllImports
+ * 
+ **********************************************************************/
+
+        const string bridgeDll = "p4bridge.dll";
+
+		static P4Bridge()
+		{
+			Assembly p4apinet = Assembly.GetExecutingAssembly();
+			PortableExecutableKinds peKind;
+			ImageFileMachine machine;
+			p4apinet.ManifestModule.GetPEKind(out peKind, out machine);
+
+			// only set this path if it is Any CPU (ILOnly)
+			if (peKind.ToString()=="ILOnly")
+			{
+				string currentArchSubPath = "x86";
+
+				// Is this a 64 bits process?
+				if (IntPtr.Size == 8)
+				{
+					currentArchSubPath = "x64";
+				}
+				SetDllDirectory(currentArchSubPath);
+			}
+		}
+
+		[DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+		static extern bool SetDllDirectory(string lpPathName);
 
 		/// <summary>
 		/// Create a new P4BridgeServer in the DLL and connect to the 
@@ -245,7 +300,7 @@ namespace Perforce.P4
 		/// <param name="logfn">Function pointer for the logging callback. Can
 		///     be null if logging is not desired.</param>
 		/// <returns>Handle (pointer) to the P4BridgeServer</returns>
-		[DllImport("p4bridge.dll", EntryPoint = "Connect",
+		[DllImport(bridgeDll, EntryPoint = "Connect",
 			CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
 		public static extern
 			IntPtr ConnectA(	String server,
@@ -270,7 +325,7 @@ namespace Perforce.P4
 		/// <param name="logfn">Function pointer for the logging callback. Can
 		///     be null if logging is not desired.</param>
 		/// <returns>Handle (pointer) to the P4BridgeServer</returns>
-		[DllImport("p4bridge.dll", EntryPoint = "Connect",
+		[DllImport(bridgeDll, EntryPoint = "Connect",
 			CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
 		public static extern
 			IntPtr ConnectW(String server,
@@ -298,7 +353,7 @@ namespace Perforce.P4
 		/// <param name="logfn">Function pointer for the logging callback. Can
 		///     be null if logging is not desired.</param>
 		/// <returns>Handle (pointer) to the P4BridgeServer</returns>
-		[DllImport("p4bridge.dll", EntryPoint = "TrustedConnect",
+		[DllImport(bridgeDll, EntryPoint = "TrustedConnect",
 			CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
 		public static extern
 			IntPtr TrustedConnectA(String server,
@@ -328,7 +383,7 @@ namespace Perforce.P4
 		/// <param name="logfn">Function pointer for the logging callback. Can
 		///     be null if logging is not desired.</param>
 		/// <returns>Handle (pointer) to the P4BridgeServer</returns>
-		[DllImport("p4bridge.dll", EntryPoint = "TrustedConnect",
+		[DllImport(bridgeDll, EntryPoint = "TrustedConnect",
 			CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
 		public static extern
 			IntPtr TrustedConnectW(String server,
@@ -344,7 +399,7 @@ namespace Perforce.P4
         /// </summary>
         /// <param name="path">Path from which to assume configuration info</param>
         /// <returns>Handle (pointer) to the P4BridgeServer</returns>
-        [DllImport("p4bridge.dll", EntryPoint = "ConnectionFromPath",
+        [DllImport(bridgeDll, EntryPoint = "ConnectionFromPath",
             CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern
             IntPtr ConnectionFromPath(String path);
@@ -353,7 +408,7 @@ namespace Perforce.P4
         /// Get the error message generated by the previous connection (if any)
         /// </summary>
         /// <returns>Error Message. Null if no error occurred</returns>
-        [DllImport("p4bridge.dll", EntryPoint = "GetConnectionError",
+        [DllImport(bridgeDll, EntryPoint = "GetConnectionError",
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern IntPtr GetConnectionError();
 
@@ -361,7 +416,7 @@ namespace Perforce.P4
         /// Release error message from GetConnectionError
         /// </summary>
         /// <returns>Error Message. Null if no error occurred</returns>
-        [DllImport("p4bridge.dll", EntryPoint = "ClearConnectionError",
+        [DllImport(bridgeDll, EntryPoint = "ClearConnectionError",
             CallingConvention = CallingConvention.Cdecl)]
         public static extern void ClearConnectionError();
 
@@ -377,7 +432,7 @@ namespace Perforce.P4
         ///     the client' host file space</param>
         /// <returns>null if no error, otherwise a pointer to an error 
         /// message.</returns>
-        [DllImport("p4bridge.dll",
+        [DllImport(bridgeDll,
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			IntPtr SetCharacterSet(IntPtr pServer,
@@ -388,7 +443,7 @@ namespace Perforce.P4
 		/// Close the connection
 		/// </summary>
 		/// <param name="pServer">P4BridgeServer Handle</param>
-		[DllImport("p4bridge.dll",
+		[DllImport(bridgeDll,
 			CallingConvention = CallingConvention.Cdecl)]
         public static extern int Disconnect(IntPtr pServer);
 
@@ -396,7 +451,7 @@ namespace Perforce.P4
         /// Close the connection
         /// </summary>
         /// <param name="pServer">P4BridgeServer Handle</param>
-        [DllImport("p4bridge.dll",
+        [DllImport(bridgeDll,
             CallingConvention = CallingConvention.Cdecl)]
 		public static extern int ReleaseConnection(IntPtr pServer);
 
@@ -409,7 +464,7 @@ namespace Perforce.P4
 		/// </remarks>
 		/// <param name="pServer">P4BridgeServer Handle</param>
 		/// <returns></returns>
-		[DllImport("p4bridge.dll",
+		[DllImport(bridgeDll,
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern bool IsUnicode(IntPtr pServer);
 
@@ -422,7 +477,7 @@ namespace Perforce.P4
 		/// </remarks>
 		/// <param name="pServer">P4BridgeServer Handle</param>
 		/// <returns></returns>
-		[DllImport("p4bridge.dll",
+		[DllImport(bridgeDll,
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern int APILevel(IntPtr pServer);
 
@@ -435,7 +490,7 @@ namespace Perforce.P4
 		/// </remarks>
 		/// <param name="pServer">P4BridgeServer Handle</param>
 		/// <returns></returns>
-		[DllImport("p4bridge.dll",
+		[DllImport(bridgeDll,
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern bool UseLogin(IntPtr pServer);
 
@@ -448,7 +503,7 @@ namespace Perforce.P4
 		/// </remarks>
 		/// <param name="pServer">P4BridgeServer Handle</param>
 		/// <returns></returns>
-		[DllImport("p4bridge.dll",
+		[DllImport(bridgeDll,
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern bool SupportsExtSubmit(IntPtr pServer);
 
@@ -460,7 +515,7 @@ namespace Perforce.P4
 		/// P4BridgeClient::HandleUrl is the override that sets a bool
 		/// and calls ClientUser::HandleUrl.
 		/// </remarks>
-        [DllImport("p4bridge.dll",
+        [DllImport(bridgeDll,
             CallingConvention = CallingConvention.Cdecl)]
         public static extern bool UrlLaunched();
 
@@ -471,7 +526,7 @@ namespace Perforce.P4
         /// <param name="var">protocol variable name</param>
         /// <param name="val">protocol variable value</param>
         /// 
-        [DllImport("p4bridge.dll",
+        [DllImport(bridgeDll,
             CallingConvention = CallingConvention.Cdecl)]
         public static extern void SetProtocol(IntPtr pServer, String var, String val);
 
@@ -489,7 +544,7 @@ namespace Perforce.P4
         /// <param name="args">Arguments for the command</param>
         /// <param name="argc">Argument count</param>
         /// <returns></returns>
-        [DllImport("p4bridge.dll", EntryPoint = "RunCommand",
+        [DllImport(bridgeDll, EntryPoint = "RunCommand",
 			CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
 		public static extern
 			bool RunCommandA(	IntPtr pServer,
@@ -513,7 +568,7 @@ namespace Perforce.P4
 		/// <param name="args">Arguments for the command</param>
 		/// <param name="argc">Argument count</param>
 		/// <returns></returns>
-		[DllImport("p4bridge.dll", EntryPoint = "RunCommand",
+		[DllImport(bridgeDll, EntryPoint = "RunCommand",
 			CallingConvention = CallingConvention.Cdecl,
 			CharSet = CharSet.Ansi)]
 		public static extern
@@ -529,7 +584,7 @@ namespace Perforce.P4
 		/// </summary>
 		/// <param name="pServer">P4BridgeServer Handle</param>
 		/// <param name="CmdId">Unique Id for the run of the command</param>
-		[DllImport("p4bridge.dll",
+		[DllImport(bridgeDll,
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			void CancelCommand(IntPtr pServer, uint CmdId);
@@ -539,7 +594,7 @@ namespace Perforce.P4
 		/// </summary>
 		/// <param name="pServer">P4BridgeServer Handle</param>
         /// <returns>boolean if we have an active p4 connection</returns>
-		[DllImport("p4bridge.dll",
+		[DllImport(bridgeDll,
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			int IsConnected(IntPtr pServer);
@@ -555,7 +610,7 @@ namespace Perforce.P4
 		/// </summary>
 		/// <param name="pServer">P4BridgeServer Handle</param>
 		/// <param name="pNew">Pinned pointer to the callback delegate</param>
-		[DllImport("p4bridge.dll",
+		[DllImport(bridgeDll,
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			void SetTaggedOutputCallbackFn(IntPtr pServer, IntPtr pNew);
@@ -565,7 +620,7 @@ namespace Perforce.P4
 		/// </summary>
 		/// <param name="pServer">P4BridgeServer Handle</param>
 		/// <param name="pNew">Pinned pointer to the callback delegate</param>
-		[DllImport("p4bridge.dll",
+		[DllImport(bridgeDll,
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			void SetErrorCallbackFn(IntPtr pServer, IntPtr pNew);
@@ -575,7 +630,7 @@ namespace Perforce.P4
 		/// </summary>
 		/// <param name="pServer">P4BridgeServer Handle</param>
 		/// <param name="pcb">Pinned pointer to the callback delegate</param>
-		[DllImport("p4bridge.dll",
+		[DllImport(bridgeDll,
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			void SetInfoResultsCallbackFn(IntPtr pServer, IntPtr pcb);
@@ -585,7 +640,7 @@ namespace Perforce.P4
 		/// </summary>
 		/// <param name="pServer">P4BridgeServer Handle</param>
 		/// <param name="pNew">Pinned pointer to the callback delegate</param>
-		[DllImport("p4bridge.dll",
+		[DllImport(bridgeDll,
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			void SetTextResultsCallbackFn(IntPtr pServer, IntPtr pNew);
@@ -595,7 +650,7 @@ namespace Perforce.P4
 		/// </summary>
 		/// <param name="pServer">P4BridgeServer Handle</param>
 		/// <param name="pNew">Pinned pointer to the callback delegate</param>
-		[DllImport("p4bridge.dll",
+		[DllImport(bridgeDll,
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			void SetBinaryResultsCallbackFn(IntPtr pServer, IntPtr pNew);
@@ -605,7 +660,7 @@ namespace Perforce.P4
 		/// </summary>
 		/// <param name="pServer">P4BridgeServer Handle</param>
 		/// <param name="pNew">Pinned pointer to the callback delegate</param>
-		[DllImport("p4bridge.dll",
+		[DllImport(bridgeDll,
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			 void SetPromptCallbackFn(IntPtr pServer, IntPtr pNew);
@@ -615,7 +670,7 @@ namespace Perforce.P4
         /// </summary>
         /// <param name="pServer">P4BridgeServer Handle</param>
         /// <param name="pNew">Pinned pointer to the callback delegate</param>
-        [DllImport("p4bridge.dll",
+        [DllImport(bridgeDll,
             CallingConvention = CallingConvention.Cdecl)]
         public static extern
              void SetParallelTransferCallbackFn(IntPtr pServer, IntPtr pNew);
@@ -632,7 +687,7 @@ namespace Perforce.P4
         /// <param name="pServer">P4BridgeServer Handle</param>
         /// <param name="cmdId">Unique Id for the run of the command</param>
         /// <returns>StrDictListIterator Handle (pointer) used to read the data</returns>
-        [DllImport("p4bridge.dll",
+        [DllImport(bridgeDll,
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			int GetTaggedOutputCount(IntPtr pServer, uint cmdId);
@@ -643,7 +698,7 @@ namespace Perforce.P4
 		/// <param name="pServer">P4BridgeServer Handle</param>
         /// <param name="cmdId">Unique Id for the run of the command</param>
 		/// <returns>StrDictListIterator Handle (pointer) used to read the data</returns>
-		[DllImport("p4bridge.dll",
+		[DllImport(bridgeDll,
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			IntPtr GetTaggedOutput(IntPtr pServer, uint cmdId);
@@ -654,7 +709,7 @@ namespace Perforce.P4
 		/// <param name="pServer">P4BridgeServer Handle</param>
         /// <param name="cmdId">Unique Id for the run of the command</param>
 		/// <returns>P4ClientErrorList Handle (pointer) used to read the data</returns>
-		[DllImport("p4bridge.dll",
+		[DllImport(bridgeDll,
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			IntPtr GetErrorResults(IntPtr pServer, uint cmdId);
@@ -665,7 +720,7 @@ namespace Perforce.P4
 		/// <param name="pServer">P4BridgeServer Handle</param>
         /// <param name="cmdId">Unique Id for the run of the command</param>
 		/// <returns>Handle (pointer) to the string data</returns>
-		[DllImport("p4bridge.dll",
+		[DllImport(bridgeDll,
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			int GetInfoResultsCount(IntPtr pServer, uint cmdId);
@@ -676,7 +731,7 @@ namespace Perforce.P4
 		/// <param name="pServer">P4BridgeServer Handle</param>
         /// <param name="cmdId">Unique Id for the run of the command</param>
 		/// <returns>Handle (pointer) to the string data</returns>
-		[DllImport("p4bridge.dll",
+		[DllImport(bridgeDll,
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			IntPtr GetInfoResults(IntPtr pServer, uint cmdId);
@@ -687,7 +742,7 @@ namespace Perforce.P4
 		/// <param name="pServer">P4BridgeServer Handle</param>
         /// <param name="cmdId">Unique Id for the run of the command</param>
 		/// <returns>Handle (pointer) to the string data</returns>
-		[DllImport("p4bridge.dll",
+		[DllImport(bridgeDll,
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			IntPtr GetTextResults(IntPtr pServer, uint cmdId);
@@ -698,7 +753,7 @@ namespace Perforce.P4
 		/// <param name="pServer">P4BridgeServer Handle</param>
         /// <param name="cmdId">Unique Id for the run of the command</param>
 		/// <returns>Handle (pointer) to the data bytes</returns>
-		[DllImport("p4bridge.dll",
+		[DllImport(bridgeDll,
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			int GetBinaryResultsCount(IntPtr pServer, uint cmdId);
@@ -709,7 +764,7 @@ namespace Perforce.P4
 		/// <param name="pServer">P4BridgeServer Handle</param>
         /// <param name="cmdId">Unique Id for the run of the command</param>
 		/// <returns>Handle (pointer) to the data bytes</returns>
-		[DllImport("p4bridge.dll",
+		[DllImport(bridgeDll,
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			IntPtr GetBinaryResults(IntPtr pServer, uint cmdId);
@@ -729,7 +784,7 @@ namespace Perforce.P4
 		/// <param name="pServer">P4BridgeServer Handle</param>
         /// <param name="cmdId">Unique Id for the run of the command</param>
 		/// <param name="data">New Unicode data set</param>
-		[DllImport("p4bridge.dll", EntryPoint = "SetDataSet",
+		[DllImport(bridgeDll, EntryPoint = "SetDataSet",
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			void SetDataSetW(IntPtr pServer, uint cmdId, IntPtr data);
@@ -740,7 +795,7 @@ namespace Perforce.P4
 		/// <param name="pServer">P4BridgeServer Handle</param>
         /// <param name="cmdId">Unique Id for the run of the command</param>
 		/// <param name="data">New ASCII data set</param>
-		[DllImport("p4bridge.dll", EntryPoint = "SetDataSet",
+		[DllImport(bridgeDll, EntryPoint = "SetDataSet",
 			CallingConvention = CallingConvention.Cdecl,
 			CharSet = CharSet.Ansi)]
 		public static extern
@@ -757,7 +812,7 @@ namespace Perforce.P4
 		/// <param name="pServer">P4BridgeServer Handle</param>
         /// <param name="cmdId">Unique Id for the run of the command</param>
 		/// <returns>The data in the data set</returns>
-		[DllImport("p4bridge.dll",
+		[DllImport(bridgeDll,
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			IntPtr GetDataSet(IntPtr pServer, uint cmdId);
@@ -776,7 +831,7 @@ namespace Perforce.P4
 		/// <param name="newUser">New workspace</param>
 		/// <param name="newPassword">New password</param>
 		/// <param name="newClient">New workspace</param>
-		[DllImport("p4bridge.dll", EntryPoint = "set_connection",
+		[DllImport(bridgeDll, EntryPoint = "set_connection",
 					CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			void set_connectionW(IntPtr pServer,
@@ -793,7 +848,7 @@ namespace Perforce.P4
 		/// <param name="newUser">New workspace</param>
 		/// <param name="newPassword">New password</param>
 		/// <param name="newClient">New workspace</param>
-		[DllImport("p4bridge.dll", EntryPoint = "set_connection",
+		[DllImport(bridgeDll, EntryPoint = "set_connection",
 					CallingConvention = CallingConvention.Cdecl,
 					CharSet = CharSet.Ansi)]
 		public static extern
@@ -811,7 +866,7 @@ namespace Perforce.P4
 		/// </remarks>
 		/// <param name="pServer">P4BridgeServer Handle</param>
 		/// <param name="workspace">Client Workspace name</param>
-		[DllImport("p4bridge.dll", EntryPoint = "set_client",
+		[DllImport(bridgeDll, EntryPoint = "set_client",
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			void set_clientW(IntPtr pServer, IntPtr workspace);
@@ -821,7 +876,7 @@ namespace Perforce.P4
 		/// </summary>
 		/// <param name="pServer">P4BridgeServer Handle</param>
 		/// <param name="workspace">Client Workspace name</param>
-		[DllImport("p4bridge.dll", EntryPoint = "set_client",
+		[DllImport(bridgeDll, EntryPoint = "set_client",
 			CallingConvention = CallingConvention.Cdecl,
 			CharSet = CharSet.Ansi)]
 		public static extern
@@ -835,7 +890,7 @@ namespace Perforce.P4
 		/// </remarks>
 		/// <param name="pServer">P4BridgeServer Handle</param>
 		/// <returns>Client workspace name</returns>
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl)]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			IntPtr get_client(IntPtr pServer);
 
@@ -847,7 +902,7 @@ namespace Perforce.P4
 		/// </remarks>
 		/// <param name="pServer">P4BridgeServer Handle</param>
 		/// <param name="workspace">User name</param>
-		[DllImport("p4bridge.dll", EntryPoint = "set_user",
+		[DllImport(bridgeDll, EntryPoint = "set_user",
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			void set_userW(IntPtr pServer, IntPtr workspace);
@@ -857,7 +912,7 @@ namespace Perforce.P4
 		/// </summary>
 		/// <param name="pServer">P4BridgeServer Handle</param>
 		/// <param name="workspace">User name</param>
-		[DllImport("p4bridge.dll", EntryPoint = "set_user",
+		[DllImport(bridgeDll, EntryPoint = "set_user",
 			CallingConvention = CallingConvention.Cdecl,
 			CharSet = CharSet.Ansi)]
 		public static extern
@@ -871,7 +926,7 @@ namespace Perforce.P4
 		/// </remarks>
 		/// <param name="pServer">P4BridgeServer Handle</param>
 		/// <returns>The user's name</returns>
-		[DllImport("p4bridge.dll",
+		[DllImport(bridgeDll,
 			CallingConvention = CallingConvention.Cdecl,
 			CharSet = CharSet.Ansi)]
 		public static extern
@@ -885,7 +940,7 @@ namespace Perforce.P4
 		/// </remarks>
 		/// <param name="pServer">P4BridgeServer Handle</param>
 		/// <param name="workspace">Connection String</param>
-		[DllImport("p4bridge.dll", EntryPoint = "set_port",
+		[DllImport(bridgeDll, EntryPoint = "set_port",
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			void set_portW(IntPtr pServer, IntPtr workspace);
@@ -895,7 +950,7 @@ namespace Perforce.P4
 		/// </summary>
 		/// <param name="pServer">P4BridgeServer Handle</param>
 		/// <param name="workspace">Connection String</param>
-		[DllImport("p4bridge.dll", EntryPoint = "set_port",
+		[DllImport(bridgeDll, EntryPoint = "set_port",
 			CallingConvention = CallingConvention.Cdecl,
 			CharSet = CharSet.Ansi)]
 		public static extern
@@ -909,7 +964,7 @@ namespace Perforce.P4
 		/// </remarks>
 		/// <param name="pServer">P4BridgeServer Handle</param>
 		/// <returns>host:port used by the connection</returns>
-		[DllImport("p4bridge.dll",
+		[DllImport(bridgeDll,
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			IntPtr get_port(IntPtr pServer);
@@ -922,7 +977,7 @@ namespace Perforce.P4
 		/// </remarks>
 		/// <param name="pServer">P4BridgeServer Handle</param>
 		/// <param name="workspace">User's password</param>
-		[DllImport("p4bridge.dll", EntryPoint = "set_password",
+		[DllImport(bridgeDll, EntryPoint = "set_password",
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			void set_passwordW(IntPtr pServer, IntPtr workspace);
@@ -932,7 +987,7 @@ namespace Perforce.P4
 		/// </summary>
 		/// <param name="pServer">P4BridgeServer Handle</param>
 		/// <param name="workspace">User's password</param>
-		[DllImport("p4bridge.dll", EntryPoint = "set_password",
+		[DllImport(bridgeDll, EntryPoint = "set_password",
 			CallingConvention = CallingConvention.Cdecl,
 			CharSet = CharSet.Ansi)]
 		public static extern
@@ -947,7 +1002,7 @@ namespace Perforce.P4
 		/// </remarks>
 		/// <param name="pServer">P4BridgeServer Handle</param>
 		/// <returns>The password</returns>
-		[DllImport("p4bridge.dll",
+		[DllImport(bridgeDll,
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			IntPtr get_password(IntPtr pServer);
@@ -960,7 +1015,7 @@ namespace Perforce.P4
         /// </remarks>
         /// <param name="pServer">P4BridgeServer Handle</param>
         /// <param name="ticketFile">ticket file name</param>
-        [DllImport("p4bridge.dll", EntryPoint = "set_ticketFile",
+        [DllImport(bridgeDll, EntryPoint = "set_ticketFile",
             CallingConvention = CallingConvention.Cdecl)]
         public static extern
             void set_ticketFileW(IntPtr pServer, IntPtr ticketFile);
@@ -973,7 +1028,7 @@ namespace Perforce.P4
         /// </remarks>
         /// <param name="pServer">P4BridgeServer Handle</param>
         /// <param name="ticketFile">ticket file name</param>
-        [DllImport("p4bridge.dll", EntryPoint = "set_ticketFile",
+        [DllImport(bridgeDll, EntryPoint = "set_ticketFile",
             CallingConvention = CallingConvention.Cdecl,
             CharSet = CharSet.Ansi)]
         public static extern
@@ -987,7 +1042,7 @@ namespace Perforce.P4
         /// </remarks>
         /// <param name="pServer">P4BridgeServer Handle</param>
         /// <returns>The ticket file path, if set for the connection.</returns>
-        [DllImport("p4bridge.dll", EntryPoint = "get_ticketFile",
+        [DllImport(bridgeDll, EntryPoint = "get_ticketFile",
             CallingConvention = CallingConvention.Cdecl)]
         public static extern
             IntPtr get_ticketFileW(IntPtr pServer);
@@ -1003,7 +1058,7 @@ namespace Perforce.P4
         /// <param name="user">Current user</param>
         /// <returns>The current ticket, if any.</returns>
 
-        [DllImport("p4bridge.dll", EntryPoint = "get_ticket",
+        [DllImport(bridgeDll, EntryPoint = "get_ticket",
             CallingConvention = CallingConvention.Cdecl)]
         public static extern
             IntPtr get_ticket(IntPtr path, IntPtr port, IntPtr user);
@@ -1013,7 +1068,7 @@ namespace Perforce.P4
         /// </summary>
         /// <param name="pServer">P4BridgeServer Handle</param>
         /// <returns>The current working directory for the P4BridgeServer.</returns>
-        [DllImport("p4bridge.dll",
+        [DllImport(bridgeDll,
 				CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			IntPtr get_cwd(IntPtr pServer);
@@ -1026,7 +1081,7 @@ namespace Perforce.P4
 		/// </remarks>
 		/// <param name="pServer">P4BridgeServer Handle</param>
 		/// <param name="cwd">The new working directory</param>
-		[DllImport("p4bridge.dll", EntryPoint = "set_cwd",
+		[DllImport(bridgeDll, EntryPoint = "set_cwd",
 				CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			void set_cwdW(IntPtr pServer, IntPtr cwd);
@@ -1039,7 +1094,7 @@ namespace Perforce.P4
 		/// </remarks>
 		/// <param name="pServer">P4BridgeServer Handle</param>
 		/// <param name="cwd">The new working directory</param>
-		[DllImport("p4bridge.dll", EntryPoint = "set_cwd",
+		[DllImport(bridgeDll, EntryPoint = "set_cwd",
 				CallingConvention = CallingConvention.Cdecl,
 				CharSet = CharSet.Ansi)]
 		public static extern
@@ -1053,7 +1108,7 @@ namespace Perforce.P4
 		/// </remarks>
 		/// <param name="pServer">P4BridgeServer Handle</param>
 		/// <param name="workspace">program name</param>
-		[DllImport("p4bridge.dll", EntryPoint = "set_programName",
+		[DllImport(bridgeDll, EntryPoint = "set_programName",
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			void set_programNameW(IntPtr pServer, IntPtr workspace);
@@ -1063,7 +1118,7 @@ namespace Perforce.P4
 		/// </summary>
 		/// <param name="pServer">P4BridgeServer Handle</param>
 		/// <param name="workspace">program name</param>
-		[DllImport("p4bridge.dll", EntryPoint = "set_programName",
+		[DllImport(bridgeDll, EntryPoint = "set_programName",
 			CallingConvention = CallingConvention.Cdecl,
 			CharSet = CharSet.Ansi)]
 		public static extern
@@ -1078,7 +1133,7 @@ namespace Perforce.P4
 		/// </remarks>
 		/// <param name="pServer">P4BridgeServer Handle</param>
 		/// <returns>program name</returns>
-		[DllImport("p4bridge.dll",
+		[DllImport(bridgeDll,
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			IntPtr get_programName(IntPtr pServer);
@@ -1091,7 +1146,7 @@ namespace Perforce.P4
 		/// </remarks>
 		/// <param name="pServer">P4BridgeServer Handle</param>
 		/// <param name="programVer">program version</param>
-		[DllImport("p4bridge.dll", EntryPoint = "set_programVer",
+		[DllImport(bridgeDll, EntryPoint = "set_programVer",
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			void set_programVerW(IntPtr pServer, IntPtr programVer);
@@ -1101,7 +1156,7 @@ namespace Perforce.P4
 		/// </summary>
 		/// <param name="pServer">P4BridgeServer Handle</param>
 		/// <param name="programVer">program version</param>
-		[DllImport("p4bridge.dll", EntryPoint = "set_programVer",
+		[DllImport(bridgeDll, EntryPoint = "set_programVer",
 			CallingConvention = CallingConvention.Cdecl,
 			CharSet = CharSet.Ansi)]
 		public static extern
@@ -1115,7 +1170,7 @@ namespace Perforce.P4
 		/// </remarks>
 		/// <param name="pServer">P4BridgeServer Handle</param>
 		/// <returns>program version</returns>
-		[DllImport("p4bridge.dll",
+		[DllImport(bridgeDll,
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			IntPtr get_programVer(IntPtr pServer);
@@ -1125,12 +1180,12 @@ namespace Perforce.P4
 		/// </summary>
 		/// <param name="pServer">Pointer to the P4BridgeServer </param>
 		/// <returns>The ANSI string representing the characterset name</returns>
-		[DllImport("p4bridge.dll", EntryPoint = "get_charset",
+		[DllImport(bridgeDll, EntryPoint = "get_charset",
 				CallingConvention = CallingConvention.Cdecl,
 				CharSet = CharSet.Ansi)]
 		public static extern IntPtr get_charset( IntPtr pServer );
 
-        [DllImport("p4bridge.dll", EntryPoint = "SetCharacterSet",
+        [DllImport(bridgeDll, EntryPoint = "SetCharacterSet",
             CallingConvention = CallingConvention.Cdecl,
             CharSet = CharSet.Ansi)]
         public static extern void set_charset( IntPtr pServer, string charset, string fileset);
@@ -1140,7 +1195,7 @@ namespace Perforce.P4
 		/// </summary>
 		/// <param name="pServer">Pointer to the P4BridgeServer </param>
 		/// <returns>The config file</returns>
-		[DllImport("p4bridge.dll",
+		[DllImport(bridgeDll,
 				CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			IntPtr get_config( IntPtr pServer );
@@ -1150,13 +1205,13 @@ namespace Perforce.P4
 		/// </summary>
 		/// <param name="cwd">Directory</param>
 		/// <returns>The config file</returns>
-		[DllImport("p4bridge.dll", EntryPoint = "get_config_cwd",
+		[DllImport(bridgeDll, EntryPoint = "get_config_cwd",
 				CallingConvention = CallingConvention.Cdecl,
 				CharSet = CharSet.Ansi)]
 		public static extern
 			IntPtr get_configA( string cwd );
 
-		[DllImport("p4bridge.dll", EntryPoint = "get_config_cwd",
+		[DllImport(bridgeDll, EntryPoint = "get_config_cwd",
 				CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			IntPtr get_configW(IntPtr pcwd);
@@ -1167,44 +1222,44 @@ namespace Perforce.P4
 		 * 
 		 **********************************************************************/
 
-		[DllImport("p4bridge.dll", EntryPoint = "Get",
+		[DllImport(bridgeDll, EntryPoint = "Get",
 				CallingConvention = CallingConvention.Cdecl,
 				CharSet = CharSet.Ansi)]
 		public static extern
 			IntPtr GetA(string var);
 
-		[DllImport("p4bridge.dll", EntryPoint = "Get",
+		[DllImport(bridgeDll, EntryPoint = "Get",
 				CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			IntPtr GetW(IntPtr var);
 
-		[DllImport("p4bridge.dll", EntryPoint = "Set",
+		[DllImport(bridgeDll, EntryPoint = "Set",
 				CallingConvention = CallingConvention.Cdecl,
 				CharSet = CharSet.Ansi)]
 		public static extern
 			void SetA(string var, string val);
 
-		[DllImport("p4bridge.dll", EntryPoint = "Set",
+		[DllImport(bridgeDll, EntryPoint = "Set",
 				CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			void SetW(IntPtr var, IntPtr val);
 
-        [DllImport("p4bridge.dll", EntryPoint = "Update",
+        [DllImport(bridgeDll, EntryPoint = "Update",
                 CallingConvention = CallingConvention.Cdecl)]
         public static extern
             void UpdateW(IntPtr var, IntPtr val);
 
-        [DllImport("p4bridge.dll", EntryPoint = "ReloadEnviro",
+        [DllImport(bridgeDll, EntryPoint = "ReloadEnviro",
                CallingConvention = CallingConvention.Cdecl)]
         public static extern
             void ReloadEnviro();
 
-        [DllImport("p4bridge.dll", EntryPoint = "GetTicketFile",
+        [DllImport(bridgeDll, EntryPoint = "GetTicketFile",
                 CallingConvention = CallingConvention.Cdecl)]
         public static extern
             IntPtr GetTicketFile();
 
-        [DllImport("p4bridge.dll", EntryPoint = "GetTicket",
+        [DllImport(bridgeDll, EntryPoint = "GetTicket",
                 CallingConvention = CallingConvention.Cdecl)]
         public static extern
             IntPtr GetTicket(IntPtr port, IntPtr user);
@@ -1215,12 +1270,12 @@ namespace Perforce.P4
 		 * 
 		 **********************************************************************/
 
-		[DllImport("p4bridge.dll", EntryPoint = "IsIgnored",
+		[DllImport(bridgeDll, EntryPoint = "IsIgnored",
 				CallingConvention = CallingConvention.Cdecl,
 				CharSet = CharSet.Ansi)]
 		public static extern bool IsIgnoredA(string Path);
 
-		[DllImport("p4bridge.dll", EntryPoint = "IsIgnored",
+		[DllImport(bridgeDll, EntryPoint = "IsIgnored",
 				CallingConvention = CallingConvention.Cdecl)]
 		public static extern bool IsIgnoredW(IntPtr Path);
 
@@ -1239,7 +1294,7 @@ namespace Perforce.P4
 		/// </summary>
 		/// <param name="pObj">StrDictListIterator Handle</param>
 		/// <returns>StrDictList Handle, null if end of list</returns>
-		[DllImport("p4bridge.dll",
+		[DllImport(bridgeDll,
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			IntPtr GetNextItem(IntPtr pObj);
@@ -1249,7 +1304,7 @@ namespace Perforce.P4
 		/// </summary>
 		/// <param name="pObj">StrDictListIterator Handle</param>
 		/// <returns>Handle to a Key:Value pair</returns>
-		[DllImport("p4bridge.dll",
+		[DllImport(bridgeDll,
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			IntPtr GetNextEntry(IntPtr pObj);
@@ -1259,7 +1314,7 @@ namespace Perforce.P4
         /// longer needed
         /// </summary>
         /// <param name="pObj">StrDictListIterator Handle</param>
-        [DllImport("p4bridge.dll",
+        [DllImport(bridgeDll,
             CallingConvention = CallingConvention.Cdecl)]
         public static extern
             void Release(IntPtr pObj);
@@ -1269,7 +1324,7 @@ namespace Perforce.P4
         /// longer needed
         /// </summary>
         /// <param name="pObj">StrDictListIterator Handle</param>
-        [DllImport("p4bridge.dll",
+        [DllImport(bridgeDll,
             CallingConvention = CallingConvention.Cdecl)]
         public static extern
             void ReleaseString(IntPtr pObj);
@@ -1287,7 +1342,7 @@ namespace Perforce.P4
 		/// </summary>
 		/// <param name="pObj">KeyValuePair Handle</param>
 		/// <returns>Key string</returns>
-		[DllImport("p4bridge.dll",
+		[DllImport(bridgeDll,
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			IntPtr GetKey(IntPtr pObj);
@@ -1297,7 +1352,7 @@ namespace Perforce.P4
 		/// </summary>
 		/// <param name="pObj">KeyValuePair Handle</param>
 		/// <returns>String value</returns>
-		[DllImport("p4bridge.dll",
+		[DllImport(bridgeDll,
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			IntPtr GetValue(IntPtr pObj);
@@ -1316,7 +1371,7 @@ namespace Perforce.P4
 		/// </summary>
 		/// <param name="pObj">P4ErrorList Handle</param>
 		/// <returns>Severity level</returns>
-		[DllImport("p4bridge.dll",
+		[DllImport(bridgeDll,
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			int Severity(IntPtr pObj);
@@ -1326,7 +1381,7 @@ namespace Perforce.P4
 		/// </summary>
 		/// <param name="pObj">P4ErrorList Handle</param>
 		/// <returns>Generic error code</returns>
-		[DllImport("p4bridge.dll",
+		[DllImport(bridgeDll,
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			int ErrorCode(IntPtr pObj);
@@ -1336,7 +1391,7 @@ namespace Perforce.P4
 		/// </summary>
 		/// <param name="pObj">P4ErrorList Handle</param>
 		/// <returns>Error Message</returns>
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl)]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			IntPtr Message(IntPtr pObj);
 
@@ -1355,7 +1410,7 @@ namespace Perforce.P4
 		/// </summary>
 		/// <param name="pObj">P4ErrorList Handle</param>
 		/// <returns>null indicates the end of the list</returns>
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl)]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			IntPtr Next(IntPtr pObj);
 
@@ -1373,7 +1428,7 @@ namespace Perforce.P4
 		/// </summary>
 		/// <param name="pObj">P4ClientInfoMessage Handle</param>
 		/// <returns>Severity level</returns>
-		[DllImport("p4bridge.dll",
+		[DllImport(bridgeDll,
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			char MessageLevel(IntPtr pObj);
@@ -1383,7 +1438,7 @@ namespace Perforce.P4
 		/// </summary>
 		/// <param name="pObj">P4ClientInfoMessage Handle</param>
 		/// <returns>Generic error code</returns>
-		[DllImport("p4bridge.dll",
+		[DllImport(bridgeDll,
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			int InfoMsgCode(IntPtr pObj);
@@ -1393,7 +1448,7 @@ namespace Perforce.P4
 		/// </summary>
 		/// <param name="pObj">P4ClientInfoMessage Handle</param>
 		/// <returns>Error Message</returns>
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl)]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			IntPtr InfoMessage(IntPtr pObj);
 
@@ -1402,7 +1457,7 @@ namespace Perforce.P4
 		/// </summary>
 		/// <param name="pObj">P4ClientInfoMessage Handle</param>
 		/// <returns>null indicates the end of the list</returns>
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl)]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			IntPtr NextInfoMsg(IntPtr pObj);
 	}
@@ -1419,53 +1474,77 @@ namespace Perforce.P4
 	/// </summary>
 	internal class P4ClientMergeBridge
 	{
+		const string bridgeDll = "p4bridge.dll";
+		static P4ClientMergeBridge()
+		{
+			Assembly p4apinet = Assembly.GetExecutingAssembly();
+			PortableExecutableKinds peKind;
+			ImageFileMachine machine;
+			p4apinet.ManifestModule.GetPEKind(out peKind, out machine);
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CM_AutoResolve")]
+			// only set this path if it is Any CPU (ILOnly)
+			if (peKind.ToString() == "ILOnly")
+			{
+				string currentArchSubPath = "x86";
+
+				// Is this a 64 bits process?
+				if (IntPtr.Size == 8)
+				{
+					currentArchSubPath = "x64";
+				}
+				SetDllDirectory(currentArchSubPath);
+			}
+		}
+
+		[DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+		static extern bool SetDllDirectory(string lpPathName);
+
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CM_AutoResolve")]
 		public static extern int AutoResolve(IntPtr pObj, int forceMerge);
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CM_Resolve")]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CM_Resolve")]
 		public static extern int Resolve(IntPtr pObj);
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CM_DetectResolve")]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CM_DetectResolve")]
 		public static extern int DetectResolve(IntPtr pObj);
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CM_IsAcceptable")]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CM_IsAcceptable")]
 		public static extern int IsAcceptable(IntPtr pObj);
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CM_GetBaseFile")]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CM_GetBaseFile")]
 		public static extern IntPtr GetBaseFile(IntPtr pObj);
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CM_GetYourFile")]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CM_GetYourFile")]
 		public static extern IntPtr GetYourFile(IntPtr pObj);
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CM_GetTheirFile")]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CM_GetTheirFile")]
 		public static extern IntPtr GetTheirFile(IntPtr pObj);
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CM_GetResultFile")]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CM_GetResultFile")]
 		public static extern IntPtr GetResultFile(IntPtr pObj);
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CM_GetYourChunks")]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CM_GetYourChunks")]
 		public static extern int GetYourChunks(IntPtr pObj);
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CM_GetTheirChunks")]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CM_GetTheirChunks")]
 		public static extern int GetTheirChunks(IntPtr pObj);
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CM_GetBothChunks")]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CM_GetBothChunks")]
 		public static extern int GetBothChunks(IntPtr pObj);
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CM_GetConflictChunks")]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CM_GetConflictChunks")]
 		public static extern int GetConflictChunks(IntPtr pObj);
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CM_GetMergeDigest")]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CM_GetMergeDigest")]
 		public static extern IntPtr GetMergeDigest(IntPtr pObj);
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CM_GetYourDigest")]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CM_GetYourDigest")]
 		public static extern IntPtr GetYourDigest(IntPtr pObj);
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CM_GetTheirDigest")]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CM_GetTheirDigest")]
 		public static extern IntPtr GetTheirDigest(IntPtr pObj);
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CM_GetLastError")]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CM_GetLastError")]
 		public static extern IntPtr GetLastError(IntPtr pObj);
 
 		/**********************************************************************
@@ -1480,7 +1559,7 @@ namespace Perforce.P4
 		*  Return: None
 		**********************************************************************/
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl)]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl)]
 		public static extern void SetResolveCallbackFn(	IntPtr pServer,
 														IntPtr pNew);
 	}
@@ -1498,64 +1577,89 @@ namespace Perforce.P4
 	/// </summary>
 	internal class P4ClientResolveBridge
 	{
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_AutoResolve")]
+		const string bridgeDll = "p4bridge.dll";
+		static P4ClientResolveBridge()
+		{
+			Assembly p4apinet = Assembly.GetExecutingAssembly();
+			PortableExecutableKinds peKind;
+			ImageFileMachine machine;
+			p4apinet.ManifestModule.GetPEKind(out peKind, out machine);
+
+			// only set this path if it is Any CPU (ILOnly)
+			if (peKind.ToString() == "ILOnly")
+			{
+				string currentArchSubPath = "x86";
+
+				// Is this a 64 bits process?
+				if (IntPtr.Size == 8)
+				{
+					currentArchSubPath = "x64";
+				}
+				SetDllDirectory(currentArchSubPath);
+			}
+		}
+
+		[DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+		static extern bool SetDllDirectory(string lpPathName);
+
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_AutoResolve")]
 		public static extern int AutoResolve(IntPtr pObj, int force);
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_Resolve")]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_Resolve")]
 		public static extern int Resolve(IntPtr pObj, bool preview);
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_GetType")]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_GetType")]
 		public static extern IntPtr GetResolveType(IntPtr pObj);
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_GetMergeAction")]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_GetMergeAction")]
 		public static extern IntPtr GetMergeAction(IntPtr pObj);
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_GetYoursAction")]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_GetYoursAction")]
 		public static extern IntPtr GetYoursAction(IntPtr pObj);
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_GetTheirAction")]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_GetTheirAction")]
 		public static extern IntPtr GetTheirAction(IntPtr pObj);
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_GetMergePrompt")]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_GetMergePrompt")]
 		public static extern IntPtr GetMergePrompt(IntPtr pObj);
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_GetYoursPrompt")]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_GetYoursPrompt")]
 		public static extern IntPtr GetYoursPrompt(IntPtr pObj);
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_GetTheirPrompt")]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_GetTheirPrompt")]
 		public static extern IntPtr GetTheirPrompt(IntPtr pObj);
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_GetMergeOpt")]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_GetMergeOpt")]
 		public static extern IntPtr GetMergeOpt(IntPtr pObj);
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_GetYoursOpt")]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_GetYoursOpt")]
 		public static extern IntPtr GetYoursOpt(IntPtr pObj);
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_GetTheirOpt")]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_GetTheirOpt")]
 		public static extern IntPtr GetTheirOpt(IntPtr pObj);
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_GetSkipOpt")]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_GetSkipOpt")]
 		public static extern IntPtr GetSkipOpt(IntPtr pObj);
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_GetHelpOpt")]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_GetHelpOpt")]
 		public static extern IntPtr GetHelpOpt(IntPtr pObj);
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_GetAutoOpt")]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_GetAutoOpt")]
 		public static extern IntPtr GetAutoOpt(IntPtr pObj);
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_GetPrompt")]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_GetPrompt")]
 		public static extern IntPtr GetPrompt(IntPtr pObj);
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_GetTypePrompt")]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_GetTypePrompt")]
 		public static extern IntPtr GetTypePrompt(IntPtr pObj);
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_GetUsageError")]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_GetUsageError")]
 		public static extern IntPtr GetUsageError(IntPtr pObj);
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_GetHelp")]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_GetHelp")]
 		public static extern IntPtr GetHelp(IntPtr pObj);
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_GetLastError")]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_GetLastError")]
 		public static extern IntPtr GetLastError(IntPtr pObj);
 
 		/**********************************************************************
@@ -1570,7 +1674,7 @@ namespace Perforce.P4
 		*  Return: None
 		**********************************************************************/
 
-		[DllImport("p4bridge.dll", CallingConvention = CallingConvention.Cdecl)]
+		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl)]
 		public static extern void SetResolveACallbackFn(IntPtr pServer, 
 														IntPtr pNew);
     }

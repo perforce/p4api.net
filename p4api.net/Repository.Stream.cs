@@ -421,6 +421,70 @@ namespace Perforce.P4
         /// Get the record for an existing stream from the repository.
         /// </summary>
         /// <param name="stream">Stream name</param>
+        /// <param name="options">There are no valid flags to use when fetching an existing stream</param>
+        /// <returns>The Stream object if new stream was found, null if creation failed</returns>
+        /// <example>
+        /// 
+        ///     Get the stream with the stream Id "//Rocket/GUI":
+        ///     <code>
+        ///     
+        ///         string targetStream = "//Rocket/GUI";
+        ///         Stream s = rep.GetStream(targetStream, null, null);
+        ///     
+        ///     </code>
+        ///    Get stream spec for a new development type stream with the parent 
+        ///    //Rocket/MAIN:
+        ///     <code>
+        ///     
+        ///         string targetStream = "//Rocket/GUI2";
+        ///         string parentStream = "//Rocket/MAIN";
+        ///         Stream stream = rep.GetStream(targetStream,
+        ///             new StreamCmdOptions(StreamCmdFlags.None, parentStream, 
+        ///             StreamType.Development.ToString()));
+        ///     
+        ///     </code>
+        /// </example>
+        public Stream GetStream(string stream, Options options)
+        {
+            if (stream == null)
+            {
+                throw new ArgumentNullException("stream");
+
+            }
+            P4Command cmd = new P4Command(this, "stream", true, stream);
+
+            if (options == null)
+            {
+                options = new StreamCmdOptions((StreamCmdFlags.Output), null, null);
+            }
+            if (options.ContainsKey("-o") == false)
+            {
+                options["-o"] = null;
+            }
+
+            P4CommandResult results = cmd.Run(options);
+            if (results.Success)
+            {
+                if ((results.TaggedOutput == null) || (results.TaggedOutput.Count <= 0))
+                {
+                    return null;
+                }
+                Stream value = new Stream();
+
+                value.FromStreamCmdTaggedOutput(results.TaggedOutput[0]);
+
+                return value;
+            }
+            else
+            {
+                P4Exception.Throw(results.ErrorList);
+            }
+            return null;
+        }
+        /// <summary>
+        /// Get the record for an existing stream from the repository.
+        /// </summary>
+        /// <param name="stream">Stream name</param>
         /// <param name="parent">Parent name</param>
         /// <param name="options">There are no valid flags to use when fetching an existing stream</param>
         /// <returns>The Stream object if new stream was found, null if creation failed</returns>
@@ -445,42 +509,30 @@ namespace Perforce.P4
         ///     
         ///     </code>
         /// </example>
+        [Obsolete("Use GetStream(string stream, Options options)")]
         public Stream GetStream(string stream, string parent, Options options)
 		{
-			if (stream == null)
-			{
-				throw new ArgumentNullException("stream");
+            if (stream == null)
+            {
+                throw new ArgumentNullException("stream");
+            }
 
-			}
-			P4Command cmd = new P4Command(this, "stream", true, stream);
+            if (options == null)
+            {
+                options = new StreamCmdOptions((StreamCmdFlags.Output), null, null);
+            }
 
-			if (options == null)
-			{
-				options = new Options((StreamCmdFlags.Output), parent, null);
-			}
-			if (options.ContainsKey("-o") == false)
-			{
-				options["-o"] = null;
-			}
+            if (options.ContainsKey("-o") == false)
+            {
+                options["-o"] = null;
+            }
 
-			P4CommandResult results = cmd.Run(options);
-			if (results.Success)
-			{
-				if ((results.TaggedOutput == null) || (results.TaggedOutput.Count <= 0))
-				{
-					return null;
-				}
-				Stream value = new Stream();
+            if (!string.IsNullOrEmpty(parent))
+            {
+                options["-P"] = parent;
+            }
 
-			value.FromStreamCmdTaggedOutput(results.TaggedOutput[0]);
-
-				return value;
-			}
-			else
-			{
-				P4Exception.Throw(results.ErrorList);
-			}
-			return null;
+            return GetStream(stream, options);
 		}
         /// <summary>
         /// Get the record for an existing stream from the repository.

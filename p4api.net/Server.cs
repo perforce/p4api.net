@@ -249,11 +249,12 @@ namespace Perforce.P4
 				string platform = info[1];
 				string major = info[2];
 				string minor = info[3];
-				DateTime date;
-				DateTime.TryParse(info[4], out date);
-				
+                char[] trimChars = { '(', ')' };
+                string dateString = info[4] +"-"+ info[5] +"-"+ info[6];
+                dateString = dateString.Trim(trimChars);
+				DateTime date = new DateTime(1,1,1);
+				DateTime.TryParse(dateString, out date);
 				Version = new ServerVersion(product,platform, major,minor,date);
-				
 			}
 
 
