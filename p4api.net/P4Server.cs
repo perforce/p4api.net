@@ -1111,7 +1111,7 @@ namespace Perforce.P4
                             foreach (P4ClientError e in _errorList)
                             {
                                 if (e.ErrorCode == P4ClientError.MsgRpc_Break)
-                                    throw new P4CommandCanceledException(String.Format("Command %d cancelled", cmdId));
+                                    throw new P4CommandCanceledException(String.Format("Command {0} cancelled", cmdId));
                             }
                             P4Exception.Throw(cmd, args, _errorList, GetInfoResults(cmdId));
                         }
