@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package >
+  <metadata>
+    <id>p4api.net.core</id>
+    <version>$version$</version>
+    <title>p4api.net.core</title>
+    <authors>Perforce Software, Inc.</authors>
+    <owners>Perforce</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <license type="file">LICENSE.txt</license>
+    <projectUrl>https://www.perforce.com/downloads/helix-core-api-net</projectUrl>
+    <iconUrl>https://www.perforce.com/sites/default/files/image/2018-12/icon-helix-core-simple-64-64.png</iconUrl>
+    <description>Helix Core API for .NET Core 2.0</description>
+    <copyright>Copyright 2020</copyright>
+    <tags>perforce helix vcs scm p4 p4api p4api.net</tags>
+	</metadata>
+    <files>
+    <file src="bin\Any CPU\Release\netcoreapp2.0\p4api.net.*" target="lib\netcoreapp2.0" />
+    <file src="bin\Any CPU\Release\netcoreapp2.0\x86\p4bridge.dll" target="runtimes\win-x86\native"/>
+	<file src="bin\Any CPU\Release\netcoreapp2.0\x64\p4bridge.dll" target="runtimes\win-x64\native"/>
+	<file src="p4api.net.core.targets" target="build" />
+	<file src="..\LICENSE.txt" target="" />
+</files>
+
+</package>
+
+

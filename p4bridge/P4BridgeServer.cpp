@@ -64,11 +64,11 @@ bool CheckErrorId(const ErrorId &eid, const ErrorId &tgt)
 }
 
 bool CheckErrorId(Error  &e, const ErrorId &tgt)
-{ 
+{
 	if (e.Test())
 	{
 		// iterate through the ErrorIds in this Error
-		for (int i = 0; ; ++i) 
+		for (int i = 0; ; ++i)
 		{
 			ErrorId    *eid = e.GetId(i);
 			if (eid == NULL)
@@ -78,7 +78,7 @@ bool CheckErrorId(Error  &e, const ErrorId &tgt)
 				return true;
 			}
 		}
-	} 
+	}
 	return false;
 }
 
@@ -116,7 +116,7 @@ int P4BridgeServer::LogMessageNoArgs(int log_level, const char * file, int line,
 }
 
 /******************************************************************************
-// LogMessage: Use the client logging callback function (if set) to log a 
+// LogMessage: Use the client logging callback function (if set) to log a
 //   message in the callers log.
 ******************************************************************************/
 int P4BridgeServer::LogMessage(int log_level, const char * file, int line, const char * message, ...)
@@ -147,10 +147,10 @@ int P4BridgeServer::LogMessage(int log_level, const char * file, int line, const
 		__except (HandleException_Static(GetExceptionCode(), GetExceptionInformation()))
 		{
 			// bad ptr?
-			pLogFn = NULL; 
+			pLogFn = NULL;
 		}
 		DELETE_ARRAY(buff1)
-	
+
 		return ret;
 	}
 	return 0;
@@ -179,8 +179,8 @@ P4BridgeServer::P4BridgeServer(void) :
 {
 }
 
-P4BridgeClient* P4BridgeServer::get_ui() 
-{ 
+P4BridgeClient* P4BridgeServer::get_ui()
+{
 	LOG_ENTRY();
 	return getConnection()->getUi();
 }
@@ -193,8 +193,8 @@ P4BridgeClient* P4BridgeServer::get_ui()
  *
  ******************************************************************************/
 
-P4BridgeServer::P4BridgeServer( const char *p4port, 
-								const char *user, 
+P4BridgeServer::P4BridgeServer( const char *p4port,
+								const char *user,
 								const char *pass,
 								const char *ws_client) :
 	p4base(Type()),
@@ -221,7 +221,7 @@ P4BridgeServer::P4BridgeServer( const char *p4port,
 	supportsExtSubmit = 0;
 	connecting = 0;
 
-	// Clear the the callbacks 
+	// Clear the the callbacks
 	pTaggedOutputCallbackFn = NULL;
 	pErrorCallbackFn = NULL;
 	pInfoResultsCallbackFn = NULL;
@@ -254,11 +254,11 @@ P4BridgeServer::~P4BridgeServer(void)
 	}
 	else
 	{
-		LOCK(&Locker); 
-	
+		LOCK(&Locker);
+
 		disposed = 1;
 
-		// Clear the the callbacks 
+		// Clear the the callbacks
 		pTaggedOutputCallbackFn = NULL;
 		pErrorCallbackFn = NULL;
 		pInfoResultsCallbackFn = NULL;
@@ -270,7 +270,7 @@ P4BridgeServer::~P4BridgeServer(void)
 		pParallelTransferCallbackFn = NULL;
 
 		close_connection();
-	
+
 		delete pConnection;
 	}
 
@@ -353,7 +353,7 @@ int P4BridgeServer::connected_int( P4ClientError **err )
  *
  *  connect_and_trust
  *
- *  Connect to the specified P4 Server, create a UI, and establish a trust 
+ *  Connect to the specified P4 Server, create a UI, and establish a trust
  *	 relationship.
  *
  ******************************************************************************/
@@ -374,7 +374,7 @@ int P4BridgeServer::connect_and_trust( P4ClientError **err, char* trust_flag, ch
 
 int P4BridgeServer::connect_and_trust_int( P4ClientError **err, char* trust_flag, char* fingerprint )
 {
-	LOCK(&Locker); 
+	LOCK(&Locker);
 
 	if (connecting || isInitialized())
 	{
@@ -441,7 +441,7 @@ int P4BridgeServer::connect_and_trust_int( P4ClientError **err, char* trust_flag
 
 int P4BridgeServer::close_connection()
 {
-	LOCK(&Locker); 
+	LOCK(&Locker);
 	LOG_ENTRY();
 
 	// Close connections
@@ -454,11 +454,11 @@ int P4BridgeServer::close_connection()
 
 	// the ClientUser (P4BridgeClient) deletes the transfer object
 	// this implies that we're probably not managing the transfer object
-	// in the expected way due to the P4API.Net layer's configuration 
+	// in the expected way due to the P4API.Net layer's configuration
 	// abilities. Anyway, don't delete it.
 	pTransfer = NULL;
 
-	// should we check e?  if the connection was invalid Final() 
+	// should we check e?  if the connection was invalid Final()
 	// will return a bad result, so ignore it and complete the cleanup
 #if 0
 	if (e.Test())
@@ -491,14 +491,14 @@ int P4BridgeServer::close_connection()
 
 int P4BridgeServer::disconnect( void )
 {
-	LOCK(&Locker); 
+	LOCK(&Locker);
 	LOG_ENTRY();
 
 	if (pConnection)
 	{
 		pConnection->Disconnect();
 		// don't delete it.  it's possible that someone would
-		// disconnect (p4api.net auto-disconnects after N seconds) 
+		// disconnect (p4api.net auto-disconnects after N seconds)
 		// and fetch the results later.  This used to break a GetConfig()
 		// test in p4api.net, but refactoring how set_cwd works seems
 		// to have made the behavior identical without the explicit delete here
@@ -550,14 +550,14 @@ CharSetApi::CharSet GetDefaultCharSet()
         default:
         case 1252:  return CharSetApi::WIN_US_ANSI;
    }
-} 
+}
 
 /*******************************************************************************
  *
  *  set_charset
  *
- * Set the character set for encoding Unicode strings for command parameters 
- *  and output. Optionally, a separate encoding can be specified for the 
+ * Set the character set for encoding Unicode strings for command parameters
+ *  and output. Optionally, a separate encoding can be specified for the
  *  contents of files that are directly saved in the client's file system.
  *
  ******************************************************************************/
@@ -587,7 +587,7 @@ string P4BridgeServer::set_charset( const char* c, const char * filec )
 
 	CharSetApi::CharSet filecs;
 
-	// Lookup the correct enum for the specified character set for file 
+	// Lookup the correct enum for the specified character set for file
 	//  contents
 	if (filec)
 	{
@@ -602,7 +602,7 @@ string P4BridgeServer::set_charset( const char* c, const char * filec )
 			return m.Text();
 		}
 	}
-	else 
+	else
 	{
 		// default value
 		filecs = CharSetApi::WIN_US_ANSI;
@@ -647,7 +647,7 @@ void P4BridgeServer::set_cwd( const char* newCwd )
 	LOG_DEBUG2(4, "Setting 0x%llu cwd to %s", pConnection, pCwd.c_str());
 	LOG_DEBUG1(4, "P4CONFIG: %s", this->Get("P4CONFIG"));
 	// don't create a connection just for the CWD, but if the connection existed
-	// already and is unconnected, go ahead and delete it.  It will be re-created 
+	// already and is unconnected, go ahead and delete it.  It will be re-created
 	// on-demand
 	if (pConnection)
 	{
@@ -686,7 +686,7 @@ void checkForParallelError(int existingErrors, P4Connection* client, const char 
 {
 	// client does not clear its error count, so we need to detect that the error count changed
 	// but we never got any HandleError() calls in our ClientUser object (P4BridgeClient)
-	// we could check that it's a cmd that is parallel available (sync and submit), but 
+	// we could check that it's a cmd that is parallel available (sync and submit), but
 	// this is a little more future-friendly
 	if (existingErrors != client->GetErrors() && ui->GetErrorResults() == NULL)
 	{
@@ -735,7 +735,7 @@ char *GetInfo(char* lpstrVffInfo, char *InfoItem)
             (LPSTR)szGetName,
             (void **)&lpVersion,
             (UINT *)&uVersionLen);
-    if ( bRetCode && uVersionLen && lpVersion) 
+    if ( bRetCode && uVersionLen && lpVersion)
 	{
         sprintf_s(szResult, 256, "%04x%04x", (WORD)(*((DWORD *)lpVersion)),
             (WORD)(*((DWORD *)lpVersion)>>16));
@@ -762,16 +762,16 @@ char *GetInfo(char* lpstrVffInfo, char *InfoItem)
             (LPSTR)szGetName,
             (void **)&lpVersion,
             (UINT *)&uVersionLen);
-    if ( bRetCode && uVersionLen && lpVersion) 
+    if ( bRetCode && uVersionLen && lpVersion)
 	{
         lstrcpy(szResult, lpVersion);
     }
-    else 
+    else
 	{
 		delete[] szResult;
         szResult = NULL;
     }
-    
+
 	// if szResult is NULL return an empty string
 	return szResult == nullptr ? "" : szResult;
 }
@@ -780,9 +780,9 @@ char *GetInfo(char* lpstrVffInfo, char *InfoItem)
  *
  * run_command
  *
- * Run a command using the supplied parameters. The command can either be run 
- *  in tagged or untagged protocol. If the target server supports Unicode, the 
- *  strings in the parameter list need to be encoded in the character set 
+ * Run a command using the supplied parameters. The command can either be run
+ *  in tagged or untagged protocol. If the target server supports Unicode, the
+ *  strings in the parameter list need to be encoded in the character set
  *  specified by a previous call to set_charset().
  *
  ******************************************************************************/
@@ -820,7 +820,7 @@ int P4BridgeServer::run_command( const char *cmd, int cmdId, int tagged, char **
 		ui->clear_results();
 	}
 	else
-	{	
+	{
 		LOG_ERROR("connection did not have a P4BridgeClient ui object");
 		return 0;
 	}
@@ -879,7 +879,7 @@ int P4BridgeServer::run_command( const char *cmd, int cmdId, int tagged, char **
 
 				if (pProgramVer.empty())
 				{
-					if (VerQueryValue( lpData, "\\", (LPVOID *) &pFileInfo, (PUINT)&BufLen ) ) 
+					if (VerQueryValue( lpData, "\\", (LPVOID *) &pFileInfo, (PUINT)&BufLen ) )
  					{
 						WORD MajorVersion = HIWORD(pFileInfo->dwProductVersionMS);
 						WORD MinorVersion = LOWORD(pFileInfo->dwProductVersionMS);
@@ -919,7 +919,7 @@ int P4BridgeServer::run_command( const char *cmd, int cmdId, int tagged, char **
                            LANG_NEUTRAL,
                            (LPTSTR)&errorText,
                            0,
-                           NULL );		
+                           NULL );
 			pProgramVer = errorText;
 			LocalFree(errorText);
 		}
@@ -927,7 +927,7 @@ int P4BridgeServer::run_command( const char *cmd, int cmdId, int tagged, char **
 	}
 	if (setProdName && pModPath)
 	{
-		// need to set the product name, and we're not going to do 
+		// need to set the product name, and we're not going to do
 		// later when we set the product version, and we have the
 		// path of the module that loaded the dll
 		int idx1 = 0;
@@ -972,7 +972,7 @@ int P4BridgeServer::run_command( const char *cmd, int cmdId, int tagged, char **
 		if (!pTransfer)
 			pTransfer = new ParallelTransfer(this);
 		ui->SetTransfer(pTransfer);
-	} 
+	}
 	else
 	{
 		// make sure we clear it
@@ -1000,7 +1000,7 @@ int P4BridgeServer::run_command( const char *cmd, int cmdId, int tagged, char **
 		connection->clientNeedsInit = 1;
 	}
 
-	if (connection->IsAlive() == 0) 
+	if (connection->IsAlive() == 0)
 	{
 		// the command was cancelled
 		return 0;
@@ -1036,7 +1036,6 @@ P4Connection* P4BridgeServer::getConnection(int id /*= 99999999*/)
 		pConnection->SetProtocol("specstring", "");
 		pConnection->SetProtocol("enableStreams", "");
 		pConnection->SetProtocol("enableGraph", "");
-		pConnection->SetProtocol("wingui", "999");
 		pConnection->SetProtocol("unicode", "");
 
 		// also set the extraProtocols
@@ -1055,12 +1054,12 @@ P4Connection* P4BridgeServer::getConnection(int id /*= 99999999*/)
 	return pConnection;
 }
 
-void P4BridgeServer::cancel_command(int cmdId) 
+void P4BridgeServer::cancel_command(int cmdId)
 {
 	LOG_ENTRY();
 	getConnection()->cancel_command();
 }
-	
+
 bool P4BridgeServer::IsConnected()
 {
 	return pConnection && pConnection->IsConnected();
@@ -1077,11 +1076,11 @@ int P4BridgeServer::GetServerProtocols(P4ClientError **err)
 	}
 
 	LOG_LOC();
-	// set to 0 for now so we don't call this again when running the help 
+	// set to 0 for now so we don't call this again when running the help
 	//   command to get the protocols
 	isUnicode = 0;
 
-	// running the 'help' command on the server is the only command that 
+	// running the 'help' command on the server is the only command that
 	//   does not lock any tables on the server, so it has the least impact.
 
 	P4Connection* pCon = getConnection();
@@ -1173,7 +1172,7 @@ int P4BridgeServer::unicodeServer(  )
  * APILevel
  *
  * The API level the connected server supports If already determined, return the
- *  cached results, otherwise issue a help command and query the server to see 
+ *  cached results, otherwise issue a help command and query the server to see
  *  what protocols the server supports.
  *
  ******************************************************************************/
@@ -1183,7 +1182,7 @@ int P4BridgeServer::APILevel(  )
 	P4ClientError* err = NULL;
 	GetServerProtocols(&err);
 	DELETE_OBJECT(err);
-	
+
 	return apiLevel;
 }
 
@@ -1191,8 +1190,8 @@ int P4BridgeServer::APILevel(  )
  *
  * UseLogin
  *
- * Does the connected server require the login command be used? If already 
- *  determined, return the cached results, otherwise issue a help command and 
+ * Does the connected server require the login command be used? If already
+ *  determined, return the cached results, otherwise issue a help command and
  *  query the server to see if Unicode support is enabled.
  *
  ******************************************************************************/
@@ -1203,7 +1202,7 @@ int P4BridgeServer::UseLogin()
 	P4ClientError* err = NULL;
 	GetServerProtocols(&err);
 	DELETE_OBJECT(err);
-	
+
 	return useLogin;
 }
 
@@ -1212,8 +1211,8 @@ int P4BridgeServer::UseLogin()
  *
  * SupportsExtSubmit
  *
- * Does the connected server support extended submit options (2006.2 higher)? 
- *  If already determined, return the cached results, otherwise issue a help 
+ * Does the connected server support extended submit options (2006.2 higher)?
+ *  If already determined, return the cached results, otherwise issue a help
  *  command and query the server to see if Unicode support is enabled.
  *
  ******************************************************************************/
@@ -1222,7 +1221,7 @@ int P4BridgeServer::SupportsExtSubmit()
 	P4ClientError* err = NULL;
 	GetServerProtocols(&err);
 	DELETE_OBJECT(err);
-	
+
 	return supportsExtSubmit;
 }
 
@@ -1234,9 +1233,9 @@ int P4BridgeServer::SupportsExtSubmit()
  *
  ******************************************************************************/
 
-void  P4BridgeServer::set_connection(const char* newPort, 
-									const char* newUser, 
-									const char* newPassword, 
+void  P4BridgeServer::set_connection(const char* newPort,
+									const char* newUser,
+									const char* newPassword,
 									const char* newClient)
 {
 	// close the connection to force reconnection with new value(s)
@@ -1535,7 +1534,7 @@ string P4BridgeServer::get_config_Int()
 	P4Connection* pCon = getConnection();
 	// if this seems weird, it's probably because it is
 	// pCon may actually be disconnected, as this class
-	// considers "connected" as "i got the protocol data 
+	// considers "connected" as "i got the protocol data
 	// but may not actually be talking to the server".
 	// The config info is read when the Client gets created,
 	// and apparently we want something more responsive
@@ -1545,7 +1544,7 @@ string P4BridgeServer::get_config_Int()
 
 	if (sb == "noconfig")
 		return ret.Text();
-	
+
 	const StrArray* retA = pCon->GetConfigs();
 	const StrBuf* sbp = retA->Get(0);
 	LOG_DEBUG1(4, "pCon CWD: %s", sbp->Text());
@@ -1649,10 +1648,10 @@ int P4BridgeServer::HandleException(const char* fname, unsigned int line, const 
 			printf("UNKNOWN EXCEPTION\r\n");
 			break;
 		}
-		
+
 		std::stringstream ss;
 
-		ss << fname << "(" << line << "): " << func << " : Exception Detected: (" 
+		ss << fname << "(" << line << "): " << func << " : Exception Detected: ("
 			"0x" << std::uppercase << std::setfill('0') << std::setw(4) << std::hex << code << ")" << exType;
 		LOG_ERROR(ss.str().c_str());
 		if (ppErrorString)
@@ -1704,7 +1703,7 @@ void P4BridgeServer::Set( const char *var, const char *value )
 	__try
 	{
 		return P4BridgeServer::Set_Int( var, value );
-	}  
+	}
 	__except (P4BridgeServer::sHandleException(GetExceptionCode(), GetExceptionInformation()))
 	{
 	}
@@ -1721,7 +1720,7 @@ void P4BridgeServer::Update( const char *var, const char *value )
 	__try
 	{
 		return P4BridgeServer::Update_Int( var, value );
-	}  
+	}
 	__except (P4BridgeServer::sHandleException(GetExceptionCode(), GetExceptionInformation()))
 	{
 	}
@@ -1738,7 +1737,7 @@ void P4BridgeServer::Reload()
 	__try
 	{
 		return P4BridgeServer::Reload_Int();
-	}  
+	}
 	__except (P4BridgeServer::sHandleException(GetExceptionCode(), GetExceptionInformation()))
 	{
 	}
@@ -1883,7 +1882,7 @@ void P4BridgeServer::CallErrorCallbackFn( int cmdId, int severity, int errorId, 
 	}
 	__except (HANDLE_EXCEPTION(&pErrorString))
 	{
-		// could cause infinite recursion if we keep producing errors 
+		// could cause infinite recursion if we keep producing errors
 		//  when reporting errors
 		pErrorCallbackFn = NULL;
 		LOG_LOC();
@@ -1932,7 +1931,7 @@ void P4BridgeServer::SetErrorCallbackFn(IntIntIntTextCallbackFn* pNew)
 	pErrorCallbackFn = pNew;
 }
 
-void P4BridgeServer::Prompt( int cmdId, const StrPtr &msg, StrBuf &rsp, 
+void P4BridgeServer::Prompt( int cmdId, const StrPtr &msg, StrBuf &rsp,
 			int noEcho, Error *e )
 {
 	string* pErrorString = NULL;
@@ -1951,7 +1950,7 @@ void P4BridgeServer::Prompt( int cmdId, const StrPtr &msg, StrBuf &rsp,
 	{
 		LOG_LOC();
 		getConnection()->getUi()->HandleError( E_FATAL, 0, pErrorString->c_str() );
-		
+
 	}
 }
 
@@ -2045,7 +2044,7 @@ int P4BridgeServer::Resolve_int( int cmdId, P4ClientMerge *merger)
 		if ((cmdId > 0) && (pResolveCallbackFn != NULL))
 		{
 			result = (*pResolveCallbackFn)(cmdId, merger);
-		}  
+		}
 	}
 	__except (HANDLE_EXCEPTION(&pErrorString))
 	{
@@ -2067,7 +2066,7 @@ int P4BridgeServer::Resolve_int( int cmdId, P4ClientResolve *resolver, int previ
 		{
 			result = (*pResolveACallbackFn)(cmdId, resolver, preview);
 		}
-	}  
+	}
 	__except (HANDLE_EXCEPTION(&pErrorString))
 	{
 		LOG_LOC();
@@ -2076,7 +2075,7 @@ int P4BridgeServer::Resolve_int( int cmdId, P4ClientResolve *resolver, int previ
 	}
 	return result;
 }
-	
+
 int P4BridgeServer::IsIgnored_Int( const StrPtr &path )
 {
 	ClientApi client;
@@ -2090,14 +2089,14 @@ int P4BridgeServer::IsIgnored_Int( const StrPtr &path )
 	}
 
 	return ignore->Reject( path, ignoreFile );
-}	
+}
 
 int P4BridgeServer::IsIgnored( const StrPtr &path )
 {
 	__try
 	{
 		return IsIgnored_Int(path);
-	}  
+	}
 	__except (P4BridgeServer::sHandleException(GetExceptionCode(), GetExceptionInformation()))
 	{
 	}
@@ -2116,7 +2115,7 @@ string P4BridgeServer::GetTicketFile()
 	{
 		ticketfile.Set( c );
 	}
-	else 
+	else
 	{
 		h.GetTicketFile( ticketfile, &_enviro );
 	}
@@ -2136,7 +2135,7 @@ string P4BridgeServer::GetTicket(char* uri, char* user)
 	{
 		ticketfile.Set( c );
 	}
-	else 
+	else
 	{
 		h.GetTicketFile( ticketfile, &_enviro );
 	}
@@ -2204,9 +2203,9 @@ int P4BridgeServer::DoTransfer(
 }
 
 // the transfer shim
-ParallelTransfer::ParallelTransfer(P4BridgeServer* pServer) : 
+ParallelTransfer::ParallelTransfer(P4BridgeServer* pServer) :
 	p4base(Type()),
-	pBridgeServer(pServer) 
+	pBridgeServer(pServer)
 {
 }
 
@@ -2215,7 +2214,7 @@ ParallelTransfer::~ParallelTransfer()
 	LOG_LOC();
 }
 
-void ParallelTransfer::SetBridgeServer(P4BridgeServer* pServer) 
+void ParallelTransfer::SetBridgeServer(P4BridgeServer* pServer)
 {
 	pBridgeServer = pServer;
 }

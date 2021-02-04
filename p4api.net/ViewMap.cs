@@ -16,16 +16,25 @@ namespace Perforce.P4
 	/// </summary>
 	public class MapEntry
 	{
-		public MapEntry(MapType type, PathSpec left, PathSpec right)
+
+		public MapEntry(MapType type, PathSpec left, PathSpec right, String comment)
 		{
 			Type = type;
 			Left = left;
 			Right = right;
+			Comment = comment;
+		}
+
+		public MapEntry(MapType type, PathSpec left, PathSpec right)
+			: this(type, left, right, string.Empty)
+		{			
 		}
 
 		public MapType Type { get; set; }
 		public PathSpec Left { get; set; }
 		public PathSpec Right { get; set; }
+		public String Comment { get; set; }
+		
 
 		public override bool Equals(object obj)
 		{
@@ -173,14 +182,23 @@ namespace Perforce.P4
 		}
 
 		/// <summary>
-		/// Add a line to the end of the view
+		/// Add a line to the end of the view.
+		/// Will try to parse the string to split into left, right, lineType, comment
 		/// </summary>
 		/// <param name="line">Left/Right pair for the map</param>
 		public void Add(String line)
 		{
 			MapType lineType = MapType.Include;
-			if (line.Length > 0)
+			String comment = string.Empty;
+
+			if ((line.Length > 0) && (line.Contains("#")))
 			{
+				comment = line.Substring(line.IndexOf("#"));
+				line = line.Substring(0, line.IndexOf("#"));
+			}
+
+			if (line.Length > 0)
+			{				
 				if ((line[0] == '-') || (line.StartsWith("\"-")))
 				{
 					lineType = MapType.Exclude;
@@ -210,13 +228,12 @@ namespace Perforce.P4
 					lineType = MapType.StreamPathExclude;
 				}
 			}
-			
 			String[] sides = SplitViewLine(line.ToString());
-			Add(sides[0], sides[1], lineType);
+			Add(sides[0], sides[1], lineType, comment);
 		}
 
 		/// <summary>
-		/// Add a line to the end of the view
+		/// Add a line to the end of the view (left, right, lineType)
 		/// </summary>
 		/// <param name="left">left side of mapping</param>
 		/// <param name="right">right side of mapping</param>
@@ -226,10 +243,29 @@ namespace Perforce.P4
 			MapEntry entry = new MapEntry(
 				lineType,
 				new DepotPath(left),
-				new ClientPath(right));
+				new ClientPath(right),
+				string.Empty);
 
 			Add(entry);
 		}
+
+		/// <summary>
+		/// Add a line to the end of the view (left, right, lineType, comment)
+		/// </summary>
+		/// <param name="left">left side of mapping</param>
+		/// <param name="right">right side of mapping</param>
+		/// <param name="lineType"></param>
+		/// <param name="comment"></param>
+		public void Add(String left, String right, MapType lineType, String comment)
+		{
+			MapEntry entry = new MapEntry(
+				lineType,
+				new DepotPath(left),
+				new ClientPath(right),
+				comment);
+			Add(entry);
+		}
+
 
 		/// <summary>
 		/// Convert to a Perforce server compatible string for a workspace spec
@@ -243,82 +279,87 @@ namespace Perforce.P4
 			for (int idx = 0; idx < Count; idx++)
 			{
 				MapEntry entry = this[idx];
-				string left = entry.Left.Path;
-				
-				if (entry.Type == MapType.Exclude)
+				string left = string.Empty;
+
+				if (entry.Left != null)
 				{
-					if (left.Contains(' '))
+					left = entry.Left.Path;
+
+					if (entry.Type == MapType.Exclude)
 					{
-						left = String.Format("\"-{0}\"", left);
+						if (left.Contains(' '))
+						{
+							left = String.Format("\"-{0}\"", left);
+						}
+						else
+							left = String.Format("-{0}", left);
 					}
-					else
-					left = String.Format("-{0}", left);
-				}
-				else if (entry.Type == MapType.Overlay)
-				{
-					if (left.Contains(' '))
+					else if (entry.Type == MapType.Overlay)
 					{
-						left = String.Format("\"+{0}\"", left);
+						if (left.Contains(' '))
+						{
+							left = String.Format("\"+{0}\"", left);
+						}
+						else
+							left = String.Format("+{0}", left);
 					}
-					else
-					left = String.Format("+{0}", left);
-				}
 
 
-				else if (entry.Type == MapType.Share)
-				{
-					if (left.Contains(' '))
+					else if (entry.Type == MapType.Share)
 					{
-						left = String.Format("share \"{0}\"", left);
+						if (left.Contains(' '))
+						{
+							left = String.Format("share \"{0}\"", left);
+						}
+						else
+							left = String.Format("share {0}", left);
 					}
-					else
-					left = String.Format("share {0}", left);
-				}
-				else if (entry.Type == MapType.Isolate)
-				{
-					if (left.Contains(' '))
+					else if (entry.Type == MapType.Isolate)
 					{
-						left = String.Format("isolate \"{0}\"", left);
+						if (left.Contains(' '))
+						{
+							left = String.Format("isolate \"{0}\"", left);
+						}
+						else
+							left = String.Format("isolate {0}", left);
 					}
-					else
-					left = String.Format("isolate {0}", left);
-				}
-				else if (entry.Type == MapType.Import)
-				{
-					if (left.Contains(' '))
+					else if (entry.Type == MapType.Import)
 					{
-						left = String.Format("import \"{0}\"", left);
+						if (left.Contains(' '))
+						{
+							left = String.Format("import \"{0}\"", left);
+						}
+						else
+							left = String.Format("import {0}", left);
 					}
-					else
-					left = String.Format("import {0}", left);
-				}
-                else if (entry.Type == MapType.ImportSubmittable)
-                {
-                    if (left.Contains(' '))
-                    {
-                        left = String.Format("import+ \"{0}\"", left);
-                    }
-                    else
-                        left = String.Format("import+ {0}", left);
-                }
-                else if (entry.Type == MapType.StreamPathExclude)
-				{
-					if (left.Contains(' '))
+					else if (entry.Type == MapType.ImportSubmittable)
 					{
-						left = String.Format("exclude \"{0}\"", left);
+						if (left.Contains(' '))
+						{
+							left = String.Format("import+ \"{0}\"", left);
+						}
+						else
+							left = String.Format("import+ {0}", left);
 					}
-					else
-					left = String.Format("exclude {0}", left);
+					else if (entry.Type == MapType.StreamPathExclude)
+					{
+						if (left.Contains(' '))
+						{
+							left = String.Format("exclude \"{0}\"", left);
+						}
+						else
+							left = String.Format("exclude {0}", left);
+					}
+					else if (entry.Type == MapType.Include || entry.Type == MapType.None)
+					{
+						if (left.Contains(' '))
+						{
+							left = String.Format("\"{0}\"", left);
+						}
+						else
+							left = String.Format("{0}", left);
+					}
 				}
-                else if (entry.Type == MapType.Include||entry.Type==MapType.None)
-                {
-                    if (left.Contains(' '))
-                    {
-                        left = String.Format("\"{0}\"", left);
-                    }
-                    else
-                        left = String.Format("{0}", left);
-                }
 
 				try
 				{
@@ -332,7 +373,15 @@ namespace Perforce.P4
 				{
 					right = string.Empty;
 				}
-				value += String.Format("{0} {1}\r\n", left, right);
+
+				if (entry.Comment != string.Empty)
+				{
+					value += String.Format("{0} {1} {2}\r\n", left, right, entry.Comment);
+				}
+				else 
+				{
+					value += String.Format("{0} {1}\r\n", left, right);
+				}
 			}
 			return value;
 		}

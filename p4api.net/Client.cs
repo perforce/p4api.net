@@ -35,6 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 namespace Perforce.P4
@@ -318,6 +319,30 @@ namespace Perforce.P4
 	}
 
 	/// <summary>
+	///  Sets Type for client spec.
+	/// </summary>
+	[Flags]
+	public enum ClientType
+	{
+		/// <summary>
+		/// mode that is native to the client (default).
+		/// </summary>
+		writeable = 0x0000,
+		/// <summary>
+		/// Type: readonly.
+		/// </summary>
+		@readonly = 0x0001,
+		/// <summary>
+		/// Type: graph.
+		/// </summary>
+		graph = 0x0002,
+		/// <summary>
+		/// Type: paritioned.
+		/// </summary>
+		partitioned = 0x0003,	
+	}
+
+	/// <summary>
 	/// A client specification in a Perforce repository. 
 	/// </summary>
 	public class Client
@@ -394,8 +419,12 @@ namespace Perforce.P4
         /// A List of Alternate Roots
         /// </summary>
 		public IList<string> AltRoots { get; set; }
+		/// <summary>
+		/// Ties client files to a particular point in time
+		/// </summary>
+		public IList<string> ChangeView { get; set; }
 
-        private ClientOptionEnum _options = ClientOption.None;
+		private ClientOptionEnum _options = ClientOption.None;
         
         /// <summary>
         /// Options for the Client command
@@ -406,9 +435,20 @@ namespace Perforce.P4
 			set { _options = (ClientOptionEnum) value; }
 		}
 
-        /// <summary>
-        /// Options for the Client about submit behavior
-        /// </summary>
+		private StringEnum<ClientType> _clientType = ClientType.writeable;
+
+		/// <summary>
+		/// Type for the Client command
+		/// </summary>
+		public ClientType ClientType
+		{
+			get { return _clientType; }
+			set { _clientType = value; }
+		}
+
+		/// <summary>
+		/// Options for the Client about submit behavior
+		/// </summary>
 		public ClientSubmitOptions SubmitOptions = new ClientSubmitOptions(false, SubmitType.SubmitUnchanged);
 
         private StringEnum<LineEnd> _lineEnd = LineEnd.Local;
@@ -437,9 +477,9 @@ namespace Perforce.P4
         /// </summary>
 		public string ServerID { get; set; }
 
-        /// <summary>
-        /// View Mapping
-        /// </summary>
+		/// <summary>
+		/// View Mapping
+		/// </summary>
 		public ViewMap ViewMap { get; set; }
 
         /// <summary>
@@ -510,6 +550,11 @@ namespace Perforce.P4
 				_lineEnd = workspaceInfo["LineEnd"];
 			}
 
+			if (workspaceInfo.ContainsKey("Type"))
+			{
+				_clientType = workspaceInfo["Type"];
+			}
+
 			if (workspaceInfo.ContainsKey("Root"))
 				Root = workspaceInfo["Root"];
 
@@ -556,6 +601,19 @@ namespace Perforce.P4
 			else
 			{
 				ViewMap = null;
+			}
+
+			idx = 0;
+			key = String.Format("ChangeView{0}", idx);
+			if (workspaceInfo.ContainsKey(key))
+			{
+				ChangeView = new List<String>();
+				while (workspaceInfo.ContainsKey(key))
+				{
+					ChangeView.Add(workspaceInfo[key]);
+					idx++;
+					key = String.Format("ChangeView{0}", idx);
+				}
 			}
 		}
 
@@ -613,6 +671,11 @@ namespace Perforce.P4
 				_lineEnd = workspaceInfo["LineEnd"];
 			}
 
+			if (workspaceInfo.ContainsKey("Type"))
+			{
+				_clientType = workspaceInfo["Type"];
+			}
+
 			if (workspaceInfo.ContainsKey("Root"))
 				Root = workspaceInfo["Root"];
 
@@ -659,6 +722,19 @@ namespace Perforce.P4
 			else
 			{
 				ViewMap = null;
+			}
+			
+			idx = 0;
+			key = String.Format("ChangeView{0}", idx);
+			if (workspaceInfo.ContainsKey(key))
+			{
+				ChangeView = new List<String>();
+				while (workspaceInfo.ContainsKey(key))
+				{
+					ChangeView.Add(workspaceInfo[key]);
+					idx++;
+					key = String.Format("ChangeView{0}", idx);
+				}
 			}
 		}
 		#endregion
@@ -750,6 +826,18 @@ namespace Perforce.P4
                 }
 			}
 
+			if (_baseForm.ContainsKey("ChangeView"))
+			{
+				if (_baseForm["ChangeView"] is IList<string>)
+				{
+					ChangeView = _baseForm["ChnageView"] as IList<string>;
+				}
+				else if (_baseForm["ChangeView"] is SimpleList<string>)
+				{
+					ChangeView = (List<string>)((SimpleList<string>)_baseForm["ChangeView"]);
+				}
+			}
+
 			if (_baseForm.ContainsKey("Update"))
 			{
 				DateTime d;
@@ -777,6 +865,10 @@ namespace Perforce.P4
 			if (_baseForm.ContainsKey("LineEnd"))
 			{
 				_lineEnd = _baseForm["LineEnd"] as string;
+			}
+			if (_baseForm.ContainsKey("Type"))
+			{
+				_clientType = _baseForm["Type"] as string;
 			}
 			if (_baseForm.ContainsKey("Stream"))
 			{
@@ -818,11 +910,14 @@ namespace Perforce.P4
 													"\n" +
 													"LineEnd:\t{10}\n" +
 													"\n" +
-													"{11}"+
+													"Type:\t{11}\n" +
+													"\n" +
 													"{12}" +
 													"{13}" +
+													"{14}" +
+													"{15}" +
 													"View:\n" +
-													"\t{14}\n";
+													"\t{16}\n";
 		private String AltRootsStr
 		{
 			get
@@ -838,6 +933,21 @@ namespace Perforce.P4
 				return value;
 			}
 		}
+		private String ChangeViewStr
+		{
+			get
+			{
+				String value = String.Empty;
+				if ((ChangeView != null) && (ChangeView.Count > 0))
+				{
+					for (int idx = 0; idx < ChangeView.Count; idx++)
+					{
+						value += ChangeView[idx] + "\r\n";
+					}
+				}
+				return value;
+			}
+		}
 		/// <summary>
 		/// Utility function to format a DateTime in the format expected in a spec
 		/// </summary>
@@ -846,7 +956,7 @@ namespace Perforce.P4
 		public static String FormatDateTime(DateTime dt)
 		{
 			if ((dt != null) && (DateTime.MinValue != dt))
-				return dt.ToString("yyyy/MM/dd HH:mm:ss");
+				return dt.ToString("yyyy/MM/dd HH:mm:ss", CultureInfo.InvariantCulture);
 			return string.Empty;
 		}
 
@@ -865,6 +975,12 @@ namespace Perforce.P4
 			if (!String.IsNullOrEmpty(AltRootsStr))
 			{
                 tmpAltRootsStr = FormBase.FormatMultilineField(AltRootsStr.ToString());
+			}
+			String tmpChangeViewStr = String.Empty;
+			if (!String.IsNullOrEmpty(ChangeViewStr))
+			{
+				tmpChangeViewStr = FormBase.FormatMultilineField(ChangeViewStr.ToString());
+				tmpChangeViewStr = "ChangeView:\t" + tmpChangeViewStr + "\n" + "\n";
 			}
 			String tmpViewStr = String.Empty;
 			if (ViewMap != null)
@@ -889,14 +1005,14 @@ namespace Perforce.P4
 				tmpServerIDStr = FormBase.FormatMultilineField(ServerID.ToString());
 				tmpServerIDStr = "ServerID:\t" + tmpServerIDStr + "\n" + "\n";
 			}
-            String value = String.Format(ClientSpecFormat, Name,
+			String value = String.Format(ClientSpecFormat, Name,
 				FormatDateTime(Updated),
 				FormatDateTime(Accessed),
 				OwnerName, Host, tmpDescStr, Root, tmpAltRootsStr,
 				_options.ToString(),
 				SubmitOptions.ToString(),
-				_lineEnd.ToString(), tmpStreamStr, tmpStreamAtChangeStr,
-				tmpServerIDStr, tmpViewStr);
+				_lineEnd.ToString(), _clientType.ToString(), tmpStreamStr, tmpStreamAtChangeStr,
+				tmpServerIDStr, tmpChangeViewStr, tmpViewStr);
 			return value;
 		}
 		#endregion

@@ -1,0 +1,14 @@
+<Project>
+    <ItemGroup Condition=" '$(Platform)' == 'x64' ">
+        <None Include="$(MSBuildThisFileDirectory)..\runtimes\win-x64\native\p4bridge.dll">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+            <Link>p4bridge.dll</Link>
+        </None>
+    </ItemGroup>
+    <ItemGroup Condition=" '$(Platform)' == 'x86' OR '$(Platform)' == 'AnyCPU' ">
+        <None Include="$(MSBuildThisFileDirectory)..\runtimes\win-x86\native\p4bridge.dll">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+            <Link>p4bridge.dll</Link>
+        </None>
+    </ItemGroup>
+</Project>

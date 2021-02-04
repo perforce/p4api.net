@@ -149,10 +149,9 @@ namespace p4api.net.unit.test
                             Stream newStream = rep.CreateStream(s,
                                 new StreamCmdOptions(StreamCmdFlags.None, "//Rocket/xxx", StreamType.Release.ToString()));
                         }
-                        catch (P4Exception e)
+                        catch (System.ArgumentNullException e)
                         {
-                            Assert.AreEqual(822153261, e.ErrorCode,
-                                "Error in stream specification.\nStream '//Rocket/xxx' doesn't exist.\n");
+                            Assert.AreEqual("Value cannot be null.\r\nParameter name: Parent", e.Message);
                         }
                     }
                 }
@@ -222,9 +221,9 @@ namespace p4api.net.unit.test
                         {
                             Stream newStream1 = rep.CreateStream(s1);
                         }
-                        catch (P4Exception e)
+                        catch (ArgumentNullException e)
                         {
-                            Assert.AreEqual(822153261, e.ErrorCode,
+                            Assert.AreEqual("Value cannot be null.\r\nParameter name: Parent", e.Message,
                                 ("Error in stream specification.\nMissing required field 'Parent'.\n"));
                         }
                     }
@@ -388,7 +387,7 @@ namespace p4api.net.unit.test
                         string taskTargetId = "//Rocket/tasktest";
                         task.Id = taskTargetId;
                         task.Type = StreamType.Task;
-                        task.Parent = new DepotPath("none");
+                        task.Parent = new DepotPath("//Rocket/mainlinetest");
                         task.Options = new StreamOptionEnum(StreamOption.None);
                         task.Name = "tasktest";
                         task.Paths = new ViewMap();
@@ -1332,5 +1331,331 @@ namespace p4api.net.unit.test
                 Utilities.RemoveTestServer(p4d, TestDir);
             }
         }
+
+        [TestMethod()]
+        public void CreateCustomFieldStreamTest()
+        {                       
+            string uri = "localhost:6666";
+            string user = "admin";
+            string pass = string.Empty;
+            string ws_client = "admin_space";
+
+            Process p4d = null;
+            try
+            {
+                p4d = Utilities.DeployP4TestServer(TestDir, 21, false);
+                Server server = new Server(new ServerAddress(uri));
+
+                Repository rep = new Repository(server);
+
+                using (Connection con = rep.Connection)
+                {
+                    con.UserName = user;
+                    con.Client = new Client();
+                    con.Client.Name = ws_client;
+
+                    bool connected = con.Connect(null);
+                    Assert.IsTrue(connected);
+                    Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+
+                    // Setting spec.custom=1
+                    P4Command configureCmd = new P4Command(con, "configure", true, null);
+                    Options opts = new Options();
+                    opts["set"] = "spec.custom=1";
+                    P4CommandResult setRes = configureCmd.Run(opts);
+
+                    // Send custom spec to server
+                    P4Command specStreamCmd = new P4Command(con, "spec", false, null);
+                    Options specOpts = new Options();
+                    specOpts["-i"] = "stream";
+                    specStreamCmd.DataSet = CustomStreamSpec201;
+                    specStreamCmd.Run(specOpts);
+
+                    // Create a Stream spec
+                    //Define values for stream properties
+                    string expectedP1 = "...";
+                    string expectedP2 = "aps/...";
+                    string expectedP3 = "aps/...";
+                    string expectedP4 = "remapped-aps/...";
+                    string expectedP5 = "/flow/D1/a";
+                    string testField1 = "TestValue1";
+                    List<string> testField2 = new List<string> { "listValues1", "listValues2" };
+                    int testField3 = 20;
+                    Dictionary<string, object> customFields = new Dictionary<string, object>() 
+                    {
+                        { "TestField", testField1 },
+                        { "NewField", testField2 },
+                        { "DiffrentField", testField3 }
+                    };
+                    ViewMap Paths = new ViewMap() 
+                    {
+                        { new MapEntry(MapType.Share, new DepotPath(expectedP1), null) },
+                        { new MapEntry(MapType.Share, new DepotPath(expectedP2), null) }
+                    };
+                    ViewMap Remapped = new ViewMap() { new MapEntry(MapType.None, new DepotPath(expectedP3), new DepotPath(expectedP4)) };
+                    ViewMap Ignored = new ViewMap() { new MapEntry(MapType.None, new DepotPath(expectedP5), null) };
+                    StreamOptionEnum options =  new StreamOptionEnum(
+                        StreamOption.Locked | 
+                        StreamOption.NoToParent | 
+                        StreamOption.OwnerSubmit |
+                        StreamOption.MergeAny );
+                    string description = "release stream for first release";
+                    string ownerName = "admin";
+                    DepotPath parent = new DepotPath("none");
+                    string name = "StreamCustomFieldTest";
+                    string id = "//Rocket/StreamCustomFieldTest";
+                    StreamType type = StreamType.Mainline;
+
+                    // Assign values to stream properties
+                    Stream streamCustom = new Stream();
+                    streamCustom.Id = id;
+                    streamCustom.Type = type;
+                    streamCustom.Options = options;
+                    streamCustom.Parent = parent;
+                    streamCustom.Name = name;
+                    streamCustom.OwnerName = ownerName;
+                    streamCustom.Description = description;
+                    streamCustom.Paths = Paths;
+                    streamCustom.Remapped = Remapped;
+                    streamCustom.Ignored = Ignored;
+                    streamCustom.CustomFields = customFields;
+  
+                    // push the stream back to the server
+                    // This will test the toString method to convert object to server stream spec
+                    Stream createdCustomStream = rep.CreateStream(streamCustom);
+
+                    // Read back the stream properties and compare to initial values
+                    Stream readStream = rep.GetStream(id);
+                    Assert.IsNotNull(readStream);
+                    Assert.AreEqual(readStream.Id, id);
+                    Assert.AreEqual(readStream.Type, type);
+                    Assert.AreEqual(readStream.Options.ToString(), "OwnerSubmit, Locked, NoToParent, MergeAny");
+                    Assert.AreEqual(readStream.Parent, parent);
+                    Assert.AreEqual(readStream.Name, name);                    
+                    Assert.AreEqual(readStream.OwnerName, ownerName);
+                    Assert.AreEqual(readStream.Description, description + "\r\n");
+                    Assert.AreEqual(readStream.Paths[1].Left.ToString(), expectedP2);
+                    Assert.AreEqual(readStream.Remapped[0].Left.ToString(), expectedP3);
+                    Assert.AreEqual(readStream.Remapped[0].Right.ToString(), expectedP4);
+                    Assert.AreEqual(readStream.Ignored[0].Left.ToString(), expectedP5);
+                    Assert.AreEqual(readStream.CustomFields["TestField"], testField1);
+                    Assert.AreEqual(readStream.CustomFields["NewField"].ToString(), testField2.ToString());
+                    Assert.AreEqual(readStream.CustomFields["DiffrentField"], testField3.ToString());                    
+                }
+            }
+            finally
+            {
+                Utilities.RemoveTestServer(p4d, TestDir);
+            }
+        }
+        [TestMethod()]
+        public void CreateSpecParentViewTest()
+        {
+            string uri = "localhost:6666";
+            string user = "admin";
+            string pass = string.Empty;
+            string ws_client = "admin_space";
+
+            Process p4d = null;
+            try
+            {
+                p4d = Utilities.DeployP4TestServer(TestDir, 21, false);
+                Server server = new Server(new ServerAddress(uri));
+
+                Repository rep = new Repository(server);
+
+                using (Connection con = rep.Connection)
+                {
+                    con.UserName = user;
+                    con.Client = new Client();
+                    con.Client.Name = ws_client;
+
+                    bool connected = con.Connect(null);
+                    Assert.IsTrue(connected);
+                    Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+
+
+                    StreamOption options = new StreamOption();
+                    string description = "ParentView spec development";
+                    string ownerName = "admin";
+                    DepotPath parent = new DepotPath("//Rocket/MAIN");
+                    string name = "StreamParentView1";
+                    string id = "//Rocket/StreamParentView1";
+                    StreamType type = StreamType.Development;
+                    ParentView parentView = ParentView.NoInherit;
+                    ViewMap Paths = new ViewMap()
+                    {
+                        { new MapEntry(MapType.Share, new DepotPath("..."), null) }
+                    };
+
+                    // Assign values to stream properties
+                    Stream streamParentView = new Stream();
+                    streamParentView.Id = id;
+                    streamParentView.Type = type;
+                    streamParentView.Options = options;
+                    streamParentView.Parent = parent;
+                    streamParentView.Name = name;
+                    streamParentView.OwnerName = ownerName;
+                    streamParentView.Description = description;
+                    streamParentView.Paths = Paths;
+                    streamParentView.ParentView = parentView;
+
+                    Stream createdCustomStream = rep.CreateStream(streamParentView);
+
+                    // Read back the stream properties and compare to initial values
+                    Stream readStream = rep.GetStream(id);
+                    Assert.IsNotNull(readStream);
+                    Assert.AreEqual(readStream.ParentView.ToString(), parentView.ToString());
+                }
+            }
+            finally
+            {
+                Utilities.RemoveTestServer(p4d, TestDir);
+            }
+        }
+
+        [TestMethod()]
+        public void ViewCommentsTest()
+        {
+            string uri = "localhost:6666";
+            string user = "admin";
+            string pass = string.Empty;
+            string ws_client = "admin_space";
+
+            Process p4d = null;
+            try
+            {
+                p4d = Utilities.DeployP4TestServer(TestDir, 21, false);
+                Server server = new Server(new ServerAddress(uri));
+
+                Repository rep = new Repository(server);
+
+                using (Connection con = rep.Connection)
+                {
+                    con.UserName = user;
+                    con.Client = new Client();
+                    con.Client.Name = ws_client;
+
+                    bool connected = con.Connect(null);
+                    Assert.IsTrue(connected);
+                    Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+
+
+                    StreamOption options = new StreamOption();
+                    string description = "View comments spec development";
+                    string ownerName = "admin";
+                    DepotPath parent = new DepotPath("//Rocket/MAIN");
+                    string name = "StreamViewComments1";
+                    string id = "//Rocket/StreamViewComments1";
+                    StreamType type = StreamType.Development;
+                    ViewMap Paths = new ViewMap()
+                    {
+                        { new MapEntry(MapType.Share, new DepotPath("..."), null, "## inline comment") },
+                        { new MapEntry(MapType.None, null, null, "## newline comment") }
+                    };
+
+                    // Assign values to stream properties
+                    Stream streamViewComments = new Stream();
+                    streamViewComments.Id = id;
+                    streamViewComments.Type = type;
+                    streamViewComments.Options = options;
+                    streamViewComments.Parent = parent;
+                    streamViewComments.Name = name;
+                    streamViewComments.OwnerName = ownerName;
+                    streamViewComments.Description = description;
+                    streamViewComments.Paths = Paths;
+
+                    rep.CreateStream(streamViewComments);
+
+                    // Read back the stream properties and compare to initial values
+                    Stream readStream = rep.GetStream(id);
+                    Assert.IsNotNull(readStream);
+                    Assert.AreEqual("## inline comment",readStream.Paths[0].Comment.ToString());
+                    Assert.AreEqual("## newline comment", readStream.Paths[1].Comment.ToString());
+                }
+            }
+            finally
+            {
+                Utilities.RemoveTestServer(p4d, TestDir);
+            }
+        }
+
+
+        // Custom Spec
+        private static String CustomStreamSpec201 = @"# A Perforce Spec Specification.
+#
+#  Updating this form can be dangerous!
+#  To update the job spec, see 'p4 help jobspec' for proper directions.
+#  To update the stream spec, see 'p4 help streamspec' for proper directions.
+#  Otherwise, see 'p4 help spec'.
+
+Fields:
+        701 Stream word 64 key
+        705 Update date 20 always
+        706 Access date 20 always
+        704 Owner word 32 optional
+        703 Name line 32 required
+        702 Parent word 64 required
+        708 Type word 32 required
+        709 Description text 128 optional
+        707 Options line 64 optional
+        710 Paths wlist 64 required
+        711 Remapped wlist 64 optional
+        712 Ignored wlist 64 optional
+        713 View wlist 64 optional
+        714 ChangeView llist 64 always
+        NNN TestField word 32 optional
+        NNN NewField llist 32 optional
+        NNN DiffrentField word 32 optional
+
+Words:
+        Paths 2
+        Remapped 2
+        View 2
+
+Formats:
+        Update 0 L
+        Access 0 L
+
+Values:
+        Options allsubmit/ownersubmit,unlocked/locked,toparent/notoparent,fromparent/nofromparent,mergedown/mergeany
+
+Openable:
+        Owner isolate
+        Name isolate
+        Parent isolate
+        Type isolate
+        Description isolate
+        Options isolate
+        Paths propagate
+        Remapped propagate
+        Ignored propagate
+
+Maxwords:
+        Paths 3
+
+Comments:
+        # A Perforce Stream Specification.
+        #
+        #  Stream:       The stream field is unique and specifies the depot path.
+        #  Update:       The date the specification was last changed.
+        #  Access:       The date the specification was originally created.
+        #  Owner:        The user who created this stream.
+        #  Name:         A short title which may be updated.
+        #  Parent:       The parent of this stream, or 'none' if Type is mainline.
+        #  Type:         Type of stream provides clues for commands run
+        #                between stream and parent.  Five types include 'mainline',
+        #                'release', 'development' (default), 'virtual' and 'task'.
+        #  Description:  A short description of the stream (optional).
+        #  Options:      Stream Options:
+        #                       allsubmit/ownersubmit [un]locked
+        #                       [no]toparent [no]fromparent mergedown/mergeany
+        #  Paths:        Identify paths in the stream and how they are to be
+        #                generated in resulting clients of this stream.
+        #                Path types are share/isolate/import/import+/exclude.
+        #  Remapped:     Remap a stream path in the resulting client view.
+        #  Ignored:      Ignore a stream path in the resulting client view.
+        #
+        # Use 'p4 help stream' to see more about stream specifications and command.";      
     }
 }

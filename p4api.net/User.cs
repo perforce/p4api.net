@@ -63,75 +63,75 @@ namespace Perforce.P4
 	/// <summary>
 	/// A user on a Perforce Server, represented by a P4 User spec.
 	/// </summary>
-		/// <remarks>
-		/// <br/><b>p4 help user</b>
-		/// <br/> 
-		/// <br/>     user -- Create or edit a user specification
-		/// <br/> 
-		/// <br/>     p4 user [-f] [name]
-		/// <br/>     p4 user -d [-f] name
-		/// <br/>     p4 user -o [name]
-		/// <br/>     p4 user -i [-f]
-		/// <br/> 
-		/// <br/> 	Create a new user specification or edit an existing user specification.
-		/// <br/> 	The specification form is put into a temporary file and the editor
-		/// <br/> 	(configured by the environment variable $P4EDITOR) is invoked.
-		/// <br/> 
-		/// <br/> 	Normally, a user specification is created automatically the first
-		/// <br/> 	time that the user issues any command that updates the depot. The
-		/// <br/> 	'p4 user' command is typically used to edit the user's subscription
-		/// <br/> 	list for change review.
-		/// <br/> 
-		/// <br/> 	The user specification form contains the following fields:
-		/// <br/> 
-		/// <br/> 	User:        The user name (read-only).
-		/// <br/> 
-		/// <br/> 	Email:       The user's email address (Default: user@client).
-		/// <br/> 
-		/// <br/> 	Update:      The date the specification was last modified (read-only).
-		/// <br/> 
-		/// <br/> 	Access:      The date that the user last issued a client command.
-		/// <br/> 
-		/// <br/> 	FullName:    The user's real name.
-		/// <br/> 
-		/// <br/> 	JobView:     Selects jobs that are displayed when the user creates
-		/// <br/> 		     a changelist. These jobs can be closed automatically
-		/// <br/> 		     when the user submits the changelist. For a description
-		/// <br/> 		     of jobview syntax, see 'p4 help jobview'
-		/// <br/> 
-		/// <br/> 	Reviews:     The subscription list for change review.  There is no
-		/// <br/> 	             limit on the number of lines that this field can contain.
-		/// <br/> 		     You can include the following wildcards:
-		/// <br/> 
-		/// <br/> 			 ...            matches any characters including /
-		/// <br/> 			 *              matches any character except /
-		/// <br/> 
-		/// <br/> 	Password:    The user's password.  See 'p4 help passwd'.
-		/// <br/> 
-		/// <br/> 	Type:        Must be 'service', operator, or 'standard'. Default is
-		/// <br/> 		     'standard'. Once set, the user type cannot be changed.
-		/// <br/> 
-		/// <br/> 	AuthMethod:  Must be 'perforce' or 'ldap'. Default is 'perforce'
-		/// <br/> 		     Unless overridden by the 'auth.default.method'
-		/// <br/> 		     configurable, see 'p4 help configurables'. AuthMethod
-		/// <br/> 		     can only be changed when the -f flag has been provided.
-		/// <br/> 
-		/// <br/> 	The -d flag deletes the specified user (unless the user has files
-		/// <br/> 	open).
-		/// <br/> 
-		/// <br/> 	The -o flag writes the user specification to the standard output.
-		/// <br/> 	The user's editor is not invoked.
-		/// <br/> 
-		/// <br/> 	The -i flag reads a user specification from the standard input.
-		/// <br/> 	The user's editor is not invoked.
-		/// <br/> 
-		/// <br/> 	The -f flag forces the creation, update or deletion of the specified
-		/// <br/> 	user, and enables you to change the Last Modified date. By default,
-		/// <br/> 	users can only delete or modify their own user specifications.  The
-		/// <br/> 	-f flag requires 'super' access, which is granted by 'p4 protect'.
-		/// <br/> 
-		/// <br/> 
-		/// </remarks>
+	/// <remarks>
+	/// <br/><b>p4 help user</b>
+	/// <br/> 
+	/// <br/>     user -- Create or edit a user specification
+	/// <br/> 
+	/// <br/>     p4 user [-f] [name]
+	/// <br/>     p4 user -d [-f] name
+	/// <br/>     p4 user -o [name]
+	/// <br/>     p4 user -i [-f]
+	/// <br/> 
+	/// <br/> 	Create a new user specification or edit an existing user specification.
+	/// <br/> 	The specification form is put into a temporary file and the editor
+	/// <br/> 	(configured by the environment variable $P4EDITOR) is invoked.
+	/// <br/> 
+	/// <br/> 	Normally, a user specification is created automatically the first
+	/// <br/> 	time that the user issues any command that updates the depot. The
+	/// <br/> 	'p4 user' command is typically used to edit the user's subscription
+	/// <br/> 	list for change review.
+	/// <br/> 
+	/// <br/> 	The user specification form contains the following fields:
+	/// <br/> 
+	/// <br/> 	User:        The user name (read-only).
+	/// <br/> 
+	/// <br/> 	Email:       The user's email address (Default: user@client).
+	/// <br/> 
+	/// <br/> 	Update:      The date the specification was last modified (read-only).
+	/// <br/> 
+	/// <br/> 	Access:      The date that the user last issued a client command.
+	/// <br/> 
+	/// <br/> 	FullName:    The user's real name.
+	/// <br/> 
+	/// <br/> 	JobView:     Selects jobs that are displayed when the user creates
+	/// <br/> 		     a changelist. These jobs can be closed automatically
+	/// <br/> 		     when the user submits the changelist. For a description
+	/// <br/> 		     of jobview syntax, see 'p4 help jobview'
+	/// <br/> 
+	/// <br/> 	Reviews:     The subscription list for change review.  There is no
+	/// <br/> 	             limit on the number of lines that this field can contain.
+	/// <br/> 		     You can include the following wildcards:
+	/// <br/> 
+	/// <br/> 			 ...            matches any characters including /
+	/// <br/> 			 *              matches any character except /
+	/// <br/> 
+	/// <br/> 	Password:    The user's password.  See 'p4 help passwd'.
+	/// <br/> 
+	/// <br/> 	Type:        Must be 'service', operator, or 'standard'. Default is
+	/// <br/> 		     'standard'. Once set, the user type cannot be changed.
+	/// <br/> 
+	/// <br/> 	AuthMethod:  Must be 'perforce' or 'ldap'. Default is 'perforce'
+	/// <br/> 		     Unless overridden by the 'auth.default.method'
+	/// <br/> 		     configurable, see 'p4 help configurables'. AuthMethod
+	/// <br/> 		     can only be changed when the -f flag has been provided.
+	/// <br/> 
+	/// <br/> 	The -d flag deletes the specified user (unless the user has files
+	/// <br/> 	open).
+	/// <br/> 
+	/// <br/> 	The -o flag writes the user specification to the standard output.
+	/// <br/> 	The user's editor is not invoked.
+	/// <br/> 
+	/// <br/> 	The -i flag reads a user specification from the standard input.
+	/// <br/> 	The user's editor is not invoked.
+	/// <br/> 
+	/// <br/> 	The -f flag forces the creation, update or deletion of the specified
+	/// <br/> 	user, and enables you to change the Last Modified date. By default,
+	/// <br/> 	users can only delete or modify their own user specifications.  The
+	/// <br/> 	-f flag requires 'super' access, which is granted by 'p4 protect'.
+	/// <br/> 
+	/// <br/> 
+	/// </remarks>
 	public class User
 	{
         /// <summary>
@@ -141,19 +141,20 @@ namespace Perforce.P4
 		{
 		}
 
-        /// <summary>
-        /// Parameterized constructor
-        /// </summary>
-        /// <param name="id">Perforce user name</param>
-        /// <param name="fullname">User Full Name</param>
-        /// <param name="password">password</param>
-        /// <param name="emailaddress">email address</param>
-        /// <param name="updated">last user update</param>
-        /// <param name="accessed">last user access</param>
-        /// <param name="jobview">Job View String</param>
-        /// <param name="reviews">Review Specification</param>
-        /// <param name="type">User type</param>
-        /// <param name="spec">User form specificatoin</param>
+		/// <summary>
+		/// Parameterized constructor
+		/// </summary>
+		/// <param name="id">Perforce user name</param>
+		/// <param name="fullname">User Full Name</param>
+		/// <param name="password">password</param>
+		/// <param name="emailaddress">email address</param>
+		/// <param name="updated">last user update</param>
+		/// <param name="accessed">last user access</param>
+		/// <param name="jobview">Job View String</param>
+		/// <param name="reviews">Review Specification</param>
+		/// <param name="type">User type</param>
+		/// <param name="spec">User form specificatoin</param>
+		[ObsoleteAttribute("Use User(string id, string fullname, string password, string emailaddress, DateTime updated, DateTime accessed, string jobview, string authmethod, List<string> reviews, UserType type, FormSpec spec)", false)]
 		public User(string id,
 						string fullname,
 						string password,
@@ -173,6 +174,46 @@ namespace Perforce.P4
 			Updated = updated;
 			Accessed = accessed;
 			JobView = jobview;
+			Reviews = reviews;
+			Type = type;
+			Spec = spec;
+		}
+
+		/// <summary>
+		/// Parameterized constructor
+		/// </summary>
+		/// <param name="id">Perforce user name</param>
+		/// <param name="fullname">User Full Name</param>
+		/// <param name="password">password</param>
+		/// <param name="emailaddress">email address</param>
+		/// <param name="updated">last user update</param>
+		/// <param name="accessed">last user access</param>
+		/// <param name="jobview">Job View String</param>
+		/// <param name="authmethod">Authentication Method</param>
+		/// <param name="reviews">Review Specification</param>
+		/// <param name="type">User type</param>
+		/// <param name="spec">User form specificatoin</param>
+		public User(string id,
+						string fullname,
+						string password,
+						string emailaddress,
+						DateTime updated,
+						DateTime accessed,
+						string jobview,
+						string authmethod,
+						List<string> reviews,
+						UserType type,
+						FormSpec spec
+						)
+		{
+			Id = id;
+			FullName = fullname;
+			Password = password;
+			EmailAddress = emailaddress;
+			Updated = updated;
+			Accessed = accessed;
+			JobView = jobview;
+			AuthMethod = authmethod;
 			Reviews = reviews;
 			Type = type;
 			Spec = spec;
@@ -209,6 +250,10 @@ namespace Perforce.P4
 		/// Selects jobs for inclusion during changelist creation.
 		/// </summary>
 		public string JobView { get; set; }
+		/// <summary>
+		/// Authentication method used for this user
+		/// </summary>
+		public string AuthMethod { get; set; }
 		/// <summary>
 		/// Listing of depot files to be reviewed by user.
 		/// </summary>
@@ -311,6 +356,9 @@ namespace Perforce.P4
 
 			if (objectInfo.ContainsKey("Type"))
 				_type = objectInfo["Type"];
+
+			if (objectInfo.ContainsKey("AuthMethod"))
+				AuthMethod = objectInfo["AuthMethod"];
 		}
 
 		/// <summary>
@@ -374,6 +422,9 @@ namespace Perforce.P4
 			else
 				Type = UserType.Standard;
 
+			if (_baseForm.ContainsKey("AuthMethod"))
+				AuthMethod = _baseForm["AuthMethod"] as string;
+
 			return true;
 		}
 
@@ -395,7 +446,9 @@ namespace Perforce.P4
 													"\r\n" +
 													"Reviews:\r\n{6}" +
 													"\r\n" +
-													"Password:\t{7}\r\n";
+													"Password:\t{7}\r\n" +
+													"\r\n" +
+													"AuthMethod:\t{8}\r\n";
 
 		/// <summary>
 		/// Convert to specification in server format
@@ -413,7 +466,7 @@ namespace Perforce.P4
 			}
 			String value = String.Format(UserSpecFormat, Id, EmailAddress,
 				FormBase.FormatDateTime(Updated), FormBase.FormatDateTime(Accessed),
-				FullName, JobView, reviewsView, Password);
+				FullName, JobView, reviewsView, Password, AuthMethod);
 			return value;
 		}
 	}

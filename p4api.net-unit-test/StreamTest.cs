@@ -46,10 +46,22 @@ namespace p4api.net.unit.test
 		static MapEntry remap = new MapEntry(MapType.Include, new DepotPath("//projectX/main"), null);
 		static ViewMap ignored = null;
         static ViewMap view = null;
+		static ParentView parentView = ParentView.Inherit;
 		static MapEntry ig = new MapEntry(MapType.Include, new DepotPath("//projectX/extra"), null);
         static FormSpec spec = new FormSpec(new List<SpecField>(), new Dictionary<string, string>(), new List<string>(), new List<string>(), new Dictionary<string, string>(),
 			new Dictionary<string,string>(), "here are the comments");
-		
+		static Dictionary<string, object> customfields = new Dictionary<string, object>()
+		{
+			{"testField1", "test value1"},
+			{"testField2", "test value2"},
+			{"testField3", "test value3"},
+			{"testField4", "test value4"},
+			{"listField1", new List<string>{"multiline1","multiline2","multiline3"} },
+			{"testField5", "test value5"},
+		};
+		static ViewMap changeview = null;
+
+
 		static Stream target = null;
 		
 		static void setTarget()
@@ -63,7 +75,8 @@ namespace p4api.net.unit.test
 			target = new Stream(id, updated, accessed,
 			ownername, name, parent, baseparent, type, description,
 			options, firmerthanparent, changeflowstoparent,
-			changeflowsfromparent,paths, remapped, ignored, view, spec);
+			changeflowsfromparent,paths, remapped, ignored, view, 
+			changeview, spec, customfields, parentView);
 		}
 
 		#region Additional test attributes
@@ -118,41 +131,51 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void ParseTest()
         {
-            string streamForm = "Stream:\t{0}\r\n" +
-                                                    "\r\n" +
-                                                    "Update:\t{1}\r\n" +
-                                                    "\r\n" +
-                                                    "Access:\t{2}\r\n" +
-                                                    "\r\n" +
-                                                    "Owner:\t{3}\r\n" +
-                                                    "\r\n" +
-                                                    "Name:\t{4}\r\n" +
-                                                    "\r\n" +
-                                                    "Parent:\t{5}\r\n" +
-                                                    "\r\n" +
-                                                    "Type:\t{6}\r\n" +
-                                                    "\r\n" +
-                                                    "Description:\r\n\t{7}\r\n" +
-                                                    "\r\n" +
-                                                    "Options:\t{8}\r\n" +
-                                                    "\r\n" +
-                                                    "Paths:\r\n\t{9}\r\n" +
-                                                    "\r\n" +
-                                                    "Remapped:\r\n\t{10}\r\n" +
-                                                    "\r\n" +
-                                                    "Ignored:\r\n\t{11}\r\n";
+			string streamForm = "Stream:\t{0}\r\n" +
+													"\r\n" +
+													"Update:\t{1}\r\n" +
+													"\r\n" +
+													"Access:\t{2}\r\n" +
+													"\r\n" +
+													"Owner:\t{3}\r\n" +
+													"\r\n" +
+													"Name:\t{4}\r\n" +
+													"\r\n" +
+													"Parent:\t{5}\r\n" +
+													"\r\n" +
+													"Type:\t{6}\r\n" +
+													"\r\n" +
+													"Description:\r\n\t{7}\r\n" +
+													"\r\n" +
+													"Options:\t{8}\r\n" +
+													"\r\n" +
+													"Paths:\r\n\t{9}\r\n" +
+													"\t{10}\r\n" +
+													"\r\n" +
+													"Remapped:\r\n\t{11}\r\n" +
+													"\r\n" +
+													"Ignored:\r\n\t{12}\r\n" +
+													"\r\n" +
+													"ParentView:\r\n\t{13}\r\n";
 
             String streamData = String.Format(streamForm, "//User/test",
 "", "", "user1", "test", "//User/user1_stream", "development",
 "created by user1.", "allsubmit unlocked toparent fromparent",
-"share ...", "", "");
+"share ... ## In-line comment", "## This is new line comment", "share/... remapped/... #3rd part comment", "Rocket/GUI/core/gui/res/...", "noinherit");
 
+			ViewMap Paths = new ViewMap() { new MapEntry(MapType.Share, new ClientPath("..."), new ClientPath("")) };
             Stream stream = new Stream();
             stream.Parse(streamData);
+			Assert.AreEqual(stream.Description, "created by user1.");
             Assert.AreEqual(stream.OwnerName, "user1");
-            Assert.AreEqual(stream.Id, "//User/test");
+			Assert.AreEqual(stream.Paths[0].Left.ToString(), "...");
+			Assert.AreEqual(stream.Paths[0].Comment.ToString(), "## In-line comment");
+			Assert.AreEqual(stream.Paths[1].Comment.ToString(), "## This is new line comment");
+			Assert.AreEqual(stream.Id, "//User/test");
             Assert.AreEqual(stream.Name, "test");
-        }
+			Assert.AreEqual(stream.ParentView.ToString(), "NoInherit");
+		}
+
 
 		/// <summary>
 		///A test for Description
@@ -318,6 +341,18 @@ namespace p4api.net.unit.test
 			target.Updated = expected;
 			DateTime actual;
 			actual = target.Updated;
+			Assert.AreEqual(expected, actual);
+		}
+
+		/// <summary>
+		///A test fot to String method
+		///</summary>
+		[TestMethod()]
+		public void ToStringTest()
+		{
+			string expected = "Stream:\t//projectX/dev\r\n\r\nUpdate:\t2011/04/10 00:00:00\r\n\r\nAccess:\t2011/04/10 00:00:00\r\n\r\nOwner:\tJohn Smith\r\n\r\nName:\tProjectX development\r\n\r\nParent:\t//projectX/main\r\n\r\nType:\tdevelopment\r\n\r\nDescription:\r\n\tdevelopment stream for experimental work on projectX\r\n\r\nOptions:\townersubmit locked notoparent nofromparent mergedown\r\n\r\nParentView:\tinherit\r\n\r\nPaths:\r\n\tshare //projectX/main\r\n\r\nRemapped:\r\n\t//projectX/main\r\n\r\nIgnored:\r\n\t//projectX/extra\r\n\r\ntestField1:\ttest value1\r\n\r\ntestField2:\ttest value2\r\n\r\ntestField3:\ttest value3\r\n\r\ntestField4:\ttest value4\r\n\r\nlistField1:\r\n\tmultiline1\r\n\tmultiline2\r\n\tmultiline3\r\n\r\ntestField5:\ttest value5\r\n";
+			setTarget();
+			string actual = target.ToString();
 			Assert.AreEqual(expected, actual);
 		}
 	}

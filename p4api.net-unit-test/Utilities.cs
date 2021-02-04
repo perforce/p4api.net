@@ -29,14 +29,14 @@ namespace p4api.net.unit.test
 
     }
 
-	class Utilities
-	{
+    class Utilities
+    {
         private static Logger logger = LogManager.GetCurrentClassLogger();
         private static ResetServerType ResetServer = new ResetServerType();
         private static Stopwatch stopWatchAllTests = null;
         private static Stopwatch stopWatch = null;
         private static int testCount = 0;
-        private static string[] settings = new string[] { "P4CLIENT", "P4CONFIG", "P4IGNORE", "P4PASSWD", "P4PORT", "P4TRUST", "P4TICKETS" };
+        private static string[] settings = new string[] { "P4CLIENT", "P4CONFIG", "P4IGNORE", "P4PASSWD", "P4PORT", "P4TRUST", "P4TICKETS", "P4USER" };
         private static string[] settingValues;
         private static string[] envValues;
         private static string cwd;
@@ -146,82 +146,85 @@ namespace p4api.net.unit.test
             logger.Info("@@@@@@ Time for tests: {0} - {1} s", testCount, stopWatchAllTests.Elapsed);
         }
 
-		public static void ClobberDirectory( String path )
-		{
-			DirectoryInfo di = new DirectoryInfo( path );
+        public static void ClobberDirectory(String path)
+        {
+            DirectoryInfo di = new DirectoryInfo(path);
 
-			ClobberDirectory( di );
-		}
+            ClobberDirectory(di);
+        }
 
-		public static void ClobberDirectory(DirectoryInfo di)
-		{
-			string comSpec = Environment.GetEnvironmentVariable("ComSpec");
-			Process Zapper = new Process();
-			ProcessStartInfo si = new ProcessStartInfo(comSpec, "/c rd /S /Q " + di.FullName);
-			si.WorkingDirectory = Path.GetDirectoryName(di.FullName);
+        public static void ClobberDirectory(DirectoryInfo di)
+        {
+            string comSpec = Environment.GetEnvironmentVariable("ComSpec");
+            Process Zapper = new Process();
+            ProcessStartInfo si = new ProcessStartInfo(comSpec, "/c rd /S /Q " + di.FullName);
+            si.WorkingDirectory = Path.GetDirectoryName(di.FullName);
             si.UseShellExecute = true;
 
-			Zapper.StartInfo = si;
-			try
-			{
-				Zapper.Start();
-			}
-			catch (Exception ex)
-			{
-				logger.Info("In ClobberDirectory, Zapper.Start() failed: {0}", ex.Message);
-			}
-			if (Zapper.HasExited == false)
-			{
-				Zapper.WaitForExit();
-			}
-			if (Directory.Exists(di.FullName))
-			{
-				bool worked = false;
-				int retries = 0;
-				do
-				{
-					if (!di.Exists)
-						return;
+            Zapper.StartInfo = si;
+            try
+            {
+                Zapper.Start();
+            }
+            catch (Exception ex)
+            {
+                logger.Info("In ClobberDirectory, Zapper.Start() failed: {0}", ex.Message);
+            }
+            if (Zapper.HasExited == false)
+            {
+                Zapper.WaitForExit();
+            }
+            if (Directory.Exists(di.FullName))
+            {
+                bool worked = false;
+                int retries = 0;
+                do
+                {
+                    if (!di.Exists)
+                        return;
 
-					try
-					{
-						FileInfo[] files = di.GetFiles();
+                    try
+                    {
+                        FileInfo[] files = di.GetFiles();
 
-						foreach (FileInfo fi in files)
-						{
-							if (fi.IsReadOnly)
-								fi.IsReadOnly = false;
-							fi.Delete();
-						}
-						DirectoryInfo[] subDirs = di.GetDirectories();
-						foreach (DirectoryInfo sdi in subDirs)
-						{
-							ClobberDirectory(sdi);
-						}
+                        foreach (FileInfo fi in files)
+                        {
+                            if (fi.IsReadOnly)
+                                fi.IsReadOnly = false;
+                            fi.Delete();
+                        }
+                        DirectoryInfo[] subDirs = di.GetDirectories();
+                        foreach (DirectoryInfo sdi in subDirs)
+                        {
+                            ClobberDirectory(sdi);
+                        }
 
-						di.Delete();
+                        di.Delete();
 
-						worked = true;
-					}
-					catch (Exception)
-					{
-						System.Threading.Thread.Sleep(100);
-					}
-					retries++;
-				}
-				while (!worked && retries < 2);
-			}
-		}
+                        worked = true;
+                    }
+                    catch (Exception)
+                    {
+                        System.Threading.Thread.Sleep(100);
+                    }
+                    retries++;
+                }
+                while (!worked && retries < 2);
+            }
+        }
 
         static string p4d_exe = System.Environment.GetEnvironmentVariable("P4DPATH");
-        //const String _p4d_cmd = "-vrpc=3 -vnet=9 -p localhost:6666 -Id {1} -r {0} -L p4d.log -vserver=3"; 
+        //const String _p4d_cmd = "-vrpc=3 -vnet=9 -p localhost:6666 -Id {1} -r {0} -L p4d.log -vserver=3";
         const String _p4d_cmd = "-p localhost:6666 -Id {1} -r {0} -L p4d.log";
         static String p4d_cmd = null;
-        static String rsh_p4d_cmd = "rsh:"+p4d_exe+" -r {0} -L p4d.log -vserver=3 -i";
+        static String rsh_p4d_cmd = "rsh:" + p4d_exe + " -r {0} -L p4d.log -vserver=3 -i";
         static String restore_cmd = "-r {0} -jr checkpoint.{1}";
         static String upgrade_cmd = "-r {0} -xu";
         static String generate_key_cmd = string.Empty;
         static string rubbishBin = "c:\\MyTestDir-rubbish-bin";
+
+
+
 
         public static Process DeploySSLP4TestServer(string path, bool Unicode)
         {
@@ -279,7 +282,7 @@ namespace p4api.net.unit.test
             logger.Debug("Client root: {0}", root);
             return root;
 			}
-			
+
         public static void SetClientRoot(Repository rep, string TestDir, bool unicode, string ws_client)
 			{
             Client c = rep.GetClient(ws_client, null);
@@ -293,7 +296,8 @@ namespace p4api.net.unit.test
         public static Process DeployP4TestServer(string path, int checkpointRev, bool unicode, string testName = "")
 		{
 			String zippedFile = "a.exe";
-			if (unicode)
+            string currentPath = Directory.GetCurrentDirectory();
+            if (unicode)
 			{
 				zippedFile = "u.exe";
 			}
@@ -418,7 +422,7 @@ namespace p4api.net.unit.test
 	            {
 	                Process GenKeyandCert = new Process();
 
-                    // generate private key and certificate 
+                    // generate private key and certificate
                     si = new ProcessStartInfo(p4d_exe);
                     si.Arguments = generate_key_cmd;
 	                si.WorkingDirectory = testServerRoot;
@@ -438,6 +442,7 @@ namespace p4api.net.unit.test
 	            Process RestoreCheckPoint = new Process();
                 si = new ProcessStartInfo(p4d_exe);
                 si.Arguments = String.Format(restore_cmd, testServerRoot, checkpointRev);
+                //si.FileName = "p4d.exe";
 	            si.WorkingDirectory = testServerRoot;
 	            si.UseShellExecute = false;
                 si.RedirectStandardOutput = true;

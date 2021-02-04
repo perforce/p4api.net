@@ -145,6 +145,11 @@ namespace Perforce.P4
 		/// </summary>
 		public int MaxLockTime { get; set; }
 		/// <summary>
+		/// The maximum number of files that a member of a group 
+		/// can open using a single command. 
+		/// </summary>
+		public int MaxOpenFiles { get; set; }
+		/// <summary>
 		/// A time (in seconds, unless 'unlimited' or 'unset')
 		/// which determines how long a 'p4 login'
 		/// session ticket remains valid (default is 12 hours).
@@ -189,29 +194,32 @@ namespace Perforce.P4
 			MaxResults = -1;
 			MaxScanRows = -1;
 			MaxLockTime = -1;
+			MaxOpenFiles = -1;
 			TimeOut = -1;
 			PasswordTimeout = -1;
 			OwnerNames = null;
 			UserNames = null;
 			SubGroups = null;
 		}
-        /// <summary>
-        /// Create a group providing all of the properties
-        /// </summary>
-        /// <param name="id"></param>
-        /// <param name="maxResults"></param>
-        /// <param name="maxScanRows"></param>
-        /// <param name="maxLockTime"></param>
-        /// <param name="timeOut"></param>
-        /// <param name="passwordTimeout"></param>
-        /// <param name="ownerNames"></param>
-        /// <param name="userNames"></param>
-        /// <param name="subGroups"></param>
-        /// <param name="spec"></param>
-        public Group(	string id,
+		/// <summary>
+		/// Create a group providing all of the properties
+		/// </summary>
+		/// <param name="id"></param>
+		/// <param name="maxResults"></param>
+		/// <param name="maxScanRows"></param>
+		/// <param name="maxLockTime"></param>
+		/// <param name="maxOpenFiles"></param>
+		/// <param name="timeOut"></param>
+		/// <param name="passwordTimeout"></param>
+		/// <param name="ownerNames"></param>
+		/// <param name="userNames"></param>
+		/// <param name="subGroups"></param>
+		/// <param name="spec"></param>
+		public Group(	string id,
 						int maxResults,
 						int maxScanRows,
 						int maxLockTime,
+						int maxOpenFiles,
 						int timeOut,
 						int passwordTimeout,
 						IList<string> ownerNames,
@@ -223,7 +231,45 @@ namespace Perforce.P4
 			MaxResults = maxResults;
 			MaxScanRows = maxScanRows;
 			MaxLockTime = maxLockTime;
-			TimeOut = maxLockTime;
+			MaxOpenFiles = maxOpenFiles;
+			TimeOut = timeOut;
+			PasswordTimeout = passwordTimeout;
+			OwnerNames = ownerNames;
+			UserNames = userNames;
+			SubGroups = subGroups;
+			Spec = spec;
+		}
+
+		/// <summary>
+		/// Create a group providing all of the properties
+		/// </summary>
+		/// <param name="id"></param>
+		/// <param name="maxResults"></param>
+		/// <param name="maxScanRows"></param>
+		/// <param name="maxLockTime"></param>		
+		/// <param name="timeOut"></param>
+		/// <param name="passwordTimeout"></param>
+		/// <param name="ownerNames"></param>
+		/// <param name="userNames"></param>
+		/// <param name="subGroups"></param>
+		/// <param name="spec"></param>
+		[ObsoleteAttribute("Use Group(string id, int maxResults, int maxScanRows, int maxLockTime, int maxOpenFiles, int timeOut, int passwordTimeout, IList<string> ownerNames, IList<string> userNames, IList<string> subGroups, FormSpec spec)", false)]
+		public Group(string id,
+						int maxResults,
+						int maxScanRows,
+						int maxLockTime,						
+						int timeOut,
+						int passwordTimeout,
+						IList<string> ownerNames,
+						IList<string> userNames,
+						IList<string> subGroups,
+						FormSpec spec)
+		{
+			Id = id;
+			MaxResults = maxResults;
+			MaxScanRows = maxScanRows;
+			MaxLockTime = maxLockTime;
+			TimeOut = timeOut;
 			PasswordTimeout = passwordTimeout;
 			OwnerNames = ownerNames;
 			UserNames = userNames;
@@ -266,6 +312,13 @@ namespace Perforce.P4
 				int v = -1;
 				int.TryParse(objectInfo["MaxLockTime"], out v);
 				MaxLockTime = v;
+			}
+
+			if (objectInfo.ContainsKey("MaxOpenFiles"))
+			{
+				int v = -1;
+				int.TryParse(objectInfo["MaxOpenFiles"], out v);
+				MaxOpenFiles = v;
 			}
 
 			if (objectInfo.ContainsKey("Timeout"))
@@ -376,7 +429,14 @@ namespace Perforce.P4
                 MaxLockTime = v;
             }
 
-            if (_baseForm.ContainsKey("Timeout"))
+			if (_baseForm.ContainsKey("MaxOpenFiles"))
+			{
+				int v = -1;
+				int.TryParse(_baseForm["MaxOpenFiles"] as string, out v);
+				MaxOpenFiles = v;
+			}
+
+			if (_baseForm.ContainsKey("Timeout"))
             {
                 int v = -1;
                 int.TryParse(_baseForm["Timeout"] as string, out v);
@@ -426,7 +486,7 @@ namespace Perforce.P4
 		}
 		#endregion
 
-				/// <summary>
+		/// <summary>
 		/// Format of a user specification used to save a user to the server
 		/// </summary>
 		private static String GroupSpecFormat =
@@ -438,14 +498,16 @@ namespace Perforce.P4
 													"\r\n" +
 													"MaxLockTime:\t{3}\r\n" +
 													"\r\n" +
-													"Timeout:\t{4}\r\n" +
+													"MaxOpenFiles:\t{4}\r\n" +
 													"\r\n" +
-													"{5}" +
-													"Subgroups:\r\n{6}" +
+													"Timeout:\t{5}\r\n" +
 													"\r\n" +
-													"Owners:\r\n{7}" +
+													"{6}" +
+													"Subgroups:\r\n{7}" +
 													"\r\n" +
-													"Users:\r\n{8}";
+													"Owners:\r\n{8}" +
+													"\r\n" +
+													"Users:\r\n{9}";
 
 		/// <summary>
 		/// Convert to specification in server format
@@ -478,9 +540,10 @@ namespace Perforce.P4
 				}
 			}
 			String value = String.Format(GroupSpecFormat, Id, 
-				(MaxResults>0)?MaxResults.ToString():string.Empty,
+				(MaxResults > 0) ? MaxResults.ToString() : string.Empty,
 				(MaxScanRows > 0) ? MaxScanRows.ToString() : string.Empty,
 				(MaxLockTime > 0) ? MaxLockTime.ToString() : string.Empty,
+				(MaxOpenFiles > 0) ? MaxOpenFiles.ToString() : string.Empty,
 				(TimeOut > 0) ? TimeOut.ToString() : string.Empty,
                 (PasswordTimeout > 0) ? "PasswordTimeout:\t" + PasswordTimeout.ToString() + "\r\n" + "\r\n" : string.Empty,
 				subgroupsView, ownersView, usersView);

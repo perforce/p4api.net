@@ -720,5 +720,58 @@ namespace p4api.net.unit.test
 				unicode = !unicode;
 			}
 		}
-	}
+        /// <summary>
+        ///A test for setting and reading back Authmethod
+        ///</summary>
+        [TestMethod()]
+        public void UpdateAuthMethodTest()
+        {
+            bool unicode = false;
+
+            string uri = "localhost:6666";
+            string user = "admin";
+            string pass = string.Empty;
+            string ws_client = "admin_space";
+
+            Process p4d = null;
+
+            try
+            {
+                p4d = Utilities.DeployP4TestServer(TestDir, 7, unicode);
+                Server server = new Server(new ServerAddress(uri));
+
+                Repository rep = new Repository(server);
+
+                using (Connection con = rep.Connection)
+                {
+                    con.UserName = user;
+                    con.Client = new Client();
+                    con.Client.Name = ws_client;
+
+                    bool connected = con.Connect(null);
+                    Assert.IsTrue(connected);
+                    Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+
+                    User u = new User
+                    {
+                        AuthMethod = "ldap",
+                        Id = "bobski",
+                        EmailAddress = "bobski@bobski.bo",
+                        FullName = "bo bo booo"
+                    };
+
+
+                    Options uFlags = new Options(UserCmdFlags.Force);
+                    rep.CreateUser(u, uFlags);
+
+                    User userReadback = rep.GetUser("bobski");
+                    Assert.AreEqual(userReadback.AuthMethod, u.AuthMethod);
+                }
+            }
+            finally
+            {
+                Utilities.RemoveTestServer(p4d, TestDir);
+            }
+        }
+    }
 }

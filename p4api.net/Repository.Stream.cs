@@ -307,7 +307,9 @@ namespace Perforce.P4
 			}
 			P4Command cmd = new P4Command(this, "stream", true);
 
-			cmd.DataSet = stream.ToString();
+            stream.ParentView = GetParentView(stream);
+
+            cmd.DataSet = stream.ToString();
 
 			if (options == null)
 			{
@@ -769,7 +771,27 @@ namespace Perforce.P4
             }
             return null;
         }
-        
 
+        private ParentView GetParentView(Stream stream)
+        {
+            // If ParentView is explicitly set return that value
+            if (!stream.ParentView.Equals(ParentView.None))
+            {
+                return stream.ParentView;
+            }
+            if (stream.Type == StreamType.Mainline)
+            {
+                return GetStream(stream.Id, null).ParentView;
+            }
+            else
+            {
+                if ( stream.Parent == null )
+                {
+                    throw new ArgumentNullException("Parent");
+                }
+
+                return GetStream(stream.Id, stream.Parent.ToString(), null).ParentView;
+            }
+        }
 	}
 }

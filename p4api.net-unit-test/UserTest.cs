@@ -76,9 +76,7 @@ namespace p4api.net.unit.test
 			FormSpec spec = null; // TODO: Initialize to an appropriate value
 			User target = new User(id, fullname, password, emailaddress, updated, accessed, jobview, reviews, type, spec); // TODO: Initialize to an appropriate value
 			DateTime expected = new DateTime(2011, 04, 01);
-			DateTime actual;
-			target.Accessed = expected;
-			actual = target.Accessed;
+			DateTime actual = target.Accessed;
 			Assert.AreEqual(expected, actual);
 		}
 
@@ -100,9 +98,7 @@ namespace p4api.net.unit.test
 			FormSpec spec = null; // TODO: Initialize to an appropriate value
 			User target = new User(id, fullname, password, emailaddress, updated, accessed, jobview, reviews, type, spec); // TODO: Initialize to an appropriate value
 			string expected = "perforce@perforce.com";
-			string actual;
-			target.EmailAddress = expected;
-			actual = target.EmailAddress;
+			string actual = target.EmailAddress;
 			Assert.AreEqual(expected, actual);
 		}
 
@@ -113,8 +109,8 @@ namespace p4api.net.unit.test
 		public void FullNameTest()
 		{
 			string id = string.Empty; // TODO: Initialize to an appropriate value
-			string fullname = string.Empty; // TODO: Initialize to an appropriate value
-			string password = "John Smith";
+			string fullname = "John Smith"; 
+			string password = string.Empty; // TODO: Initialize to an appropriate value
 			string emailaddress = string.Empty; // TODO: Initialize to an appropriate value
 			DateTime updated = new DateTime(); // TODO: Initialize to an appropriate value
 			DateTime accessed = new DateTime(); // TODO: Initialize to an appropriate value
@@ -124,9 +120,7 @@ namespace p4api.net.unit.test
 			FormSpec spec = null; // TODO: Initialize to an appropriate value
 			User target = new User(id, fullname, password, emailaddress, updated, accessed, jobview, reviews, type, spec); // TODO: Initialize to an appropriate value
 			string expected = "John Smith";
-			string actual;
-			target.FullName = expected;
-			actual = target.FullName;
+			string actual = target.FullName;
 			Assert.AreEqual(expected, actual);
 		}
 
@@ -148,9 +142,7 @@ namespace p4api.net.unit.test
 			FormSpec spec = null; // TODO: Initialize to an appropriate value
 			User target = new User(id, fullname, password, emailaddress, updated, accessed, jobview, reviews, type, spec); // TODO: Initialize to an appropriate value
 			string expected = "jsmith";
-			string actual;
-			target.Id = expected;
-			actual = target.Id;
+			string actual = target.Id;
 			Assert.AreEqual(expected, actual);
 		}
 
@@ -172,9 +164,7 @@ namespace p4api.net.unit.test
 			FormSpec spec = null; // TODO: Initialize to an appropriate value
 			User target = new User(id, fullname, password, emailaddress, updated, accessed, jobview, reviews, type, spec); // TODO: Initialize to an appropriate value
 			string expected = "status=open type=bug";
-			string actual;
-			target.JobView = expected;
-			actual = target.JobView;
+			string actual = target.JobView;
 			Assert.AreEqual(expected, actual);
 		}
 
@@ -184,9 +174,9 @@ namespace p4api.net.unit.test
 		[TestMethod()]
 		public void PasswordTest()
 		{
-			string id = "password";
+			string id = string.Empty; // TODO: Initialize to an appropriate value
 			string fullname = string.Empty; // TODO: Initialize to an appropriate value
-			string password = string.Empty; // TODO: Initialize to an appropriate value
+			string password = "password"; // TODO: Initialize to an appropriate value
 			string emailaddress = string.Empty; // TODO: Initialize to an appropriate value
 			DateTime updated = new DateTime(); // TODO: Initialize to an appropriate value
 			DateTime accessed = new DateTime(); // TODO: Initialize to an appropriate value
@@ -196,9 +186,7 @@ namespace p4api.net.unit.test
 			FormSpec spec = null; // TODO: Initialize to an appropriate value
 			User target = new User(id, fullname, password, emailaddress, updated, accessed, jobview, reviews, type, spec); // TODO: Initialize to an appropriate value
 			string expected = "password";
-			string actual;
-			target.Password = expected;
-			actual = target.Password;
+			string actual = target.Password;
 			Assert.AreEqual(expected, actual);
 		}
 
@@ -235,9 +223,7 @@ namespace p4api.net.unit.test
 			FormSpec spec = null; // TODO: Initialize to an appropriate value
 			User target = new User(id, fullname, password, emailaddress, updated, accessed, jobview, reviews, type, spec); // TODO: Initialize to an appropriate value
 			UserType expected = UserType.Service;
-			UserType actual;
-			target.Type = expected;
-			actual = target.Type;
+			UserType actual = target.Type;
 			Assert.AreEqual(expected, actual);
 		}
 
@@ -259,9 +245,30 @@ namespace p4api.net.unit.test
 			FormSpec spec = null; // TODO: Initialize to an appropriate value
 			User target = new User(id, fullname, password, emailaddress, updated, accessed, jobview, reviews, type, spec); // TODO: Initialize to an appropriate value
 			DateTime expected = new DateTime(2011, 04, 01);
-			DateTime actual;
-			target.Updated = expected;
-			actual = target.Updated;
+			DateTime actual = target.Updated;
+			Assert.AreEqual(expected, actual);
+		}
+
+		/// <summary>
+		///A test for Updated
+		///</summary>
+		[TestMethod()]
+		public void AuthMethodTest()
+		{
+			string id = string.Empty; // TODO: Initialize to an appropriate value
+			string fullname = string.Empty; // TODO: Initialize to an appropriate value
+			string password = string.Empty; // TODO: Initialize to an appropriate value
+			string emailaddress = string.Empty; // TODO: Initialize to an appropriate value
+			DateTime updated = new DateTime(); // TODO: Initialize to an appropriate value
+			DateTime accessed = new DateTime(); // TODO: Initialize to an appropriate value
+			string jobview = string.Empty; // TODO: Initialize to an appropriate value
+			List<string> reviews = null; // TODO: Initialize to an appropriate value
+			UserType type = new UserType(); // TODO: Initialize to an appropriate value
+			string authmethod = "perforce+2fa";
+			FormSpec spec = null; // TODO: Initialize to an appropriate value
+			User target = new User(id, fullname, password, emailaddress, updated, accessed, jobview, authmethod, reviews, type, spec); // TODO: Initialize to an appropriate value
+			string expected = "perforce+2fa";
+			string actual = target.AuthMethod;
 			Assert.AreEqual(expected, actual);
 		}
 
@@ -313,6 +320,8 @@ Reviews:
 	//depot/poetry
 	//depot/movies
 
+AuthMethod: ldap+2fa
+
 Password:	******";
 		/// <summary>
 		///A test for Parse
@@ -323,6 +332,7 @@ Password:	******";
 			User target = new User();
 			target.Parse(spec);
 			Assert.AreEqual(target.Id, "fred");
+			Assert.AreEqual(target.AuthMethod, "ldap+2fa");
 		}
 	}
 }

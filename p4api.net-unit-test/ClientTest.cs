@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using NLog;
+using System.Runtime.Remoting.Messaging;
 
 namespace p4api.net.unit.test
 {
@@ -125,6 +126,8 @@ namespace p4api.net.unit.test
             workspaceInfo["AltRoots0"] = "C:\\alt0";
             workspaceInfo["AltRoots1"] = "C:\\alt1";
             workspaceInfo["Stream"] = "//Rocket/dev1";
+            workspaceInfo["Type"] = "readonly";
+            workspaceInfo["ChangeView0"] = "//depot/main/p4/test@1";
             workspaceInfo["View0"] = "	//depot/main/p4/... //dbarbee_win-dbarbee/main/p4/...";
             // new MapEntry(MapType.Include,
             //		new PathSpec(PathType.DEPOT_PATH, null, "//depot/main/p4/..."),
@@ -152,6 +155,8 @@ namespace p4api.net.unit.test
             Assert.AreEqual("Miss Manners client", target.Description);
             Assert.AreEqual("C:\\alt0", target.AltRoots[0]);
             Assert.AreEqual("C:\\alt1", target.AltRoots[1]);
+            Assert.AreEqual(ClientType.@readonly, target.ClientType);
+            Assert.AreEqual("//depot/main/p4/test@1", target.ChangeView[0]);
             Assert.AreEqual("//Rocket/dev1", target.Stream);
             Assert.AreEqual(new MapEntry(MapType.Include,
                     new DepotPath("//depot/main/p4/..."),
@@ -175,7 +180,7 @@ namespace p4api.net.unit.test
         {
             Client target = new Client(); // TODO: Initialize to an appropriate value
             string spec =
-                "Client:\tclientName\r\n\r\nUpdate:\t2010/01/02 03:04:05\r\n\r\nAccess:\t2011/02/03 04:05:06\r\n\r\nOwner:\tJoeOwner\r\n\r\nHost:\tMissManners\r\n\r\nDescription:\r\n\tMiss Manners client\r\n\r\nRoot:\tC:\\clientname\r\n\r\nAltRoots:\r\n\tC:\\alt0\r\n\tC:\\alt1\r\n\r\nOptions:\tallwrite noclobber compress unlocked modtime normdir\r\n\r\nSubmitOptions:\trevertunchanged+reopen\r\n\r\nLineEnd:\tLocal\r\n\r\nView:\r\n\t//depot/main/p4/... //dbarbee_win-dbarbee/main/p4/...\r\n\t-//usr/... //dbarbee_win-dbarbee/usr/...\r\n\t+//spec/... //dbarbee_win-dbarbee/spec/...\r\n";
+                "Client:\tclientName\r\n\r\nUpdate:\t2010/01/02 03:04:05\r\n\r\nAccess:\t2011/02/03 04:05:06\r\n\r\nOwner:\tJoeOwner\r\n\r\nHost:\tMissManners\r\n\r\nDescription:\r\n\tMiss Manners client\r\n\r\nRoot:\tC:\\clientname\r\n\r\nAltRoots:\r\n\tC:\\alt0\r\n\tC:\\alt1\r\n\r\nChangeView:\r\n\t//depot/main/p4/changeview1@1\r\n\t//depot/main/p4/changeview2@1\r\n\r\nOptions:\tallwrite noclobber compress unlocked modtime normdir\r\n\r\nSubmitOptions:\trevertunchanged+reopen\r\n\r\nLineEnd:\tLocal\r\n\r\nView:\r\n\t//depot/main/p4/... //dbarbee_win-dbarbee/main/p4/...\r\n\t-//usr/... //dbarbee_win-dbarbee/usr/...\r\n\t+//spec/... //dbarbee_win-dbarbee/spec/...\r\n";
             bool expected = true;
             bool actual;
             actual = target.Parse(spec);
@@ -193,6 +198,8 @@ namespace p4api.net.unit.test
             Assert.AreEqual("Miss Manners client", target.Description);
             Assert.AreEqual("C:\\alt0", target.AltRoots[0]);
             Assert.AreEqual("C:\\alt1", target.AltRoots[1]);
+            Assert.AreEqual("//depot/main/p4/changeview1@1", target.ChangeView[0]);
+            Assert.AreEqual("//depot/main/p4/changeview2@1", target.ChangeView[1]);
             Assert.AreEqual(new MapEntry(MapType.Include,
                     new DepotPath("//depot/main/p4/..."),
                     new ClientPath("//dbarbee_win-dbarbee/main/p4/...")),
@@ -238,7 +245,7 @@ namespace p4api.net.unit.test
             });
 
             string expected =
-                "Client:\tclientName\n\nUpdate:\t2010/01/02 03:04:05\n\nAccess:\t2011/02/03 04:05:06\n\nOwner:\tJoeOwner\n\nHost:\tMissManners\n\nDescription:\n\tMiss Manners client\n\nRoot:\tC:\\clientname\n\nAltRoots:\n\tC:\\alt0\n\tC:\\alt1\n\nOptions:\tnoallwrite noclobber nocompress unlocked nomodtime normdir\n\nSubmitOptions:\tsubmitunchanged\n\nLineEnd:\tLocal\n\nStream:\t//Stream/main\n\nStreamAtChange:\t111\n\nServerID:\tperforce:1666\n\nView:\n\t//depot/main/p4/... //dbarbee_win-dbarbee/main/p4/...\n\t-//usr/... //dbarbee_win-dbarbee/usr/...\n\t+//spec/... //dbarbee_win-dbarbee/spec/...\n";
+                "Client:\tclientName\n\nUpdate:\t2010/01/02 03:04:05\n\nAccess:\t2011/02/03 04:05:06\n\nOwner:\tJoeOwner\n\nHost:\tMissManners\n\nDescription:\n\tMiss Manners client\n\nRoot:\tC:\\clientname\n\nAltRoots:\n\tC:\\alt0\n\tC:\\alt1\n\nOptions:\tnoallwrite noclobber nocompress unlocked nomodtime normdir\n\nSubmitOptions:\tsubmitunchanged\n\nLineEnd:\tLocal\n\nType:\twriteable\n\nStream:\t//Stream/main\n\nStreamAtChange:\t111\n\nServerID:\tperforce:1666\n\nView:\n\t//depot/main/p4/... //dbarbee_win-dbarbee/main/p4/...\n\t-//usr/... //dbarbee_win-dbarbee/usr/...\n\t+//spec/... //dbarbee_win-dbarbee/spec/...\n";
             string actual;
             actual = target.ToString();
             Assert.AreEqual(expected, actual);
@@ -267,6 +274,8 @@ namespace p4api.net.unit.test
             target.ServerID = "perforce:1666";
             target.Stream = "//Stream/main";
             target.StreamAtChange = "111";
+            target.ChangeView = new List<string>();
+            target.ChangeView.Add("//dbarbee_win-dbarbee/main/p4/test@2");
 
             target.ViewMap = new ViewMap(new string[]
             {
@@ -276,7 +285,7 @@ namespace p4api.net.unit.test
             });
 
             string expected =
-                "Client:\tclientName\n\nUpdate:\t2010/01/02 03:04:05\n\nAccess:\t2011/02/03 04:05:06\n\nOwner:\tJoeOwner\n\nHost:\tMissManners\n\nDescription:\n\tMiss Manners client\n\nRoot:\tC:\\clientname\n\nAltRoots:\n\tC:\\alt0\n\tC:\\alt1\n\nOptions:\tallwrite noclobber compress unlocked modtime normdir\n\nSubmitOptions:\trevertunchanged+reopen\n\nLineEnd:\tLocal\n\nStream:\t//Stream/main\n\nStreamAtChange:\t111\n\nServerID:\tperforce:1666\n\nView:\n\t//depot/main/p4/... //dbarbee_win-dbarbee/main/p4/...\n\t-//usr/... //dbarbee_win-dbarbee/usr/...\n\t+//spec/... //dbarbee_win-dbarbee/spec/...\n";
+                "Client:\tclientName\n\nUpdate:\t2010/01/02 03:04:05\n\nAccess:\t2011/02/03 04:05:06\n\nOwner:\tJoeOwner\n\nHost:\tMissManners\n\nDescription:\n\tMiss Manners client\n\nRoot:\tC:\\clientname\n\nAltRoots:\n\tC:\\alt0\n\tC:\\alt1\n\nOptions:\tallwrite noclobber compress unlocked modtime normdir\n\nSubmitOptions:\trevertunchanged+reopen\n\nLineEnd:\tLocal\n\nType:\twriteable\n\nStream:\t//Stream/main\n\nStreamAtChange:\t111\n\nServerID:\tperforce:1666\n\nChangeView:\t//dbarbee_win-dbarbee/main/p4/test@2\n\nView:\n\t//depot/main/p4/... //dbarbee_win-dbarbee/main/p4/...\n\t-//usr/... //dbarbee_win-dbarbee/usr/...\n\t+//spec/... //dbarbee_win-dbarbee/spec/...\n";
             string actual;
             actual = target.ToString();
             Assert.AreEqual(expected, actual);

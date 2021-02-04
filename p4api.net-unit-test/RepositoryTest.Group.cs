@@ -699,6 +699,77 @@ namespace p4api.net.unit.test
             }
         }
 
+        /// <summary>
+        ///A test that creates and reads back the Group
+        ///</summary>
+        [TestMethod()]
+        public void CreateVerifyGroupTest()
+        {
+            bool unicode = false;
 
-	}
+            string uri = "localhost:6666";
+            string user = "admin";
+            string pass = string.Empty;
+            string ws_client = "admin_space";
+
+            string targetGroup = "newgroup1";
+
+            for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
+            {
+                Process p4d = Utilities.DeployP4TestServer(TestDir, 7, unicode);
+                Server server = new Server(new ServerAddress(uri));
+                try
+                {
+                    Repository rep = new Repository(server);
+
+                    using (Connection con = rep.Connection)
+                    {
+                        con.UserName = user;
+                        con.Client = new Client();
+                        con.Client.Name = ws_client;
+
+                        bool connected = con.Connect(null);
+                        Assert.IsTrue(connected);
+
+                        Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+
+                        Group u = new Group();
+                        u.Id = targetGroup;
+                        u.UserNames = new List<string> { "Alex" };
+                        u.OwnerNames = new List<string> { "Alex" };
+                        u.MaxResults = 9999;
+                        u.MaxScanRows = 101;
+                        u.MaxLockTime = 102;
+                        u.MaxOpenFiles = 103;
+                        u.TimeOut = 104;
+                        u.PasswordTimeout = 105;
+                        
+                        //GroupOptions uFlags = new GroupOptions(GroupFlags.Force);
+                        Group createdGroup = rep.CreateGroup(u, null);
+
+                        Assert.IsNotNull(createdGroup);
+                        Assert.AreEqual(targetGroup, createdGroup.Id);
+
+                        Group readGroup = rep.GetGroup(targetGroup, null);
+
+                        Assert.AreEqual(createdGroup.MaxResults, readGroup.MaxResults);
+                        Assert.AreEqual(createdGroup.MaxScanRows, readGroup.MaxScanRows);
+                        Assert.AreEqual(createdGroup.MaxLockTime, readGroup.MaxLockTime);
+                        Assert.AreEqual(createdGroup.MaxOpenFiles, readGroup.MaxOpenFiles);
+                        Assert.AreEqual(createdGroup.TimeOut, readGroup.TimeOut);
+                        Assert.AreEqual(createdGroup.PasswordTimeout, readGroup.PasswordTimeout);
+
+
+                    }
+                }
+                finally
+                {
+                    Utilities.RemoveTestServer(p4d, TestDir);
+                }
+                unicode = !unicode;
+            }
+        }
+
+
+    }
 }

@@ -124,6 +124,8 @@ namespace Perforce.P4
 			Formats = new List<string>();
 			Values = new Dictionary<string,string>();
 			Presets = new Dictionary<string,string>();
+			Openable = new List<string>();
+			Maxwords = new List<string>();
 			Comments = null;
 		}
 
@@ -132,7 +134,7 @@ namespace Perforce.P4
 		/// </summary>
         public FormSpec(List<SpecField> fields, Dictionary<String, String> fieldmap, 
             List<String> words, List<String> formats, Dictionary<String, String> values,
-			Dictionary<String, String> presets, string comments)
+			Dictionary<String, String> presets, List<string> openable, List<string> maxwords, string comments)
 		{
 			Fields = fields;
 		    FieldMap = fieldmap;
@@ -140,7 +142,20 @@ namespace Perforce.P4
 			Formats = formats;
 			Values = values;
 			Presets = presets;
+			Openable = openable;
+			Maxwords = maxwords;
 			Comments = comments;
+		}
+
+		/// <summary>
+		/// Create a FormSpec
+		/// </summary>
+		[ObsoleteAttribute("Use FormSpec(List<SpecField> fields, Dictionary<String, String> fieldmap, List < String > words, List < String > formats, Dictionary < String, String > values, Dictionary < String, String > presets, List<string> openable, List<string> maxwords, string comments)", false)]
+		public FormSpec(List<SpecField> fields, Dictionary<String, String> fieldmap,
+			List<String> words, List<String> formats, Dictionary<String, String> values,
+			Dictionary<String, String> presets, string comments)
+			: this(fields, fieldmap, words, formats, values, presets, null, null, comments)
+		{ 
 		}
 
 		/// <summary>
@@ -173,6 +188,10 @@ namespace Perforce.P4
 		/// See the main Perforce documentation for formats used here. 
 		/// </remarks>
 		public Dictionary<String, String> Presets { get; set; }
+
+		public IList<String> Openable { get; set; }
+		public IList<String> Maxwords { get; set; }
+
 		/// <summary>
 		/// a single (possibly rather long) string (which may contain embedded 
 		/// newlines) containing comments to be optionally used in GUI or 
@@ -268,6 +287,24 @@ namespace Perforce.P4
 				string[] parts = line.Split(new char[] { ' ' }, 2);
 				val.Presets[parts[0]] = parts[1];
 				key = String.Format("Presets{0}", ++idx);
+			}
+
+			idx = 0;
+			key = String.Format("Openable{0}", idx);
+			while (obj.ContainsKey(key))
+			{
+				string word = obj[key];
+				val.Openable.Add(word);
+				key = String.Format("Openable{0}", ++idx);
+			}
+
+			idx = 0;
+			key = String.Format("Maxwords{0}", idx);
+			while (obj.ContainsKey(key))
+			{
+				string word = obj[key];
+				val.Maxwords.Add(word);
+				key = String.Format("Maxwords{0}", ++idx);
 			}
 
 			if (obj.ContainsKey("Comments"))

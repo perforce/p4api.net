@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration( "" )]
 [assembly: AssemblyCompany("Perforce Software, Inc.")]
 [assembly: AssemblyProduct("Helix Core API for .NET")]
-[assembly: AssemblyCopyright("Copyright (C) 2020 Perforce Software, Inc.")]
+[assembly: AssemblyCopyright("Copyright (C) 2021 Perforce Software, Inc.")]
 [assembly: AssemblyTrademark( "" )]
 [assembly: AssemblyCulture( "" )]
 
@@ -32,7 +32,7 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("2020.1.193.5313")]
-[assembly: AssemblyFileVersion("2020.1.193.5313")]
+[assembly: AssemblyVersion("2020.2.207.5590")]
+[assembly: AssemblyFileVersion("2020.2.207.5590")]
 
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("p4api.net-unit-test")]

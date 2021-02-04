@@ -66,6 +66,8 @@ namespace p4api.net.unit.test
                                                     "\r\n" +
                                                     "MaxLockTime:\t20\r\n" +
                                                     "\r\n" +
+                                                    "MaxOpenFiles:\t50\r\n" +
+                                                    "\r\n" +
                                                     "Timeout:\t30\r\n" +
                                                     "\r\n" +
                                                     "PasswordTimeout:\t40\r\n" +
@@ -104,6 +106,7 @@ namespace p4api.net.unit.test
             Assert.AreEqual(target.MaxLockTime, 20);
             Assert.AreEqual(target.TimeOut, 30);
             Assert.AreEqual(target.PasswordTimeout, 40);
+            Assert.AreEqual(target.MaxOpenFiles, 50);
             Assert.AreEqual(target.OwnerNames[0], "Alpha");
             Assert.AreEqual(target.OwnerNames[1], "Beta");
             Assert.AreEqual(target.UserNames[0], "Alice");
@@ -125,6 +128,7 @@ namespace p4api.net.unit.test
             target.MaxLockTime = 20;
             target.TimeOut = 30;
             target.PasswordTimeout = 40;
+            target.MaxOpenFiles = 50;
             target.OwnerNames = new List<string>() { "Alpha", "Beta" };
             target.UserNames = new List<string>() { "Alice", "Bob" };
             target.SubGroups = new List<string>() { "SG1", "SG2" };
@@ -151,6 +155,7 @@ namespace p4api.net.unit.test
             objectInfo["MaxLockTime"] = "20";
             objectInfo["Timeout"] = "30";
             objectInfo["PasswordTimeout"] = "40";
+            objectInfo["MaxOpenFiles"] = "50";
 
             objectInfo["Users0"] = "Alice";
             objectInfo["Users1"] = "Bob";
@@ -167,6 +172,7 @@ namespace p4api.net.unit.test
             Assert.AreEqual(target.MaxResults, 100);
             Assert.AreEqual(target.MaxScanRows, 10);
             Assert.AreEqual(target.MaxLockTime, 20);
+            Assert.AreEqual(target.MaxOpenFiles, 50);
             Assert.AreEqual(target.TimeOut, 30);
             Assert.AreEqual(target.PasswordTimeout, 40);
             Assert.AreEqual(target.OwnerNames[0], "Alpha");

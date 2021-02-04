@@ -184,9 +184,27 @@ namespace Perforce.P4
 
 		private StringEnum<ChangeListType> _type;
 
-        /// <summary>
-        /// Property to access type of the changelist
-        /// </summary>
+		/// <summary>
+		/// Property to access Identity, 
+		/// Identifier for this change.
+		/// </summary>
+		public string Identity { get; set; }
+
+		/// <summary>
+		/// Property to read ImportedBy,
+		/// The user who fetched or pushed this 
+		/// change to this server.
+		/// </summary>
+		public string ImportedBy { get; private set; }
+
+		/// <summary>
+		/// Property to access stream that is to be 
+		/// added to this changelist.
+		/// </summary>
+		public string Stream { get; set; }
+		/// <summary>
+		/// Property to access type of the changelist
+		/// </summary>
 		public ChangeListType Type 
 		{
 			get { return _type; }
@@ -291,7 +309,25 @@ namespace Perforce.P4
 				OwnerName = objectInfo["User"];
 			else if (objectInfo.ContainsKey("user"))
 				OwnerName = objectInfo["user"];
-			
+
+			if (objectInfo.ContainsKey("ImportedBy"))
+				ImportedBy = objectInfo["ImportedBy"];
+			else if (objectInfo.ContainsKey("importedby"))
+				ImportedBy = objectInfo["importedby"];
+			else if (objectInfo.ContainsKey("Importedby"))
+				ImportedBy = objectInfo["Importedby"];
+			else if (objectInfo.ContainsKey("importedBy"))
+				ImportedBy = objectInfo["importedBy"];
+
+			if (objectInfo.ContainsKey("Identity"))
+				Identity = objectInfo["Identity"];
+			else if (objectInfo.ContainsKey("changeIdentity"))
+				Identity = objectInfo["changeIdentity"];
+
+			if (objectInfo.ContainsKey("Stream"))
+				Identity = objectInfo["Stream"];
+			else if (objectInfo.ContainsKey("stream"))
+				Identity = objectInfo["stream"];
 
 			if (objectInfo.ContainsKey("Status"))
 			{
@@ -557,6 +593,15 @@ namespace Perforce.P4
 				_type = (string)_baseForm["Type"];
 			}
 
+			if (_baseForm.ContainsKey("Identity"))
+				Identity = (string)_baseForm["Identity"];
+
+			if (_baseForm.ContainsKey("ImportedBy"))
+				ImportedBy = (string)_baseForm["ImportedBy"];
+
+			if (_baseForm.ContainsKey("Stream"))
+				ImportedBy = (string)_baseForm["Stream"];
+
 			if (_baseForm.ContainsKey("Description"))
 			{
 				if (_baseForm["Description"] is string)
@@ -697,14 +742,17 @@ namespace Perforce.P4
 													"\n" +
 													"Status:\t{4}\n" +
 													"\n" +
-													"{5}" +
+													"{5}" + // Type
+													"{6}" + // ImporteBy
+													"{7}" + // Identity
 													"Description:\n" +
-													"\t{6}\n" +
+													"\t{8}\n" + //Description
 													"\n" +
 													"Jobs:\n" +
-													"{7}\n" +
+													"{9}\n" + //Jobs
 													"\n" +
-													"Files:\n{8}";
+													"{10}" + // Stream
+													"Files:\n{11}";
 
 		/// <summary>
 		/// Convert to specification in server format
@@ -751,6 +799,18 @@ namespace Perforce.P4
 			if (_type == ChangeListType.Public)
 				restrictedStr = "Type:\tpublic\n\n";
 
+			String importedStr = String.Empty;
+			if (ImportedBy != null)
+				importedStr = "ImportedBy:\t" + ImportedBy + "\n\n";
+
+			String identityStr = String.Empty;
+			if (Identity != null)
+				identityStr = "Identity:\t" + Identity + "\n\n";
+
+			String streamStr = String.Empty;
+			if (Stream != null)
+				identityStr = "Stream:\t" + Stream + "\n\n";
+
 			String statusStr = Pending ? "pending" : "submitted";
 			if (Id == -1)
 				statusStr = "new";
@@ -758,7 +818,7 @@ namespace Perforce.P4
 			String value = String.Format(ChangelistSpecFormat, ChangeNumbeStr,
 				FormBase.FormatDateTime(ModifiedDate), ClientId, OwnerName,
 				statusStr,
-				restrictedStr, descStr, jobsStr, filesStr);
+				restrictedStr, importedStr, identityStr, descStr, jobsStr, streamStr, filesStr);
 			return value;
 		}
 

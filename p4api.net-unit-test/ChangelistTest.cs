@@ -684,5 +684,52 @@ Files:
 			Assert.AreEqual(target.Jobs.Count, target2.Jobs.Count);
 			Assert.AreEqual(target.Files.Count, target2.Files.Count);
 		}
-	}
+
+        /// <summary>
+        ///A test for Stream field in chnagelist spec
+        ///</summary>
+        [TestMethod()]
+        public void SetStreamTest()
+        {
+            bool unicode = false;
+
+            string uri = "localhost:6666";
+            string user = "admin";
+            string pass = string.Empty;
+            string ws_client = "admin_space";
+
+
+            for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
+            {
+                Process p4d = Utilities.DeployP4TestServer(TestDir, 6, unicode);
+                Server server = new Server(new ServerAddress(uri));
+                try
+                {
+                    Repository rep = new Repository(server);
+
+                    using (Connection con = rep.Connection)
+                    {
+                        con.UserName = user;
+                        con.Client = new Client();
+                        con.Client.Name = ws_client;
+
+                        Changelist change = new Changelist();
+                        change.initialize(con);
+
+                        // Add Stream field
+                        change.Stream = "//test/stream1";
+
+                        // Convert change object to string
+                        string changeString = change.ToString();
+                        Assert.AreEqual(changeString, "Change:\tnew\n\nDate:\t\n\nClient:\t\n\nUser:\t\n\nStatus:\tnew\n\nStream:\t//test/stream1\n\nDescription:\n\t\n\nJobs:\n\n\nFiles:\n");
+                    }
+                }
+                finally
+                {
+                    Utilities.RemoveTestServer(p4d, TestDir);
+                }
+                unicode = !unicode;
+            }
+        }
+    }
 }
