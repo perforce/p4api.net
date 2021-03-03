@@ -413,7 +413,7 @@ namespace Perforce.P4
 			P4Command cmd = null;
 			if ((files != null) && (files.Length > 0))
 			{
-				cmd = new P4Command(this, "labels", true, FileSpec.ToStrings(files));
+				cmd = new P4Command(this, "labels", true, FileSpec.ToEscapedStrings(files));
 			}
 			else
 			{
