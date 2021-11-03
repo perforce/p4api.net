@@ -166,7 +166,7 @@ namespace Perforce.P4
         public P4ClientError ConnectionError { get; private set; }
 
 
-        private void LogBridgeMessage(int log_level,
+        private static void LogBridgeMessage(int log_level,
                                         String file,
                                         int line,
                                         String message)
@@ -189,7 +189,7 @@ namespace Perforce.P4
         private string _prog_ver;
         private string _cwd;
 
-        private P4CallBacks.LogMessageDelegate logfn = null;
+        private static P4CallBacks.LogMessageDelegate logfn = new P4CallBacks.LogMessageDelegate(LogBridgeMessage);
 
         /// <summary>
         /// Create a P4BridgeServer used to connect to the specified P4Server
@@ -266,10 +266,6 @@ namespace Perforce.P4
             // we can determine if the target server is Unicode enabled or not, so we
             // can use the correct encoding for those parameters
 
-            if (logfn == null)
-            {
-                logfn = new P4CallBacks.LogMessageDelegate(LogBridgeMessage);
-            }
             pServer = P4Bridge.ConnectA(server, _user, null, null, logfn);
 
             if (pServer != IntPtr.Zero)
@@ -399,9 +395,6 @@ namespace Perforce.P4
 
             CurrentEncodeing = P4Encoding.ASCII;
 
-            P4CallBacks.LogMessageDelegate logfn =
-                new P4CallBacks.LogMessageDelegate(LogBridgeMessage);
-
             // encode the username, password, and workspace name in UTF-8, we
             // won't know if the client supports Unicode until after connect 
             // returns
@@ -413,7 +406,6 @@ namespace Perforce.P4
                     pLogFn = Marshal.GetFunctionPointerForDelegate(logfn);
 
                 pServer = P4Bridge.TrustedConnectW(server, pUser, IntPtr.Zero, pClient, trust_flag, fingerprint, pLogFn);
-
             }
 
             if (pServer == IntPtr.Zero)
