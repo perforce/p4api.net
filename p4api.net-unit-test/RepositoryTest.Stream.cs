@@ -1057,17 +1057,14 @@ namespace p4api.net.unit.test
                         IList<Stream> s = rep.GetStreams(new Options(StreamsCmdFlags.None,
                             "Parent=//flow/mainline & Type=development", null, "//...", 3));
 
-
                         Assert.IsNotNull(s);
                         Assert.AreEqual(3, s.Count);
                         Assert.AreEqual("D2", s[1].Name);
-						//DateTime time = new DateTime(2011, 6, 24, 16, 23, 49);
-						//if (unicode)
-						//{
-						//    time = new DateTime(2011, 6, 27, 15, 4, 21);
-						//}
-						//Assert.AreEqual(s[0].Accessed,time);
-						//Assert.AreEqual(s[0].Updated, time);
+
+                        string viewmatch = "//flow/mainline/...";
+                        IList<Stream> s1 = rep.GetStreams(new Options(StreamsCmdFlags.None, null, null, null, 5, viewmatch));
+                        Assert.IsNotNull(s1);
+                        Assert.AreEqual("//flow/D1", s1[0].Id);
                     }
                 }
                 finally
@@ -1604,6 +1601,7 @@ Fields:
         712 Ignored wlist 64 optional
         713 View wlist 64 optional
         714 ChangeView llist 64 always
+        715 ParentView word 0 required
         NNN TestField word 32 optional
         NNN NewField llist 32 optional
         NNN DiffrentField word 32 optional
@@ -1619,6 +1617,10 @@ Formats:
 
 Values:
         Options allsubmit/ownersubmit,unlocked/locked,toparent/notoparent,fromparent/nofromparent,mergedown/mergeany
+        ParentView noinherit/inherit
+
+Presets:
+        ParentView inherit
 
 Openable:
         Owner isolate
@@ -1627,6 +1629,7 @@ Openable:
         Type isolate
         Description isolate
         Options isolate
+        ParentView isolate
         Paths propagate
         Remapped propagate
         Ignored propagate
@@ -1656,6 +1659,386 @@ Comments:
         #  Remapped:     Remap a stream path in the resulting client view.
         #  Ignored:      Ignore a stream path in the resulting client view.
         #
-        # Use 'p4 help stream' to see more about stream specifications and command.";      
+        # Use 'p4 help stream' to see more about stream specifications and command.";
+
+        [TestMethod()]
+        public void StreamCommandEdit()
+        {
+            string uri = "localhost:6666";
+            string user = "admin";
+            string ws_client = "admin_space";
+
+            Process p4d = null;
+            try
+            {
+                p4d = Utilities.DeployP4TestServer(TestDir, 21, false);
+                Server server = new Server(new ServerAddress(uri));
+
+                Repository rep = new Repository(server);
+
+                using (Connection con = rep.Connection)
+                {
+
+                    con.UserName = user;
+                    con.Client = new Client();
+                    con.Client.Name = ws_client;
+
+                    bool connected = con.Connect(null);
+                    Assert.IsTrue(connected);
+                    Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+
+                    StreamOption options = new StreamOption();
+                    string description = "Stream commands - edit";
+                    string ownerName = "admin";
+                    string name = "streamcmds-edit";
+                    string id = "//Rocket/streamcmds-edit";
+                    StreamType type = StreamType.Mainline;
+                    ViewMap Paths = new ViewMap()
+                    {
+                        { new MapEntry(MapType.Share, new DepotPath("..."), null) }
+                    };
+
+                    // Assign values to stream properties
+                    Stream streamCommandsEdit = new Stream();
+                    streamCommandsEdit.Id = id;
+                    streamCommandsEdit.Type = type;
+                    streamCommandsEdit.Parent = new DepotPath("none");
+                    streamCommandsEdit.Options = options;
+                    streamCommandsEdit.Name = name;
+                    streamCommandsEdit.Name = name;
+                    streamCommandsEdit.OwnerName = ownerName;
+                    streamCommandsEdit.Description = description;
+                    streamCommandsEdit.Paths = Paths;
+
+                    rep.CreateStream(streamCommandsEdit);
+
+                    Changelist c = rep.NewChangelist();
+                    c.Description = "New changelist for stream commands edit";
+                    c.Files = null;
+
+                    Changelist editChange = rep.SaveChangelist(c, null);
+
+                    con.Client.Stream = id;
+                    editChange.Stream = id;
+                    rep.UpdateClient(con.Client);
+
+                    Options streamEditOptions = new Options(EditFilesCmdFlags.StreamEdit, editChange.Id, null);
+                    con.Client.EditFiles(streamEditOptions);
+
+                    rep.UpdateChangelist(editChange);
+                    Options submitCmdOptions = new Options();
+                    submitCmdOptions["-c"] = editChange.Id.ToString();
+                    rep.Connection.Client.SubmitFiles(submitCmdOptions, null);
+
+                    Changelist submittedChange = rep.GetChangelist(editChange.Id);
+
+                    Assert.IsFalse(submittedChange.Pending);
+                    Assert.AreEqual(id, submittedChange.Stream);
+                }
+            }
+            finally
+            {
+                Utilities.RemoveTestServer(p4d, TestDir);
+            }
+        }
+
+        [TestMethod()]
+        public void StreamCommandRevert()
+        {
+            string uri = "localhost:6666";
+            string user = "admin";
+            string ws_client = "admin_space";
+
+            Process p4d = null;
+            try
+            {
+                p4d = Utilities.DeployP4TestServer(TestDir, 21, false);
+                Server server = new Server(new ServerAddress(uri));
+                Repository rep = new Repository(server);
+
+                using (Connection con = rep.Connection)
+                {
+
+                    con.UserName = user;
+                    con.Client = new Client();
+                    con.Client.Name = ws_client;
+
+                    bool connected = con.Connect(null);
+                    Assert.IsTrue(connected);
+                    Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+
+                    StreamOption options = new StreamOption();
+                    string description = "Stream commands - revert";
+                    string ownerName = "admin";
+                    string name = "streamcmds-revert";
+                    string id = "//Rocket/streamcmds-revert";
+                    StreamType type = StreamType.Mainline;
+                    ViewMap Paths = new ViewMap()
+                    {
+                        { new MapEntry(MapType.Share, new DepotPath("..."), null) }
+                    };
+
+                    // Assign values to stream properties
+                    Stream streamCommandsRevert = new Stream();
+                    streamCommandsRevert.Id = id;
+                    streamCommandsRevert.Type = type;
+                    streamCommandsRevert.Parent = new DepotPath("none");
+                    streamCommandsRevert.Options = options;
+                    streamCommandsRevert.Name = name;
+                    streamCommandsRevert.Name = name;
+                    streamCommandsRevert.OwnerName = ownerName;
+                    streamCommandsRevert.Description = description;
+                    streamCommandsRevert.Paths = Paths;
+
+                    rep.CreateStream(streamCommandsRevert);
+
+                    Changelist c = rep.NewChangelist();
+                    c.Description = "New changelist for stream commands revert";
+                    c.Files = null;
+
+                    Changelist editChange = rep.SaveChangelist(c, null);
+
+                    con.Client.Stream = id;
+                    editChange.Stream = id;
+                    rep.UpdateClient(con.Client);
+
+                    Options streamEditOptions = new Options(EditFilesCmdFlags.StreamEdit, editChange.Id, null);
+                    con.Client.EditFiles(streamEditOptions);
+
+                    IList<File> opened = rep.GetOpenedFiles(null, new Options());
+                    Assert.AreEqual(id, opened[0].Stream.ToString());
+
+                    Options streamRevertOptions = new Options(RevertFilesCmdFlags.StreamRevert, editChange.Id);
+                    con.Client.RevertFiles(streamRevertOptions);
+
+                    // After revert the stream should no longer be in opened state
+                    opened = rep.GetOpenedFiles(null, new Options());
+                    Assert.AreNotEqual(id, opened[0].Stream.ToString());
+                }
+            }
+            finally
+            {
+                Utilities.RemoveTestServer(p4d, TestDir);
+            }
+        }
+
+        [TestMethod()]
+        public void StreamCommandResolve()
+        {
+            string uri = "localhost:6666";
+            string user1 = "admin";
+            string ws_client1 = "admin_space";
+            string user2 = "alex";
+            string ws_client2 = "alex_space";
+
+            Process p4d = null;
+            try
+            {
+                p4d = Utilities.DeployP4TestServer(TestDir, 8, false);
+                Server server = new Server(new ServerAddress(uri));
+
+                Repository rep = new Repository(server);
+
+                using (Connection con = rep.Connection)
+                {
+
+                    con.UserName = user1;
+                    con.Client = new Client();
+                    con.Client.Name = ws_client1;
+
+                    bool connected = con.Connect(null);
+                    Assert.IsTrue(connected);
+                    Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+
+                    #region createStream
+                    StreamOption options = new StreamOption();
+                    string description = "Stream commands - resolve";
+                    string ownerName = "admin";
+                    string name = "streamcmds-resolve";
+                    string id = "//Rocket/streamcmds-resolve";
+                    StreamType type = StreamType.Mainline;
+                    ViewMap Paths = new ViewMap()
+                    {
+                        { new MapEntry(MapType.Share, new DepotPath("..."), null) }
+                    };
+
+                    // Assign values to stream properties
+                    Stream streamCommandsResolve = new Stream();
+                    streamCommandsResolve.Id = id;
+                    streamCommandsResolve.Type = type;
+                    streamCommandsResolve.Parent = new DepotPath("none");
+                    streamCommandsResolve.Options = options;
+                    streamCommandsResolve.Name = name;
+                    streamCommandsResolve.Name = name;
+                    streamCommandsResolve.OwnerName = ownerName;
+                    streamCommandsResolve.Description = description;
+                    streamCommandsResolve.Paths = Paths;
+
+                    rep.CreateStream(streamCommandsResolve);
+                    #endregion createStream
+
+                    #region openStreamClient1
+                    Changelist c1 = rep.NewChangelist();
+                    c1.Description = "Edit stream by client1";
+                    c1.Files = null;
+
+                    Changelist editChange1 = rep.SaveChangelist(c1, null);
+
+                    con.Client.Stream = id;
+                    editChange1.Stream = id;
+                    rep.UpdateClient(con.Client);
+
+                    Options streamEditOptions1 = new Options(EditFilesCmdFlags.StreamEdit, editChange1.Id, null);
+                    // Opens the Stream for edit
+                    con.Client.EditFiles(streamEditOptions1);
+                    // Update the changelist with Stream field
+                    rep.UpdateChangelist(editChange1);
+
+
+                    con.Disconnect();
+                    #endregion openStreamClient1
+
+                    #region editStreamClient2
+                   
+                    con.UserName = user2;
+                    con.Client = new Client();
+                    con.Client.Name = ws_client2;
+
+                    connected = con.Connect(null);
+                    Assert.IsTrue(connected);
+                    Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+
+                    Stream readStream = rep.GetStream(id);
+                    readStream.Description = "Stream commands - resolve. Edited by client2";
+                    rep.UpdateStream(readStream);
+                    Stream readStream1 = rep.GetStream(id);
+                    con.Disconnect();
+
+                    #endregion editStreamClient2
+
+
+                    #region resolveStreamClient1
+
+                    con.UserName = user1;
+                    con.Client = new Client();
+                    con.Client.Name = ws_client1;
+
+                    connected = con.Connect(null);
+                    Assert.IsTrue(connected);
+                    Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+
+                    Options submitCmdOptions = new Options();
+                    submitCmdOptions["-c"] = editChange1.Id.ToString();
+                    // Resolve command when used with -So, cannot take changelist, it resolves "opened" stream,
+                    // But we still Supply it here, as it needs changelist.
+                    Options resolveOptions = new Options(ResolveFilesCmdFlags.ResolveStream, editChange1.Id);
+                    try
+                    {
+                        con.Client.ResolveStream(resolveOptions);
+                    } catch (P4Exception e)
+                    {
+                        Assert.AreEqual("Stream needs resolve action: -ay/-at", e.Message);
+                    }
+
+                    resolveOptions = new Options(ResolveFilesCmdFlags.ResolveStream | ResolveFilesCmdFlags.AutomaticYoursMode, editChange1.Id);
+                    Assert.IsTrue(con.Client.ResolveStream(resolveOptions));
+                    rep.Connection.Client.SubmitFiles(submitCmdOptions, null);
+
+                    Changelist submittedChange = rep.GetChangelist(editChange1.Id);
+                    #endregion resolveStreamClient1
+                }
+            }
+            finally
+            {
+                Utilities.RemoveTestServer(p4d, TestDir);
+            }
+        }
+
+        [TestMethod()]
+        public void StreamCommandStreamLog()
+        {
+            string uri = "localhost:6666";
+            string user = "admin";
+            string ws_client = "admin_space";
+
+            Process p4d = null;
+            try
+            {
+                p4d = Utilities.DeployP4TestServer(TestDir, 21, false);
+                Server server = new Server(new ServerAddress(uri));
+
+                Repository rep = new Repository(server);
+
+                using (Connection con = rep.Connection)
+                {
+
+                    con.UserName = user;
+                    con.Client = new Client();
+                    con.Client.Name = ws_client;
+
+                    bool connected = con.Connect(null);
+                    Assert.IsTrue(connected);
+                    Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+
+                    StreamOption options = new StreamOption();
+                    string description = "Stream commands - streamLog";
+                    string ownerName = "admin";
+                    string name = "streamcmds-streamLog";
+                    string id = "//Rocket/streamcmds-streamLog";
+                    StreamType type = StreamType.Mainline;
+                    ViewMap Paths = new ViewMap()
+                    {
+                        { new MapEntry(MapType.Share, new DepotPath("..."), null) }
+                    };
+
+                    // Assign values to stream properties
+                    Stream streamCommandsStreamLog = new Stream();
+                    streamCommandsStreamLog.Id = id;
+                    streamCommandsStreamLog.Type = type;
+                    streamCommandsStreamLog.Parent = new DepotPath("none");
+                    streamCommandsStreamLog.Options = options;
+                    streamCommandsStreamLog.Name = name;
+                    streamCommandsStreamLog.Name = name;
+                    streamCommandsStreamLog.OwnerName = ownerName;
+                    streamCommandsStreamLog.Description = description;
+                    streamCommandsStreamLog.Paths = Paths;
+
+                    rep.CreateStream(streamCommandsStreamLog);
+
+                    Changelist c = rep.NewChangelist();
+                    c.Description = "New changelist for stream commands streamLog";
+                    c.Files = null;
+
+                    Changelist streamLogChange = rep.SaveChangelist(c, null);
+
+                    con.Client.Stream = id;
+                    streamLogChange.Stream = id;
+                    rep.UpdateClient(con.Client);
+
+                    Options streamStreamLogOptions = new Options(EditFilesCmdFlags.StreamEdit, streamLogChange.Id, null);
+                    con.Client.EditFiles(streamStreamLogOptions);
+
+                    rep.UpdateChangelist(streamLogChange);
+                    Options submitCmdOptions = new Options();
+                    submitCmdOptions["-c"] = streamLogChange.Id.ToString();
+                    rep.Connection.Client.SubmitFiles(submitCmdOptions, null);
+
+                    Changelist submittedChange = rep.GetChangelist(streamLogChange.Id);
+
+                    Assert.IsFalse(submittedChange.Pending);
+                    Assert.AreEqual(id, submittedChange.Stream);
+
+                    string[] streams = { "//Rocket/streamcmds-streamLog", "//flow/D1", "//flow/D2" };                                                           
+                    
+                    Dictionary<string, List<StreamLog>> streamLog = rep.GetStreamLog(streams, new Options());
+                    Assert.IsNotNull(streamLog);
+                    Assert.AreEqual("edit", streamLog["//Rocket/streamcmds-streamLog"][0].Action);
+                    }
+            }
+            finally
+            {
+                Utilities.RemoveTestServer(p4d, TestDir);
+            }
+        }
     }
 }

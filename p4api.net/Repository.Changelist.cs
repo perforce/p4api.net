@@ -48,7 +48,7 @@ namespace Perforce.P4
 			{
 				throw new ArgumentNullException("change");
 			}
-			
+
             P4Command cmd = null;
 			cmd = new P4Command(this, "change", true);
 			cmd.DataSet = change.ToString();
@@ -91,23 +91,23 @@ namespace Perforce.P4
 		/// <remarks>Guarantees that any custom values are set
         /// <br/>
 		/// <br/><b>p4 help change</b>
-		/// <br/> 
+		/// <br/>
 		/// <br/>     change -- Create or edit a changelist description
 		/// <br/>     changelist -- synonym for 'change'
-		/// <br/> 
+		/// <br/>
 		/// <br/>     p4 change [-s] [-f | -u] [[-O] changelist#]
 		/// <br/>     p4 change -d [-f -s -O] changelist#
 		/// <br/>     p4 change -o [-s] [-f] [[-O] changelist#]
-		/// <br/>     p4 change -i [-s] [-f | -u] 
+		/// <br/>     p4 change -i [-s] [-f | -u]
 		/// <br/>     p4 change -t restricted | public [-U user] [-f | -u | -O] changelist#
 		/// <br/>     p4 change -U user [-t restricted | public] [-f] changelist#
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	'p4 change' creates and edits changelists and their descriptions.
 		/// <br/> 	With no argument, 'p4 change' creates a new changelist.  If a
 		/// <br/> 	changelist number is specified, 'p4 change' edits an existing
 		/// <br/> 	pending changelist.  In both cases, the changelist specification
 		/// <br/> 	is placed into a form and the user's editor is invoked.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -d flag deletes a pending changelist, if it has no opened files
 		/// <br/> 	and no pending fixes associated with it.  Use 'p4 opened -a' to
 		/// <br/> 	report on opened files and 'p4 reopen' to move them to another
@@ -116,13 +116,13 @@ namespace Perforce.P4
 		/// <br/> 	fixes. The changelist can be deleted only by the user and client
 		/// <br/> 	who created it, or by a user with 'admin' privilege using the -f
 		/// <br/> 	flag.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -o flag writes the changelist specification to the standard
 		/// <br/> 	output.  The user's editor is not invoked.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -i flag reads a changelist specification from the standard
 		/// <br/> 	input.  The user's editor is not invoked.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -f flag forces the update or deletion of other users' pending
 		/// <br/> 	changelists.  -f can also force the deletion of submitted changelists
 		/// <br/> 	after they have been emptied of files using 'p4 obliterate'.  By
@@ -132,12 +132,12 @@ namespace Perforce.P4
 		/// <br/> 	an empty pending change via -U. The -f flag requires 'admin'
 		/// <br/> 	access granted by 'p4 protect'.  The -f and -u flags are mutually
 		/// <br/> 	exclusive.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -u flag can force the update of a submitted change by the owner
 		/// <br/> 	of the change. Only the Jobs, Type, and Description fields can be
 		/// <br/> 	changed	using the -u flag. The -f and -u flags cannot be used in
 		/// <br/> 	the same change command.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -s flag extends the list of jobs to include the fix status
 		/// <br/> 	for each job.  On new changelists, the fix status begins as the
 		/// <br/> 	special status 'ignore', which, if left unchanged simply excludes
@@ -145,20 +145,20 @@ namespace Perforce.P4
 		/// <br/> 	that applied with 'p4 fix -s', becomes the job's status when
 		/// <br/> 	the changelist is committed.  Note that this option exists
 		/// <br/> 	to support integration with external defect trackers.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -O flag specifies that the changelist number is the original
 		/// <br/> 	number of a changelist which was renamed on submit.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -U flag changes the 'User' of an empty pending change to the
 		/// <br/> 	specified user. The user field can only be changed using this flag
 		/// <br/> 	by the user who created the change, or by a user with 'admin'
 		/// <br/> 	privilege using the -f flag. This option is useful for running
 		/// <br/> 	in a trigger or script.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -t flag changes the 'Type' of the change to 'restricted'
 		/// <br/> 	or 'public' without displaying the change form. This option is
 		/// <br/> 	useful for running in a trigger or script.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The 'Type' field can be used to hide the change or its description
 		/// <br/> 	from users. Valid values for this field are 'public' (default), and
 		/// <br/> 	'restricted'. A shelved or committed change that is 'restricted' is
@@ -169,17 +169,17 @@ namespace Perforce.P4
 		/// <br/> 	'p4 change', 'p4 changes', and 'p4 describe' commands. Note that
 		/// <br/> 	the '-S' flag is required with 'p4 describe' for the command to
 		/// <br/> 	enforce shelved	rather than pending restricted changelist rules.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	If a user is not permitted to have access to a restricted change,
 		/// <br/> 	The 'Description' text is replaced with a 'no permission' message
 		/// <br/> 	(see 'Type' field). Users with admin permission can override the
 		/// <br/> 	restriction using the -f flag.
-		/// <br/> 
-		/// <br/> 
+		/// <br/>
+		/// <br/>
 		/// </remarks>
         /// <example>
         ///		To create a new empty changelist object:
-        ///		<code> 
+        ///		<code>
         ///		    Changelist c = Repository.NewChangelist();
         ///		</code>
         /// </example>
@@ -223,26 +223,26 @@ namespace Perforce.P4
 		/// <param name="change">Changelist specification for the new changelist</param>
 		/// <param name="options">'-s', '-f', -u flags are valid when creating a new changelist</param>
 		/// <returns>The Changelist object if new user was created, null if creation failed</returns>
-		/// <remarks> The '-i' flag is added if not specified by the caller		
+		/// <remarks> The '-i' flag is added if not specified by the caller
 		/// <br/>
 		/// <br/><b>p4 help change</b>
-		/// <br/> 
+		/// <br/>
 		/// <br/>     change -- Create or edit a changelist description
 		/// <br/>     changelist -- synonym for 'change'
-		/// <br/> 
+		/// <br/>
 		/// <br/>     p4 change [-s] [-f | -u] [[-O] changelist#]
 		/// <br/>     p4 change -d [-f -s -O] changelist#
 		/// <br/>     p4 change -o [-s] [-f] [[-O] changelist#]
-		/// <br/>     p4 change -i [-s] [-f | -u] 
+		/// <br/>     p4 change -i [-s] [-f | -u]
 		/// <br/>     p4 change -t restricted | public [-U user] [-f | -u | -O] changelist#
 		/// <br/>     p4 change -U user [-t restricted | public] [-f] changelist#
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	'p4 change' creates and edits changelists and their descriptions.
 		/// <br/> 	With no argument, 'p4 change' creates a new changelist.  If a
 		/// <br/> 	changelist number is specified, 'p4 change' edits an existing
 		/// <br/> 	pending changelist.  In both cases, the changelist specification
 		/// <br/> 	is placed into a form and the user's editor is invoked.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -d flag deletes a pending changelist, if it has no opened files
 		/// <br/> 	and no pending fixes associated with it.  Use 'p4 opened -a' to
 		/// <br/> 	report on opened files and 'p4 reopen' to move them to another
@@ -251,13 +251,13 @@ namespace Perforce.P4
 		/// <br/> 	fixes. The changelist can be deleted only by the user and client
 		/// <br/> 	who created it, or by a user with 'admin' privilege using the -f
 		/// <br/> 	flag.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -o flag writes the changelist specification to the standard
 		/// <br/> 	output.  The user's editor is not invoked.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -i flag reads a changelist specification from the standard
 		/// <br/> 	input.  The user's editor is not invoked.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -f flag forces the update or deletion of other users' pending
 		/// <br/> 	changelists.  -f can also force the deletion of submitted changelists
 		/// <br/> 	after they have been emptied of files using 'p4 obliterate'.  By
@@ -267,12 +267,12 @@ namespace Perforce.P4
 		/// <br/> 	an empty pending change via -U. The -f flag requires 'admin'
 		/// <br/> 	access granted by 'p4 protect'.  The -f and -u flags are mutually
 		/// <br/> 	exclusive.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -u flag can force the update of a submitted change by the owner
 		/// <br/> 	of the change. Only the Jobs, Type, and Description fields can be
 		/// <br/> 	changed	using the -u flag. The -f and -u flags cannot be used in
 		/// <br/> 	the same change command.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -s flag extends the list of jobs to include the fix status
 		/// <br/> 	for each job.  On new changelists, the fix status begins as the
 		/// <br/> 	special status 'ignore', which, if left unchanged simply excludes
@@ -280,20 +280,20 @@ namespace Perforce.P4
 		/// <br/> 	that applied with 'p4 fix -s', becomes the job's status when
 		/// <br/> 	the changelist is committed.  Note that this option exists
 		/// <br/> 	to support integration with external defect trackers.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -O flag specifies that the changelist number is the original
 		/// <br/> 	number of a changelist which was renamed on submit.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -U flag changes the 'User' of an empty pending change to the
 		/// <br/> 	specified user. The user field can only be changed using this flag
 		/// <br/> 	by the user who created the change, or by a user with 'admin'
 		/// <br/> 	privilege using the -f flag. This option is useful for running
 		/// <br/> 	in a trigger or script.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -t flag changes the 'Type' of the change to 'restricted'
 		/// <br/> 	or 'public' without displaying the change form. This option is
 		/// <br/> 	useful for running in a trigger or script.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The 'Type' field can be used to hide the change or its description
 		/// <br/> 	from users. Valid values for this field are 'public' (default), and
 		/// <br/> 	'restricted'. A shelved or committed change that is 'restricted' is
@@ -304,28 +304,28 @@ namespace Perforce.P4
 		/// <br/> 	'p4 change', 'p4 changes', and 'p4 describe' commands. Note that
 		/// <br/> 	the '-S' flag is required with 'p4 describe' for the command to
 		/// <br/> 	enforce shelved	rather than pending restricted changelist rules.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	If a user is not permitted to have access to a restricted change,
 		/// <br/> 	The 'Description' text is replaced with a 'no permission' message
 		/// <br/> 	(see 'Type' field). Users with admin permission can override the
 		/// <br/> 	restriction using the -f flag.
-		/// <br/> 
-		/// <br/> 
+		/// <br/>
+		/// <br/>
 		/// </remarks>
         /// <example>
         ///		To create a new changelist:
-        ///		<code> 
+        ///		<code>
         ///		    Changelist c = new Changelist();
         ///		    c = Repository.CreateChangelist(c, null);
         ///		</code>
         ///		To create a new restricted changelist:
-        ///		<code> 
+        ///		<code>
         ///		    Changelist c = new Changelist();
         ///		    c.Type = ChangeListType.Restricted;
         ///		    c = Repository.CreateChangelist(c, null);
         ///		</code>
         /// </example>
-        /// <seealso cref="ChangeCmdFlags"/> 
+        /// <seealso cref="ChangeCmdFlags"/>
         public Changelist CreateChangelist(Changelist change, Options options)
 		{
 			if (change.Id != -1)
@@ -343,23 +343,23 @@ namespace Perforce.P4
         /// <remarks>
         /// <br/>
 		/// <br/><b>p4 help change</b>
-		/// <br/> 
+		/// <br/>
 		/// <br/>     change -- Create or edit a changelist description
 		/// <br/>     changelist -- synonym for 'change'
-		/// <br/> 
+		/// <br/>
 		/// <br/>     p4 change [-s] [-f | -u] [[-O] changelist#]
 		/// <br/>     p4 change -d [-f -s -O] changelist#
 		/// <br/>     p4 change -o [-s] [-f] [[-O] changelist#]
-		/// <br/>     p4 change -i [-s] [-f | -u] 
+		/// <br/>     p4 change -i [-s] [-f | -u]
 		/// <br/>     p4 change -t restricted | public [-U user] [-f | -u | -O] changelist#
 		/// <br/>     p4 change -U user [-t restricted | public] [-f] changelist#
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	'p4 change' creates and edits changelists and their descriptions.
 		/// <br/> 	With no argument, 'p4 change' creates a new changelist.  If a
 		/// <br/> 	changelist number is specified, 'p4 change' edits an existing
 		/// <br/> 	pending changelist.  In both cases, the changelist specification
 		/// <br/> 	is placed into a form and the user's editor is invoked.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -d flag deletes a pending changelist, if it has no opened files
 		/// <br/> 	and no pending fixes associated with it.  Use 'p4 opened -a' to
 		/// <br/> 	report on opened files and 'p4 reopen' to move them to another
@@ -368,13 +368,13 @@ namespace Perforce.P4
 		/// <br/> 	fixes. The changelist can be deleted only by the user and client
 		/// <br/> 	who created it, or by a user with 'admin' privilege using the -f
 		/// <br/> 	flag.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -o flag writes the changelist specification to the standard
 		/// <br/> 	output.  The user's editor is not invoked.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -i flag reads a changelist specification from the standard
 		/// <br/> 	input.  The user's editor is not invoked.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -f flag forces the update or deletion of other users' pending
 		/// <br/> 	changelists.  -f can also force the deletion of submitted changelists
 		/// <br/> 	after they have been emptied of files using 'p4 obliterate'.  By
@@ -384,12 +384,12 @@ namespace Perforce.P4
 		/// <br/> 	an empty pending change via -U. The -f flag requires 'admin'
 		/// <br/> 	access granted by 'p4 protect'.  The -f and -u flags are mutually
 		/// <br/> 	exclusive.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -u flag can force the update of a submitted change by the owner
 		/// <br/> 	of the change. Only the Jobs, Type, and Description fields can be
 		/// <br/> 	changed	using the -u flag. The -f and -u flags cannot be used in
 		/// <br/> 	the same change command.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -s flag extends the list of jobs to include the fix status
 		/// <br/> 	for each job.  On new changelists, the fix status begins as the
 		/// <br/> 	special status 'ignore', which, if left unchanged simply excludes
@@ -397,20 +397,20 @@ namespace Perforce.P4
 		/// <br/> 	that applied with 'p4 fix -s', becomes the job's status when
 		/// <br/> 	the changelist is committed.  Note that this option exists
 		/// <br/> 	to support integration with external defect trackers.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -O flag specifies that the changelist number is the original
 		/// <br/> 	number of a changelist which was renamed on submit.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -U flag changes the 'User' of an empty pending change to the
 		/// <br/> 	specified user. The user field can only be changed using this flag
 		/// <br/> 	by the user who created the change, or by a user with 'admin'
 		/// <br/> 	privilege using the -f flag. This option is useful for running
 		/// <br/> 	in a trigger or script.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -t flag changes the 'Type' of the change to 'restricted'
 		/// <br/> 	or 'public' without displaying the change form. This option is
 		/// <br/> 	useful for running in a trigger or script.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The 'Type' field can be used to hide the change or its description
 		/// <br/> 	from users. Valid values for this field are 'public' (default), and
 		/// <br/> 	'restricted'. A shelved or committed change that is 'restricted' is
@@ -421,17 +421,17 @@ namespace Perforce.P4
 		/// <br/> 	'p4 change', 'p4 changes', and 'p4 describe' commands. Note that
 		/// <br/> 	the '-S' flag is required with 'p4 describe' for the command to
 		/// <br/> 	enforce shelved	rather than pending restricted changelist rules.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	If a user is not permitted to have access to a restricted change,
 		/// <br/> 	The 'Description' text is replaced with a 'no permission' message
 		/// <br/> 	(see 'Type' field). Users with admin permission can override the
 		/// <br/> 	restriction using the -f flag.
-		/// <br/> 
-		/// <br/> 
+		/// <br/>
+		/// <br/>
 		/// </remarks>
         /// <example>
         ///		To create a new changelist:
-        ///		<code> 
+        ///		<code>
         ///		    Changelist c = new Changelist();
         ///		    c = Repository.CreateChangelist(c, null);
         ///		</code>
@@ -449,23 +449,23 @@ namespace Perforce.P4
         /// <remarks>
         /// <br/>
 		/// <br/><b>p4 help change</b>
-		/// <br/> 
+		/// <br/>
 		/// <br/>     change -- Create or edit a changelist description
 		/// <br/>     changelist -- synonym for 'change'
-		/// <br/> 
+		/// <br/>
 		/// <br/>     p4 change [-s] [-f | -u] [[-O] changelist#]
 		/// <br/>     p4 change -d [-f -s -O] changelist#
 		/// <br/>     p4 change -o [-s] [-f] [[-O] changelist#]
-		/// <br/>     p4 change -i [-s] [-f | -u] 
+		/// <br/>     p4 change -i [-s] [-f | -u]
 		/// <br/>     p4 change -t restricted | public [-U user] [-f | -u | -O] changelist#
 		/// <br/>     p4 change -U user [-t restricted | public] [-f] changelist#
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	'p4 change' creates and edits changelists and their descriptions.
 		/// <br/> 	With no argument, 'p4 change' creates a new changelist.  If a
 		/// <br/> 	changelist number is specified, 'p4 change' edits an existing
 		/// <br/> 	pending changelist.  In both cases, the changelist specification
 		/// <br/> 	is placed into a form and the user's editor is invoked.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -d flag deletes a pending changelist, if it has no opened files
 		/// <br/> 	and no pending fixes associated with it.  Use 'p4 opened -a' to
 		/// <br/> 	report on opened files and 'p4 reopen' to move them to another
@@ -474,13 +474,13 @@ namespace Perforce.P4
 		/// <br/> 	fixes. The changelist can be deleted only by the user and client
 		/// <br/> 	who created it, or by a user with 'admin' privilege using the -f
 		/// <br/> 	flag.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -o flag writes the changelist specification to the standard
 		/// <br/> 	output.  The user's editor is not invoked.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -i flag reads a changelist specification from the standard
 		/// <br/> 	input.  The user's editor is not invoked.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -f flag forces the update or deletion of other users' pending
 		/// <br/> 	changelists.  -f can also force the deletion of submitted changelists
 		/// <br/> 	after they have been emptied of files using 'p4 obliterate'.  By
@@ -490,12 +490,12 @@ namespace Perforce.P4
 		/// <br/> 	an empty pending change via -U. The -f flag requires 'admin'
 		/// <br/> 	access granted by 'p4 protect'.  The -f and -u flags are mutually
 		/// <br/> 	exclusive.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -u flag can force the update of a submitted change by the owner
 		/// <br/> 	of the change. Only the Jobs, Type, and Description fields can be
 		/// <br/> 	changed	using the -u flag. The -f and -u flags cannot be used in
 		/// <br/> 	the same change command.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -s flag extends the list of jobs to include the fix status
 		/// <br/> 	for each job.  On new changelists, the fix status begins as the
 		/// <br/> 	special status 'ignore', which, if left unchanged simply excludes
@@ -503,20 +503,20 @@ namespace Perforce.P4
 		/// <br/> 	that applied with 'p4 fix -s', becomes the job's status when
 		/// <br/> 	the changelist is committed.  Note that this option exists
 		/// <br/> 	to support integration with external defect trackers.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -O flag specifies that the changelist number is the original
 		/// <br/> 	number of a changelist which was renamed on submit.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -U flag changes the 'User' of an empty pending change to the
 		/// <br/> 	specified user. The user field can only be changed using this flag
 		/// <br/> 	by the user who created the change, or by a user with 'admin'
 		/// <br/> 	privilege using the -f flag. This option is useful for running
 		/// <br/> 	in a trigger or script.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -t flag changes the 'Type' of the change to 'restricted'
 		/// <br/> 	or 'public' without displaying the change form. This option is
 		/// <br/> 	useful for running in a trigger or script.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The 'Type' field can be used to hide the change or its description
 		/// <br/> 	from users. Valid values for this field are 'public' (default), and
 		/// <br/> 	'restricted'. A shelved or committed change that is 'restricted' is
@@ -527,19 +527,19 @@ namespace Perforce.P4
 		/// <br/> 	'p4 change', 'p4 changes', and 'p4 describe' commands. Note that
 		/// <br/> 	the '-S' flag is required with 'p4 describe' for the command to
 		/// <br/> 	enforce shelved	rather than pending restricted changelist rules.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	If a user is not permitted to have access to a restricted change,
 		/// <br/> 	The 'Description' text is replaced with a 'no permission' message
 		/// <br/> 	(see 'Type' field). Users with admin permission can override the
 		/// <br/> 	restriction using the -f flag.
-		/// <br/> 
-		/// <br/> 
+		/// <br/>
+		/// <br/>
 		/// </remarks>
         /// <example>
         ///		To update changelist 15:
-        ///		<code> 
+        ///		<code>
         ///		    Changelist c = Repository.GetChangelist(15);
-        ///		    
+        ///
         ///         // change the description
         ///         c.Description = "fixes for localization";
         ///		    c = Repository.UpdateChangelist(c);
@@ -563,23 +563,23 @@ namespace Perforce.P4
         /// <remarks>
         /// <br/>
 		/// <br/><b>p4 help change</b>
-		/// <br/> 
+		/// <br/>
 		/// <br/>     change -- Create or edit a changelist description
 		/// <br/>     changelist -- synonym for 'change'
-		/// <br/> 
+		/// <br/>
 		/// <br/>     p4 change [-s] [-f | -u] [[-O] changelist#]
 		/// <br/>     p4 change -d [-f -s -O] changelist#
 		/// <br/>     p4 change -o [-s] [-f] [[-O] changelist#]
-		/// <br/>     p4 change -i [-s] [-f | -u] 
+		/// <br/>     p4 change -i [-s] [-f | -u]
 		/// <br/>     p4 change -t restricted | public [-U user] [-f | -u | -O] changelist#
 		/// <br/>     p4 change -U user [-t restricted | public] [-f] changelist#
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	'p4 change' creates and edits changelists and their descriptions.
 		/// <br/> 	With no argument, 'p4 change' creates a new changelist.  If a
 		/// <br/> 	changelist number is specified, 'p4 change' edits an existing
 		/// <br/> 	pending changelist.  In both cases, the changelist specification
 		/// <br/> 	is placed into a form and the user's editor is invoked.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -d flag deletes a pending changelist, if it has no opened files
 		/// <br/> 	and no pending fixes associated with it.  Use 'p4 opened -a' to
 		/// <br/> 	report on opened files and 'p4 reopen' to move them to another
@@ -588,13 +588,13 @@ namespace Perforce.P4
 		/// <br/> 	fixes. The changelist can be deleted only by the user and client
 		/// <br/> 	who created it, or by a user with 'admin' privilege using the -f
 		/// <br/> 	flag.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -o flag writes the changelist specification to the standard
 		/// <br/> 	output.  The user's editor is not invoked.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -i flag reads a changelist specification from the standard
 		/// <br/> 	input.  The user's editor is not invoked.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -f flag forces the update or deletion of other users' pending
 		/// <br/> 	changelists.  -f can also force the deletion of submitted changelists
 		/// <br/> 	after they have been emptied of files using 'p4 obliterate'.  By
@@ -604,12 +604,12 @@ namespace Perforce.P4
 		/// <br/> 	an empty pending change via -U. The -f flag requires 'admin'
 		/// <br/> 	access granted by 'p4 protect'.  The -f and -u flags are mutually
 		/// <br/> 	exclusive.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -u flag can force the update of a submitted change by the owner
 		/// <br/> 	of the change. Only the Jobs, Type, and Description fields can be
 		/// <br/> 	changed	using the -u flag. The -f and -u flags cannot be used in
 		/// <br/> 	the same change command.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -s flag extends the list of jobs to include the fix status
 		/// <br/> 	for each job.  On new changelists, the fix status begins as the
 		/// <br/> 	special status 'ignore', which, if left unchanged simply excludes
@@ -617,20 +617,20 @@ namespace Perforce.P4
 		/// <br/> 	that applied with 'p4 fix -s', becomes the job's status when
 		/// <br/> 	the changelist is committed.  Note that this option exists
 		/// <br/> 	to support integration with external defect trackers.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -O flag specifies that the changelist number is the original
 		/// <br/> 	number of a changelist which was renamed on submit.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -U flag changes the 'User' of an empty pending change to the
 		/// <br/> 	specified user. The user field can only be changed using this flag
 		/// <br/> 	by the user who created the change, or by a user with 'admin'
 		/// <br/> 	privilege using the -f flag. This option is useful for running
 		/// <br/> 	in a trigger or script.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -t flag changes the 'Type' of the change to 'restricted'
 		/// <br/> 	or 'public' without displaying the change form. This option is
 		/// <br/> 	useful for running in a trigger or script.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The 'Type' field can be used to hide the change or its description
 		/// <br/> 	from users. Valid values for this field are 'public' (default), and
 		/// <br/> 	'restricted'. A shelved or committed change that is 'restricted' is
@@ -641,34 +641,34 @@ namespace Perforce.P4
 		/// <br/> 	'p4 change', 'p4 changes', and 'p4 describe' commands. Note that
 		/// <br/> 	the '-S' flag is required with 'p4 describe' for the command to
 		/// <br/> 	enforce shelved	rather than pending restricted changelist rules.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	If a user is not permitted to have access to a restricted change,
 		/// <br/> 	The 'Description' text is replaced with a 'no permission' message
 		/// <br/> 	(see 'Type' field). Users with admin permission can override the
 		/// <br/> 	restriction using the -f flag.
-		/// <br/> 
-		/// <br/> 
+		/// <br/>
+		/// <br/>
 		/// </remarks>
         /// <example>
         ///		To update changelist 15:
-        ///		<code> 
+        ///		<code>
         ///		    Changelist c = Repository.GetChangelist(15);
-        ///		    
+        ///
         ///         // change the description
         ///         c.Description = "fixes for localization";
         ///		    c = Repository.UpdateChangelist(c);
         ///		</code>
         ///		To update changelist 15 as an admin user, changing type to Public:
-        ///		<code> 
+        ///		<code>
         ///		    Changelist c = Repository.GetChangelist(15);
-        ///		    
-        ///         ChangeCmdOptions opts = 
+        ///
+        ///         ChangeCmdOptions opts =
         ///         new ChangeCmdOptions(ChangeCmdFlags.Force);
         ///         c.Type = ChangeListType.Public;
         ///         c = Repository.UpdateChangelist(c, opts);
         ///		</code>
         /// </example>
-        /// <seealso cref="ChangeCmdFlags"/> 
+        /// <seealso cref="ChangeCmdFlags"/>
         public Changelist UpdateChangelist(Changelist change, Options options)
         {
             if (change.Id <= 0)
@@ -686,23 +686,23 @@ namespace Perforce.P4
         /// <remarks>
         /// <br/>
 		/// <br/><b>p4 help change</b>
-		/// <br/> 
+		/// <br/>
 		/// <br/>     change -- Create or edit a changelist description
 		/// <br/>     changelist -- synonym for 'change'
-		/// <br/> 
+		/// <br/>
 		/// <br/>     p4 change [-s] [-f | -u] [[-O] changelist#]
 		/// <br/>     p4 change -d [-f -s -O] changelist#
 		/// <br/>     p4 change -o [-s] [-f] [[-O] changelist#]
-		/// <br/>     p4 change -i [-s] [-f | -u] 
+		/// <br/>     p4 change -i [-s] [-f | -u]
 		/// <br/>     p4 change -t restricted | public [-U user] [-f | -u | -O] changelist#
 		/// <br/>     p4 change -U user [-t restricted | public] [-f] changelist#
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	'p4 change' creates and edits changelists and their descriptions.
 		/// <br/> 	With no argument, 'p4 change' creates a new changelist.  If a
 		/// <br/> 	changelist number is specified, 'p4 change' edits an existing
 		/// <br/> 	pending changelist.  In both cases, the changelist specification
 		/// <br/> 	is placed into a form and the user's editor is invoked.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -d flag deletes a pending changelist, if it has no opened files
 		/// <br/> 	and no pending fixes associated with it.  Use 'p4 opened -a' to
 		/// <br/> 	report on opened files and 'p4 reopen' to move them to another
@@ -711,13 +711,13 @@ namespace Perforce.P4
 		/// <br/> 	fixes. The changelist can be deleted only by the user and client
 		/// <br/> 	who created it, or by a user with 'admin' privilege using the -f
 		/// <br/> 	flag.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -o flag writes the changelist specification to the standard
 		/// <br/> 	output.  The user's editor is not invoked.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -i flag reads a changelist specification from the standard
 		/// <br/> 	input.  The user's editor is not invoked.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -f flag forces the update or deletion of other users' pending
 		/// <br/> 	changelists.  -f can also force the deletion of submitted changelists
 		/// <br/> 	after they have been emptied of files using 'p4 obliterate'.  By
@@ -727,12 +727,12 @@ namespace Perforce.P4
 		/// <br/> 	an empty pending change via -U. The -f flag requires 'admin'
 		/// <br/> 	access granted by 'p4 protect'.  The -f and -u flags are mutually
 		/// <br/> 	exclusive.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -u flag can force the update of a submitted change by the owner
 		/// <br/> 	of the change. Only the Jobs, Type, and Description fields can be
 		/// <br/> 	changed	using the -u flag. The -f and -u flags cannot be used in
 		/// <br/> 	the same change command.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -s flag extends the list of jobs to include the fix status
 		/// <br/> 	for each job.  On new changelists, the fix status begins as the
 		/// <br/> 	special status 'ignore', which, if left unchanged simply excludes
@@ -740,20 +740,20 @@ namespace Perforce.P4
 		/// <br/> 	that applied with 'p4 fix -s', becomes the job's status when
 		/// <br/> 	the changelist is committed.  Note that this option exists
 		/// <br/> 	to support integration with external defect trackers.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -O flag specifies that the changelist number is the original
 		/// <br/> 	number of a changelist which was renamed on submit.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -U flag changes the 'User' of an empty pending change to the
 		/// <br/> 	specified user. The user field can only be changed using this flag
 		/// <br/> 	by the user who created the change, or by a user with 'admin'
 		/// <br/> 	privilege using the -f flag. This option is useful for running
 		/// <br/> 	in a trigger or script.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -t flag changes the 'Type' of the change to 'restricted'
 		/// <br/> 	or 'public' without displaying the change form. This option is
 		/// <br/> 	useful for running in a trigger or script.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The 'Type' field can be used to hide the change or its description
 		/// <br/> 	from users. Valid values for this field are 'public' (default), and
 		/// <br/> 	'restricted'. A shelved or committed change that is 'restricted' is
@@ -764,19 +764,19 @@ namespace Perforce.P4
 		/// <br/> 	'p4 change', 'p4 changes', and 'p4 describe' commands. Note that
 		/// <br/> 	the '-S' flag is required with 'p4 describe' for the command to
 		/// <br/> 	enforce shelved	rather than pending restricted changelist rules.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	If a user is not permitted to have access to a restricted change,
 		/// <br/> 	The 'Description' text is replaced with a 'no permission' message
 		/// <br/> 	(see 'Type' field). Users with admin permission can override the
 		/// <br/> 	restriction using the -f flag.
-		/// <br/> 
-		/// <br/> 
+		/// <br/>
+		/// <br/>
 		/// </remarks>
         /// <example>
         ///		To update changelist 25:
-        ///		<code> 
+        ///		<code>
         ///		    Changelist c = Repository.GetChangelist(25);
-        ///		    
+        ///
         ///         // change the description
         ///         c.Description = "fixes for localization";
         ///		    c = Repository.UpdateSubmittedChangelist(c);
@@ -796,23 +796,23 @@ namespace Perforce.P4
         ///  <remarks>
         /// <br/>
 		/// <br/><b>p4 help change</b>
-		/// <br/> 
+		/// <br/>
 		/// <br/>     change -- Create or edit a changelist description
 		/// <br/>     changelist -- synonym for 'change'
-		/// <br/> 
+		/// <br/>
 		/// <br/>     p4 change [-s] [-f | -u] [[-O] changelist#]
 		/// <br/>     p4 change -d [-f -s -O] changelist#
 		/// <br/>     p4 change -o [-s] [-f] [[-O] changelist#]
-		/// <br/>     p4 change -i [-s] [-f | -u] 
+		/// <br/>     p4 change -i [-s] [-f | -u]
 		/// <br/>     p4 change -t restricted | public [-U user] [-f | -u | -O] changelist#
 		/// <br/>     p4 change -U user [-t restricted | public] [-f] changelist#
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	'p4 change' creates and edits changelists and their descriptions.
 		/// <br/> 	With no argument, 'p4 change' creates a new changelist.  If a
 		/// <br/> 	changelist number is specified, 'p4 change' edits an existing
 		/// <br/> 	pending changelist.  In both cases, the changelist specification
 		/// <br/> 	is placed into a form and the user's editor is invoked.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -d flag deletes a pending changelist, if it has no opened files
 		/// <br/> 	and no pending fixes associated with it.  Use 'p4 opened -a' to
 		/// <br/> 	report on opened files and 'p4 reopen' to move them to another
@@ -821,13 +821,13 @@ namespace Perforce.P4
 		/// <br/> 	fixes. The changelist can be deleted only by the user and client
 		/// <br/> 	who created it, or by a user with 'admin' privilege using the -f
 		/// <br/> 	flag.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -o flag writes the changelist specification to the standard
 		/// <br/> 	output.  The user's editor is not invoked.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -i flag reads a changelist specification from the standard
 		/// <br/> 	input.  The user's editor is not invoked.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -f flag forces the update or deletion of other users' pending
 		/// <br/> 	changelists.  -f can also force the deletion of submitted changelists
 		/// <br/> 	after they have been emptied of files using 'p4 obliterate'.  By
@@ -837,12 +837,12 @@ namespace Perforce.P4
 		/// <br/> 	an empty pending change via -U. The -f flag requires 'admin'
 		/// <br/> 	access granted by 'p4 protect'.  The -f and -u flags are mutually
 		/// <br/> 	exclusive.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -u flag can force the update of a submitted change by the owner
 		/// <br/> 	of the change. Only the Jobs, Type, and Description fields can be
 		/// <br/> 	changed	using the -u flag. The -f and -u flags cannot be used in
 		/// <br/> 	the same change command.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -s flag extends the list of jobs to include the fix status
 		/// <br/> 	for each job.  On new changelists, the fix status begins as the
 		/// <br/> 	special status 'ignore', which, if left unchanged simply excludes
@@ -850,20 +850,20 @@ namespace Perforce.P4
 		/// <br/> 	that applied with 'p4 fix -s', becomes the job's status when
 		/// <br/> 	the changelist is committed.  Note that this option exists
 		/// <br/> 	to support integration with external defect trackers.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -O flag specifies that the changelist number is the original
 		/// <br/> 	number of a changelist which was renamed on submit.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -U flag changes the 'User' of an empty pending change to the
 		/// <br/> 	specified user. The user field can only be changed using this flag
 		/// <br/> 	by the user who created the change, or by a user with 'admin'
 		/// <br/> 	privilege using the -f flag. This option is useful for running
 		/// <br/> 	in a trigger or script.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -t flag changes the 'Type' of the change to 'restricted'
 		/// <br/> 	or 'public' without displaying the change form. This option is
 		/// <br/> 	useful for running in a trigger or script.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The 'Type' field can be used to hide the change or its description
 		/// <br/> 	from users. Valid values for this field are 'public' (default), and
 		/// <br/> 	'restricted'. A shelved or committed change that is 'restricted' is
@@ -874,34 +874,34 @@ namespace Perforce.P4
 		/// <br/> 	'p4 change', 'p4 changes', and 'p4 describe' commands. Note that
 		/// <br/> 	the '-S' flag is required with 'p4 describe' for the command to
 		/// <br/> 	enforce shelved	rather than pending restricted changelist rules.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	If a user is not permitted to have access to a restricted change,
 		/// <br/> 	The 'Description' text is replaced with a 'no permission' message
 		/// <br/> 	(see 'Type' field). Users with admin permission can override the
 		/// <br/> 	restriction using the -f flag.
-		/// <br/> 
-		/// <br/> 
+		/// <br/>
+		/// <br/>
 		/// </remarks>
         /// <example>
         ///		To update changelist 25:
-        ///		<code> 
+        ///		<code>
         ///		    Changelist c = Repository.GetChangelist(25);
-        ///		    
+        ///
         ///         // change the description
         ///         c.Description = "fixes for localization";
         ///		    c = Repository.UpdateChangelist(c);
         ///		</code>
         ///		To update changelist 15 as an admin user, changing type to Public:
-        ///		<code> 
+        ///		<code>
         ///		    Changelist c = Repository.GetChangelist(25);
-        ///		    
-        ///         ChangeCmdOptions opts = 
+        ///
+        ///         ChangeCmdOptions opts =
         ///         new ChangeCmdOptions(ChangeCmdFlags.Force);
         ///         c.Type = ChangeListType.Public;
         ///         c = Repository.UpdateChangelist(c, opts);
         ///		</code>
         /// </example>
-        /// <seealso cref="ChangeCmdFlags"/> 
+        /// <seealso cref="ChangeCmdFlags"/>
         public Changelist UpdateSubmittedChangelist(Changelist change, Options options)
 		{
 			if (change.Id <= 0)
@@ -925,23 +925,23 @@ namespace Perforce.P4
         /// <remarks>
         /// <br/>
 		/// <br/><b>p4 help change</b>
-		/// <br/> 
+		/// <br/>
 		/// <br/>     change -- Create or edit a changelist description
 		/// <br/>     changelist -- synonym for 'change'
-		/// <br/> 
+		/// <br/>
 		/// <br/>     p4 change [-s] [-f | -u] [[-O] changelist#]
 		/// <br/>     p4 change -d [-f -s -O] changelist#
 		/// <br/>     p4 change -o [-s] [-f] [[-O] changelist#]
-		/// <br/>     p4 change -i [-s] [-f | -u] 
+		/// <br/>     p4 change -i [-s] [-f | -u]
 		/// <br/>     p4 change -t restricted | public [-U user] [-f | -u | -O] changelist#
 		/// <br/>     p4 change -U user [-t restricted | public] [-f] changelist#
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	'p4 change' creates and edits changelists and their descriptions.
 		/// <br/> 	With no argument, 'p4 change' creates a new changelist.  If a
 		/// <br/> 	changelist number is specified, 'p4 change' edits an existing
 		/// <br/> 	pending changelist.  In both cases, the changelist specification
 		/// <br/> 	is placed into a form and the user's editor is invoked.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -d flag deletes a pending changelist, if it has no opened files
 		/// <br/> 	and no pending fixes associated with it.  Use 'p4 opened -a' to
 		/// <br/> 	report on opened files and 'p4 reopen' to move them to another
@@ -950,13 +950,13 @@ namespace Perforce.P4
 		/// <br/> 	fixes. The changelist can be deleted only by the user and client
 		/// <br/> 	who created it, or by a user with 'admin' privilege using the -f
 		/// <br/> 	flag.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -o flag writes the changelist specification to the standard
 		/// <br/> 	output.  The user's editor is not invoked.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -i flag reads a changelist specification from the standard
 		/// <br/> 	input.  The user's editor is not invoked.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -f flag forces the update or deletion of other users' pending
 		/// <br/> 	changelists.  -f can also force the deletion of submitted changelists
 		/// <br/> 	after they have been emptied of files using 'p4 obliterate'.  By
@@ -966,12 +966,12 @@ namespace Perforce.P4
 		/// <br/> 	an empty pending change via -U. The -f flag requires 'admin'
 		/// <br/> 	access granted by 'p4 protect'.  The -f and -u flags are mutually
 		/// <br/> 	exclusive.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -u flag can force the update of a submitted change by the owner
 		/// <br/> 	of the change. Only the Jobs, Type, and Description fields can be
 		/// <br/> 	changed	using the -u flag. The -f and -u flags cannot be used in
 		/// <br/> 	the same change command.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -s flag extends the list of jobs to include the fix status
 		/// <br/> 	for each job.  On new changelists, the fix status begins as the
 		/// <br/> 	special status 'ignore', which, if left unchanged simply excludes
@@ -979,20 +979,20 @@ namespace Perforce.P4
 		/// <br/> 	that applied with 'p4 fix -s', becomes the job's status when
 		/// <br/> 	the changelist is committed.  Note that this option exists
 		/// <br/> 	to support integration with external defect trackers.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -O flag specifies that the changelist number is the original
 		/// <br/> 	number of a changelist which was renamed on submit.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -U flag changes the 'User' of an empty pending change to the
 		/// <br/> 	specified user. The user field can only be changed using this flag
 		/// <br/> 	by the user who created the change, or by a user with 'admin'
 		/// <br/> 	privilege using the -f flag. This option is useful for running
 		/// <br/> 	in a trigger or script.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -t flag changes the 'Type' of the change to 'restricted'
 		/// <br/> 	or 'public' without displaying the change form. This option is
 		/// <br/> 	useful for running in a trigger or script.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The 'Type' field can be used to hide the change or its description
 		/// <br/> 	from users. Valid values for this field are 'public' (default), and
 		/// <br/> 	'restricted'. A shelved or committed change that is 'restricted' is
@@ -1003,21 +1003,21 @@ namespace Perforce.P4
 		/// <br/> 	'p4 change', 'p4 changes', and 'p4 describe' commands. Note that
 		/// <br/> 	the '-S' flag is required with 'p4 describe' for the command to
 		/// <br/> 	enforce shelved	rather than pending restricted changelist rules.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	If a user is not permitted to have access to a restricted change,
 		/// <br/> 	The 'Description' text is replaced with a 'no permission' message
 		/// <br/> 	(see 'Type' field). Users with admin permission can override the
 		/// <br/> 	restriction using the -f flag.
-		/// <br/> 
-		/// <br/> 
+		/// <br/>
+		/// <br/>
 		/// </remarks>
         /// <example>
         ///		To get changelist 25:
-        ///		<code> 
+        ///		<code>
         ///		    Changelist c = Repository.GetChangelist(25, null);
         ///		</code>
         /// </example>
-        /// <seealso cref="ChangeCmdFlags"/> 
+        /// <seealso cref="ChangeCmdFlags"/>
 		public Changelist GetChangelist(int changeId, Options options)
 		{
 			P4Command cmd = null;
@@ -1035,7 +1035,7 @@ namespace Perforce.P4
 				cmd = new P4Command(this, "change", true);
 				options["-o"] = null;
 			}
-	
+
 			P4CommandResult results = cmd.Run(options);
 
             if (results.Success)
@@ -1064,7 +1064,7 @@ namespace Perforce.P4
 				{
 					value.FromChangeCmdTaggedOutput((results.TaggedOutput[0]),offset,dst_mismatch);
 				}
-				
+
 
 				return value;
 			}
@@ -1083,23 +1083,23 @@ namespace Perforce.P4
         /// <remarks>
         /// <br/>
 		/// <br/><b>p4 help change</b>
-		/// <br/> 
+		/// <br/>
 		/// <br/>     change -- Create or edit a changelist description
 		/// <br/>     changelist -- synonym for 'change'
-		/// <br/> 
+		/// <br/>
 		/// <br/>     p4 change [-s] [-f | -u] [[-O] changelist#]
 		/// <br/>     p4 change -d [-f -s -O] changelist#
 		/// <br/>     p4 change -o [-s] [-f] [[-O] changelist#]
-		/// <br/>     p4 change -i [-s] [-f | -u] 
+		/// <br/>     p4 change -i [-s] [-f | -u]
 		/// <br/>     p4 change -t restricted | public [-U user] [-f | -u | -O] changelist#
 		/// <br/>     p4 change -U user [-t restricted | public] [-f] changelist#
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	'p4 change' creates and edits changelists and their descriptions.
 		/// <br/> 	With no argument, 'p4 change' creates a new changelist.  If a
 		/// <br/> 	changelist number is specified, 'p4 change' edits an existing
 		/// <br/> 	pending changelist.  In both cases, the changelist specification
 		/// <br/> 	is placed into a form and the user's editor is invoked.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -d flag deletes a pending changelist, if it has no opened files
 		/// <br/> 	and no pending fixes associated with it.  Use 'p4 opened -a' to
 		/// <br/> 	report on opened files and 'p4 reopen' to move them to another
@@ -1108,13 +1108,13 @@ namespace Perforce.P4
 		/// <br/> 	fixes. The changelist can be deleted only by the user and client
 		/// <br/> 	who created it, or by a user with 'admin' privilege using the -f
 		/// <br/> 	flag.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -o flag writes the changelist specification to the standard
 		/// <br/> 	output.  The user's editor is not invoked.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -i flag reads a changelist specification from the standard
 		/// <br/> 	input.  The user's editor is not invoked.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -f flag forces the update or deletion of other users' pending
 		/// <br/> 	changelists.  -f can also force the deletion of submitted changelists
 		/// <br/> 	after they have been emptied of files using 'p4 obliterate'.  By
@@ -1124,12 +1124,12 @@ namespace Perforce.P4
 		/// <br/> 	an empty pending change via -U. The -f flag requires 'admin'
 		/// <br/> 	access granted by 'p4 protect'.  The -f and -u flags are mutually
 		/// <br/> 	exclusive.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -u flag can force the update of a submitted change by the owner
 		/// <br/> 	of the change. Only the Jobs, Type, and Description fields can be
 		/// <br/> 	changed	using the -u flag. The -f and -u flags cannot be used in
 		/// <br/> 	the same change command.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -s flag extends the list of jobs to include the fix status
 		/// <br/> 	for each job.  On new changelists, the fix status begins as the
 		/// <br/> 	special status 'ignore', which, if left unchanged simply excludes
@@ -1137,20 +1137,20 @@ namespace Perforce.P4
 		/// <br/> 	that applied with 'p4 fix -s', becomes the job's status when
 		/// <br/> 	the changelist is committed.  Note that this option exists
 		/// <br/> 	to support integration with external defect trackers.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -O flag specifies that the changelist number is the original
 		/// <br/> 	number of a changelist which was renamed on submit.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -U flag changes the 'User' of an empty pending change to the
 		/// <br/> 	specified user. The user field can only be changed using this flag
 		/// <br/> 	by the user who created the change, or by a user with 'admin'
 		/// <br/> 	privilege using the -f flag. This option is useful for running
 		/// <br/> 	in a trigger or script.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -t flag changes the 'Type' of the change to 'restricted'
 		/// <br/> 	or 'public' without displaying the change form. This option is
 		/// <br/> 	useful for running in a trigger or script.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The 'Type' field can be used to hide the change or its description
 		/// <br/> 	from users. Valid values for this field are 'public' (default), and
 		/// <br/> 	'restricted'. A shelved or committed change that is 'restricted' is
@@ -1161,17 +1161,17 @@ namespace Perforce.P4
 		/// <br/> 	'p4 change', 'p4 changes', and 'p4 describe' commands. Note that
 		/// <br/> 	the '-S' flag is required with 'p4 describe' for the command to
 		/// <br/> 	enforce shelved	rather than pending restricted changelist rules.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	If a user is not permitted to have access to a restricted change,
 		/// <br/> 	The 'Description' text is replaced with a 'no permission' message
 		/// <br/> 	(see 'Type' field). Users with admin permission can override the
 		/// <br/> 	restriction using the -f flag.
-		/// <br/> 
-		/// <br/> 
+		/// <br/>
+		/// <br/>
 		/// </remarks>
         /// <example>
         ///		To get changelist 25:
-        ///		<code> 
+        ///		<code>
         ///		    Changelist c = Repository.GetChangelist(25);
         ///		</code>
         /// </example>
@@ -1188,22 +1188,22 @@ namespace Perforce.P4
         /// <returns>A list containing the matching changes</returns>
         /// <remarks>
         /// <br/><b>p4 help changes</b>
-        /// <br/> 
+        /// <br/>
         /// <br/>     changes -- Display list of pending and submitted changelists
         /// <br/>     changelists -- synonym for 'changes'
-        /// <br/> 
+        /// <br/>
         /// <br/>     p4 changes [options] [file[revRange] ...]
-        /// <br/> 
+        /// <br/>
         /// <br/> 	options: -i -t -l -L -f -c client -m max -s status -u user
-        /// <br/> 
+        /// <br/>
         /// <br/> 	Returns a list of all pending and submitted changelists currently
         /// <br/> 	stored in the server.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	If files are specified, 'p4 changes' lists only changelists that
         /// <br/> 	affect those files.  If the file specification includes a revision
         /// <br/> 	range, 'p4 changes' lists only submitted changelists that affect
         /// <br/> 	the specified revisions.  See 'p4 help revisions' for details.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	If files are not specified, 'p4 changes' limits its report
         /// <br/> 	according to each change's type ('public' or 'restricted').
         /// <br/> 	If a submitted or shelved change is restricted, the change is
@@ -1211,34 +1211,34 @@ namespace Perforce.P4
         /// <br/> 	permission for at least one file in the change. Only the owner
         /// <br/> 	of a restricted and pending (not shelved) change is permitted
         /// <br/> 	to see it.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	The -i flag also includes any changelists integrated into the
         /// <br/> 	specified files.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	The -t flag displays the time as well as the date.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	The -l flag displays the full text of the changelist
         /// <br/> 	descriptions.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	The -L flag displays the changelist descriptions, truncated to 250
         /// <br/> 	characters if longer.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	The -f flag enables admin users to view restricted changes.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	The -c client flag displays only submitted by the specified client.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	The -m max flag limits changes to the 'max' most recent.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	The -s status flag limits the output to changelists with the specified
         /// <br/> 	status. Specify '-s pending', '-s shelved', or '-s submitted'.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	The -u user flag displays only changes owned by the specified user.
-        /// <br/> 
-        /// <br/> 
+        /// <br/>
+        /// <br/>
         /// </remarks>
         /// <example>
         ///		To get all changelists owned by user bsmith:
-        ///		<code> 
+        ///		<code>
         ///		    ChangesCmdOptions opts = new ChangesCmdOptions(ChangesCmdFlags.None,
         ///		        null, 0, ChangeListStatus.None, "bsmith");
         ///
@@ -1246,11 +1246,11 @@ namespace Perforce.P4
         ///		    Repository.GetChangelists(opts, null);
         ///		</code>
         ///		To get all shelved changelists in file path //depot/main/...:
-        ///		<code> 
+        ///		<code>
         ///		    ChangesCmdOptions opts =new ChangesCmdOptions(ChangesCmdFlags.None,
         ///		        null, 0, ChangeListStatus.Shelved, null);
         ///
-        ///         FileSpec file = 
+        ///         FileSpec file =
         ///         new FileSpec(new DepotPath("//depot/main/..."), null, null, null);
         ///
         ///		    IList&lt;Changelist&gt; changes =
@@ -1258,7 +1258,7 @@ namespace Perforce.P4
         ///		</code>
         ///		To the 20 latest submitted changelists from client "build_workspace"
         ///		with their full description:
-        ///		<code> 
+        ///		<code>
         ///		    ChangesCmdOptions opts =new ChangesCmdOptions(ChangesCmdFlags.FullDescription,
         ///		        "build_workspace", 20, ChangeListStatus.Submitted, null);
         ///
@@ -1267,24 +1267,24 @@ namespace Perforce.P4
         ///		</code>
         ///		To get all pending changelists as an admin user in file path
         ///		//depot/finance/...	including restricted changelists:
-        ///		<code> 
+        ///		<code>
         ///		    ChangesCmdOptions opts =new ChangesCmdOptions(ChangesCmdFlags.ViewRestricted,
         ///		        null, 0, ChangeListStatus.Pending, null);
         ///
-        ///         FileSpec file = 
+        ///         FileSpec file =
         ///         new FileSpec(new DepotPath("//depot/finance/..."), null, null, null);
         ///
         ///		    IList&lt;Changelist&gt; changes =
         ///		    Repository.GetChangelists(opts, file);
         ///		</code>
         /// </example>
-        /// <seealso cref="ChangesCmdFlags"/> 
+        /// <seealso cref="ChangesCmdFlags"/>
         public IList<Changelist> GetChangelists(Options options, params FileSpec[] files)
 		{
 			P4Command cmd = null;
 			if ((files != null) && (files.Length > 0))
 			{
-				cmd = new P4Command(this, "changes", true, FileSpec.ToStrings(files));
+				cmd = new P4Command(this, "changes", true, FileSpec.ToEscapedStrings(files));
 			}
 			else
 			{
@@ -1333,23 +1333,23 @@ namespace Perforce.P4
         /// <remarks>
         /// <br/>
 		/// <br/><b>p4 help change</b>
-		/// <br/> 
+		/// <br/>
 		/// <br/>     change -- Create or edit a changelist description
 		/// <br/>     changelist -- synonym for 'change'
-		/// <br/> 
+		/// <br/>
 		/// <br/>     p4 change [-s] [-f | -u] [[-O] changelist#]
 		/// <br/>     p4 change -d [-f -s -O] changelist#
 		/// <br/>     p4 change -o [-s] [-f] [[-O] changelist#]
-		/// <br/>     p4 change -i [-s] [-f | -u] 
+		/// <br/>     p4 change -i [-s] [-f | -u]
 		/// <br/>     p4 change -t restricted | public [-U user] [-f | -u | -O] changelist#
 		/// <br/>     p4 change -U user [-t restricted | public] [-f] changelist#
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	'p4 change' creates and edits changelists and their descriptions.
 		/// <br/> 	With no argument, 'p4 change' creates a new changelist.  If a
 		/// <br/> 	changelist number is specified, 'p4 change' edits an existing
 		/// <br/> 	pending changelist.  In both cases, the changelist specification
 		/// <br/> 	is placed into a form and the user's editor is invoked.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -d flag deletes a pending changelist, if it has no opened files
 		/// <br/> 	and no pending fixes associated with it.  Use 'p4 opened -a' to
 		/// <br/> 	report on opened files and 'p4 reopen' to move them to another
@@ -1358,13 +1358,13 @@ namespace Perforce.P4
 		/// <br/> 	fixes. The changelist can be deleted only by the user and client
 		/// <br/> 	who created it, or by a user with 'admin' privilege using the -f
 		/// <br/> 	flag.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -o flag writes the changelist specification to the standard
 		/// <br/> 	output.  The user's editor is not invoked.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -i flag reads a changelist specification from the standard
 		/// <br/> 	input.  The user's editor is not invoked.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -f flag forces the update or deletion of other users' pending
 		/// <br/> 	changelists.  -f can also force the deletion of submitted changelists
 		/// <br/> 	after they have been emptied of files using 'p4 obliterate'.  By
@@ -1374,12 +1374,12 @@ namespace Perforce.P4
 		/// <br/> 	an empty pending change via -U. The -f flag requires 'admin'
 		/// <br/> 	access granted by 'p4 protect'.  The -f and -u flags are mutually
 		/// <br/> 	exclusive.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -u flag can force the update of a submitted change by the owner
 		/// <br/> 	of the change. Only the Jobs, Type, and Description fields can be
 		/// <br/> 	changed	using the -u flag. The -f and -u flags cannot be used in
 		/// <br/> 	the same change command.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -s flag extends the list of jobs to include the fix status
 		/// <br/> 	for each job.  On new changelists, the fix status begins as the
 		/// <br/> 	special status 'ignore', which, if left unchanged simply excludes
@@ -1387,20 +1387,20 @@ namespace Perforce.P4
 		/// <br/> 	that applied with 'p4 fix -s', becomes the job's status when
 		/// <br/> 	the changelist is committed.  Note that this option exists
 		/// <br/> 	to support integration with external defect trackers.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -O flag specifies that the changelist number is the original
 		/// <br/> 	number of a changelist which was renamed on submit.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -U flag changes the 'User' of an empty pending change to the
 		/// <br/> 	specified user. The user field can only be changed using this flag
 		/// <br/> 	by the user who created the change, or by a user with 'admin'
 		/// <br/> 	privilege using the -f flag. This option is useful for running
 		/// <br/> 	in a trigger or script.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -t flag changes the 'Type' of the change to 'restricted'
 		/// <br/> 	or 'public' without displaying the change form. This option is
 		/// <br/> 	useful for running in a trigger or script.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The 'Type' field can be used to hide the change or its description
 		/// <br/> 	from users. Valid values for this field are 'public' (default), and
 		/// <br/> 	'restricted'. A shelved or committed change that is 'restricted' is
@@ -1411,27 +1411,27 @@ namespace Perforce.P4
 		/// <br/> 	'p4 change', 'p4 changes', and 'p4 describe' commands. Note that
 		/// <br/> 	the '-S' flag is required with 'p4 describe' for the command to
 		/// <br/> 	enforce shelved	rather than pending restricted changelist rules.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	If a user is not permitted to have access to a restricted change,
 		/// <br/> 	The 'Description' text is replaced with a 'no permission' message
 		/// <br/> 	(see 'Type' field). Users with admin permission can override the
 		/// <br/> 	restriction using the -f flag.
-		/// <br/> 
-		/// <br/> 
+		/// <br/>
+		/// <br/>
 		/// </remarks>
         /// <example>
         ///		To delete pending changelist 34:
-        ///		<code> 
+        ///		<code>
         ///		    Repository.DeleteChangelist(34,null);
         ///		</code>
         ///		To delete pending changelist 34 as an admin user
         ///		who is not owner of the change:
-        ///		<code> 
+        ///		<code>
         ///		    ChangeCmdOptions opts = new ChangeCmdOptions(ChangeCmdFlags.Force);
         ///		    Repository.DeleteChangelist(34, opts);
         ///		</code>
         /// </example>
-        /// <seealso cref="ChangeCmdFlags"/> 
+        /// <seealso cref="ChangeCmdFlags"/>
         public void DeleteChangelist(Changelist change, Options options)
 		{
 			if (change == null)

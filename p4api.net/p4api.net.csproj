@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -84,7 +84,12 @@
     <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
     <CodeAnalysisFailOnMissingRules>true</CodeAnalysisFailOnMissingRules>
   </PropertyGroup>
-  
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>MyKey.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'LocalRelease|AnyCPU'">
     <OutputPath>bin\LocalRelease\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
@@ -196,6 +201,8 @@
     <Compile Include="Server.cs" />
     <Compile Include="SimpleList.cs" />
     <Compile Include="Stream.cs" />
+    <Compile Include="StreamIntegrationLog.cs" />
+    <Compile Include="StreamLog.cs" />
     <Compile Include="StreamMetaData.cs" />
     <Compile Include="StringEnum.cs" />
     <Compile Include="SubmitResults.cs" />
@@ -208,7 +215,9 @@
     <Compile Include="StringList.cs" />
     <Compile Include="TaggedObject.cs" />
   </ItemGroup>
-  
+  <ItemGroup>
+    <None Include="MyKey.snk" />
+  </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Service References\" />
   </ItemGroup>
@@ -216,7 +225,7 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>
-</PostBuildEvent>
+    </PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
     <PreBuildEvent>

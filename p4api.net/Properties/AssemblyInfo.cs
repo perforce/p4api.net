@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration( "" )]
 [assembly: AssemblyCompany("Perforce Software, Inc.")]
 [assembly: AssemblyProduct("Helix Core API for .NET")]
-[assembly: AssemblyCopyright("Copyright (C) 2021 Perforce Software, Inc.")]
+[assembly: AssemblyCopyright("Copyright (C) 2013 Perforce Software, Inc.")]
 [assembly: AssemblyTrademark( "" )]
 [assembly: AssemblyCulture( "" )]
 
@@ -32,7 +32,11 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("2020.2.207.5590")]
-[assembly: AssemblyFileVersion("2020.2.207.5590")]
+[assembly: AssemblyVersion("2011.1.0.0")]
+[assembly: AssemblyFileVersion("2011.1.0.0")]
 
-[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("p4api.net-unit-test")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("p4api.net-unit-test, PublicKey=00240000048000009400000006020000002400005253413100040000010001005bd58b86ff0b4a" +
+"c3872932400b9b4da1d7d72faad9c7a37cc1c9c3d9a89d7de24f260d07fe676146196ef8f1e5b5" +
+"dc49d2eaa0347780454b82afb9502d15730858f0acc35cfd20285d4aa924b2edb55cb56846a2c3" +
+"cbe2d65303b45c9dd737e6f81fec00d5c5f3c66e1335bc36d1ad13bea44851d35d65d08bee5aac" +
+"f9e409b2")]

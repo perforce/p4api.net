@@ -1963,13 +1963,13 @@ namespace p4api.net.unit.test
                         if (errors == null)
                         {
                             Assert.IsNotNull(conErr);
-                            Assert.AreEqual(conErr.ErrorCode, 858128410);
+                            Assert.AreEqual(conErr.ErrorCode, 824577061);
                             //Assert.IsTrue(conErr.ErrorMessage.Contains("Connect to server failed"));
                         }
                         else
                         {
                             Assert.IsNotNull(errors);
-                            Assert.AreEqual(errors[0].ErrorCode, 858128410);
+                            Assert.AreEqual(errors[0].ErrorCode, 824577061);
                             //Assert.IsTrue(errors[0].ErrorMessage.Contains("Connect to server failed"));
                         }
                         target.Port = server; // back to the good port name

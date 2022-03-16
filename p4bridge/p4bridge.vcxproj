@@ -144,7 +144,10 @@
       <StackReserveSize>2097152</StackReserveSize>
       <StackCommitSize>16384</StackCommitSize>
     </Link>
-    
+    <PreBuildEvent>
+      <Command>
+</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -164,7 +167,10 @@
       <IgnoreSpecificDefaultLibraries>LIBCMT.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <FixedBaseAddress>false</FixedBaseAddress>
     </Link>
-    
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -193,8 +199,13 @@
       <Command>
       </Command>
     </CustomBuildStep>
-    
-    
+    <PreBuildEvent>
+      <Command>
+</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>update versions</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='LocalRelease|Win32'">
     <ClCompile>
@@ -223,8 +234,13 @@
       <Command>
       </Command>
     </CustomBuildStep>
-    
-    
+    <PreBuildEvent>
+      <Command>
+</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>update versions</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -248,8 +264,13 @@
       <AdditionalLibraryDirectories>..\p4api\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <FixedBaseAddress>false</FixedBaseAddress>
     </Link>
-    
-    
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>update versions</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='LocalRelease|x64'">
     <ClCompile>
@@ -272,8 +293,13 @@
       <AdditionalLibraryDirectories>..\p4api\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <FixedBaseAddress>false</FixedBaseAddress>
     </Link>
-    
-    
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>update versions</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="P4BridgeEnviro.cpp" />

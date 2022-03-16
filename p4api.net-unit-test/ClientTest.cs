@@ -3283,7 +3283,11 @@ namespace p4api.net.unit.test
                         Assert.IsNotNull(rFiles);
                         Assert.AreEqual(1, rFiles.Count);
 
-                        // test revert against all files in the default changelist (3 in total)
+                        con.Client.EditFiles(null, new FileSpec(new DepotPath("//depot/TestData/WingDings.txt"), null));
+
+                        // test revert against all files in the default changelist (1 file needs to be opened now)
+                        con.Client.EditFiles(null, new FileSpec(new DepotPath("//depot/TestData/WingDings.txt"), null));
+
                         fromFile = new FileSpec(new DepotPath("//..."), null);
                         sFlags = new Options(
                             RevertFilesCmdFlags.Preview,
@@ -3291,7 +3295,10 @@ namespace p4api.net.unit.test
                         rFiles = con.Client.RevertFiles(sFlags, fromFile);
 
                         Assert.IsNotNull(rFiles);
-                        Assert.AreEqual(3, rFiles.Count);
+                        Assert.AreEqual(1, rFiles.Count);
+
+                        con.Client.EditFiles(null, new FileSpec(new DepotPath("//depot/TestData/WingDings.txt"), null));
+
                     }
                 }
                 finally

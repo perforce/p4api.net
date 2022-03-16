@@ -545,6 +545,38 @@ namespace Perforce.P4
                                                     "{13}";
 
         /// <summary>
+        /// Format of a stream specification used to save a stream to the server,
+        /// used for Stream specs without parentview field - pre 20.2
+        /// </summary>
+        private static String StreamSpecFormatPre202 =
+                                            "Stream:\t{0}\r\n" +
+                                            "\r\n" +
+                                            "Update:\t{1}\r\n" +
+                                            "\r\n" +
+                                            "Access:\t{2}\r\n" +
+                                            "\r\n" +
+                                            "Owner:\t{3}\r\n" +
+                                            "\r\n" +
+                                            "Name:\t{4}\r\n" +
+                                            "\r\n" +
+                                            "Parent:\t{5}\r\n" +
+                                            "\r\n" +
+                                            "Type:\t{6}\r\n" +
+                                            "\r\n" +
+                                            "Description:\r\n\t{7}\r\n" +
+                                            "\r\n" +
+                                            "Options:\t{8}\r\n" +
+                                            "\r\n" +
+                                            "Paths:\r\n\t{9}\r\n" +
+                                            "\r\n" +
+                                            "Remapped:\r\n\t{10}\r\n" +
+                                            "\r\n" +
+                                            "Ignored:\r\n\t{11}\r\n" +
+                                            "\r\n" +
+                                            "{12}";
+
+
+        /// <summary>
         /// Convert to specification in server format
         /// </summary>
         /// <returns></returns>
@@ -582,12 +614,23 @@ namespace Perforce.P4
             if (CustomFields.Count != 0)
                 customFieldsString = CustomFieldsToString();
 
-            String ParentView = _parentView.ToString(StringEnumCase.Lower);
+            String value;
 
-            String value = String.Format(StreamSpecFormat, Id,
-                FormBase.FormatDateTime(Updated), FormBase.FormatDateTime(Accessed),
-                OwnerName, Name, ParentPath, Type, descStr, _options.ToString(),
-                ParentView, pathsView, remappedView, ignoredView, customFieldsString);
+            if (_parentView == ParentView.None)
+            {
+                value = String.Format(StreamSpecFormatPre202, Id,
+                    FormBase.FormatDateTime(Updated), FormBase.FormatDateTime(Accessed),
+                    OwnerName, Name, ParentPath, Type, descStr, _options.ToString(),
+                    pathsView, remappedView, ignoredView, customFieldsString);
+
+            } else {
+                String ParentView = _parentView.ToString(StringEnumCase.Lower);
+                value = String.Format(StreamSpecFormat, Id,
+                    FormBase.FormatDateTime(Updated), FormBase.FormatDateTime(Accessed),
+                    OwnerName, Name, ParentPath, Type, descStr, _options.ToString(),
+                    ParentView, pathsView, remappedView, ignoredView, customFieldsString);
+            }
+
             return value;
         }
 

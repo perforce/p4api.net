@@ -487,6 +487,11 @@ namespace Perforce.P4
 		/// 
 		/// </summary>
 		ServerOnly = 0x0002,
+		///The -So flag can be used with '-c change' to open the client's stream
+		///spec for edit.  (See 'p4 help streamcmds'.)
+		/// 
+		/// </summary>
+		StreamEdit = 0x0003,
 	};
 
 	public partial class Options
@@ -543,17 +548,21 @@ namespace Perforce.P4
 			{
 				this["-c"] = changeList.ToString();
 			}
-			if (flags == EditFilesCmdFlags.ServerOnly)
+			if (flags == EditFilesCmdFlags.ServerOnly && !flags.HasFlag(EditFilesCmdFlags.StreamEdit))
 			{
 				this["-k"] = null;
 			}
-			if (flags == EditFilesCmdFlags.PreviewOnly)
+			if (flags == EditFilesCmdFlags.PreviewOnly && !flags.HasFlag(EditFilesCmdFlags.StreamEdit))
 			{
 				this["-n"] = null;
 			}
-			if (fileType != null)
+			if (fileType != null && !flags.HasFlag(EditFilesCmdFlags.StreamEdit))
 			{
 				this["-t"] = fileType.ToString();
+			}
+			if (flags == EditFilesCmdFlags.StreamEdit)
+			{
+				this["-So"] = null;
 			}
 		}
 	}
@@ -2247,7 +2256,13 @@ namespace Perforce.P4
         /// <summary>
         /// All Whitespace and line ending flags together
         /// </summary>
-		WsFlags = IgnoreWhitespaceChanges | IgnoreWhitespace | IgnoreLineEndings
+		WsFlags = IgnoreWhitespaceChanges | IgnoreWhitespace | IgnoreLineEndings,
+
+		/// <summary>
+		/// The -So flag cen be used to resolve opened Stream spec
+		/// </summary>
+		ResolveStream = 0x0090,
+
 	}
 	/// <summary>
 	///  Options for the resolve command
@@ -2442,7 +2457,7 @@ namespace Perforce.P4
 		/// </remarks>
 		public Options(ResolveFilesCmdFlags flags, int changeList)
 		{
-			if ((flags & ResolveFilesCmdFlags.LimitFlags) != 0)
+			if (((flags & ResolveFilesCmdFlags.LimitFlags) != 0) && !flags.HasFlag(ResolveFilesCmdFlags.ResolveStream))
 			{
 				// these can be combined
 				string flag = "-A";
@@ -2480,7 +2495,7 @@ namespace Perforce.P4
 
 				this[flag] = null;
 			}
-			if ((flags & ResolveFilesCmdFlags.WsFlags) != 0)
+			if ((flags & ResolveFilesCmdFlags.WsFlags) != 0 && !flags.HasFlag(ResolveFilesCmdFlags.ResolveStream))
 			{
 				// these are mutually exclusive
 				string flag = "-d";
@@ -2494,7 +2509,7 @@ namespace Perforce.P4
 				this[flag] = null;
 			}
 
-			if ((flags & ResolveFilesCmdFlags.ForceResolve) != 0)
+			if (((flags & ResolveFilesCmdFlags.ForceResolve) != 0) && !flags.HasFlag(ResolveFilesCmdFlags.ResolveStream))
 			{
 				this["-f"] = null;
 			}
@@ -2502,7 +2517,7 @@ namespace Perforce.P4
 			{
 				this["-n"] = null;
 			}
-			if ((flags & ResolveFilesCmdFlags.PreviewPlusOnly) != 0)
+			if ((flags & ResolveFilesCmdFlags.PreviewPlusOnly) != 0 && !flags.HasFlag(ResolveFilesCmdFlags.ResolveStream))
 			{
 				this["-N"] = null;
 			}
@@ -2510,18 +2525,23 @@ namespace Perforce.P4
 			{
 				this["-o"] = null;
 			}
-			if ((flags & ResolveFilesCmdFlags.ForceTextualMerge) != 0)
+			if ((flags & ResolveFilesCmdFlags.ForceTextualMerge) != 0 && !flags.HasFlag(ResolveFilesCmdFlags.ResolveStream))
 			{
 				this["-t"] = null;
 			}
-			if ((flags & ResolveFilesCmdFlags.MarkAllChanges) != 0)
+			if ((flags & ResolveFilesCmdFlags.MarkAllChanges) != 0 && !flags.HasFlag(ResolveFilesCmdFlags.ResolveStream))
 			{
 				this["-v"] = null;
 			}
 
-			if (changeList > 0)
+			if ((changeList > 0) && !flags.HasFlag(ResolveFilesCmdFlags.ResolveStream))
 			{
 				this["-c"] = changeList.ToString();
+			}
+
+			if ((flags & ResolveFilesCmdFlags.ResolveStream) != 0)
+			{
+				this["-So"] = null;
 			}
 		}
 	}
@@ -3719,6 +3739,10 @@ namespace Perforce.P4
 		/// 	altering files in the client workspace.
 		/// </summary>
 		ServerOnly = 0x0004,
+		/// <summary>
+		/// The -So flag can be used to revert opened stream spec.
+		/// </summary>
+		StreamRevert = 0x0005,
 	}
 
 	public partial class Options
@@ -3766,28 +3790,30 @@ namespace Perforce.P4
 		/// </remarks>
 		public Options(RevertFilesCmdFlags flags, int changelist)
 		{
-			if ((flags & RevertFilesCmdFlags.UnchangedOnly) != 0)
+			if ((flags & RevertFilesCmdFlags.UnchangedOnly) != 0 && !flags.HasFlag(RevertFilesCmdFlags.StreamRevert))
 			{
 				this["-a"] = null;
 			}
-			if ((flags & RevertFilesCmdFlags.Preview) != 0)
+			if ((flags & RevertFilesCmdFlags.Preview & RevertFilesCmdFlags.StreamRevert) != 0 && !flags.HasFlag(RevertFilesCmdFlags.StreamRevert))
 			{
 				this["-n"] = null;
 			}
-			if ((flags & RevertFilesCmdFlags.ServerOnly) != 0)
+            if ((flags & RevertFilesCmdFlags.ServerOnly & RevertFilesCmdFlags.StreamRevert) != 0 && !flags.HasFlag(RevertFilesCmdFlags.StreamRevert))
 			{
 				this["-k"] = null;
 			}
-
 			if (changelist > 0)
 			{
 				this["-c"] = changelist.ToString();
 			}
-
             if (changelist == 0)
             {
                 this["-c"] = "default";
             }
+			if (flags == RevertFilesCmdFlags.StreamRevert)
+			{
+				this["-So"] = null;
+			}
 		}
 	}
 	public class RevertCmdOptions : Options
@@ -9016,6 +9042,19 @@ namespace Perforce.P4
         /// <param name="streampath">path to check for streams</param>
         /// <param name="maxItems">max number of streams to list</param>
 		public Options(StreamsCmdFlags flags, string filter, string tagged, string streampath, int maxItems)
+			: this(flags, filter, tagged, streampath, maxItems, null) { }
+
+
+		/// <summary>
+		/// Options for the Streams command
+		/// </summary>
+		/// <param name="flags">Streams flags</param>
+		/// <param name="filter">filter output fields</param>
+		/// <param name="tagged">limit output to tagged fields</param>
+		/// <param name="streampath">path to check for streams</param>
+		/// <param name="maxItems">max number of streams to list</param>
+		/// <param name="viewmatch">returns the stream containing given depot path</param>
+		public Options(StreamsCmdFlags flags, string filter, string tagged, string streampath, int maxItems, string viewmatch)
 		{
 			if (String.IsNullOrEmpty(filter) != true)
 			{
@@ -9031,6 +9070,11 @@ namespace Perforce.P4
 			{
 				this["-m"] = maxItems.ToString();
 			}
+
+			if (String.IsNullOrEmpty(viewmatch) != true)
+			{
+				this["--viewmatch"] = viewmatch;
+            }
 		}
 	}
 
