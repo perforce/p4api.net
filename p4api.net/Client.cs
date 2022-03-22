@@ -2287,6 +2287,24 @@ namespace Perforce.P4
 			return ResolveFiles(null, options, files);
 		}
 
+		public bool ResolveStream(Options options)
+		{
+			bool result = false;
+			P4Command cmd = new P4Command(Connection, "resolve", true, null);
+			P4CommandResult results = cmd.Run(options);
+
+			if (results.Success)
+			{
+				if (cmd.InfoOutput[0].ToString().Contains(" skipped ")) {
+					P4Exception.Throw(ErrorSeverity.E_FAILED, "Stream needs resolve action: -ay/-at");
+				}
+				result = true;
+			}
+			return result;		
+		}
+
+		
+
 		List<FileResolveRecord> CurrentResolveRecords = null;
 
 		FileResolveRecord CurrentResolveRecord = null;
@@ -2619,6 +2637,10 @@ namespace Perforce.P4
 			Options options,
 			params FileSpec[] files)
 		{
+			if (options.ContainsKey("-So"))
+            {
+				P4Exception.Throw(ErrorSeverity.E_FAILED, "Trying to resolve Stream, use ResolveStreams(Options options) instead");
+			}
             string change=null;
             options.TryGetValue("-c",out change);
             GetOpenedFilesOptions openedOptions = new GetOpenedFilesOptions((GetOpenedFilesCmdFlags.None),

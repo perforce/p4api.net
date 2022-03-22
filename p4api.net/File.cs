@@ -42,9 +42,15 @@ namespace Perforce.P4
         /// </summary>
 		public string Client;
 
-        /// <summary>
-        /// Default constructor
-        /// </summary>
+		/// <summary>
+		/// Stream path, used when performing operations on stream spec:
+		/// editing, resolving, reverting.
+		/// </summary>
+		public string Stream;
+
+		/// <summary>
+		/// Default constructor
+		/// </summary>
 		public File() { }
 
         /// <summary>
@@ -71,8 +77,39 @@ namespace Perforce.P4
 			DateTime submittime,
 			string user,
 			string client)
-			: base(depotPath, clientPath, null, rev) 
+			: this(depotPath, clientPath, rev, haveRev, change, action, type, submittime, user, client, null) 
 		{
+		}
+
+		/// <summary>
+		/// Fully parameterized constructor
+		/// </summary>
+		/// <param name="depotPath">Server Depot Path</param>
+		/// <param name="clientPath">Client workspace Path</param>
+		/// <param name="rev">Latest Revision of this file</param>
+		/// <param name="haveRev">Revision of this file in the workspace</param>
+		/// <param name="change">Change ID which contains this file</param>
+		/// <param name="action">Last Action taken on this file</param>
+		/// <param name="type">The file type</param>
+		/// <param name="submittime">The time when the file was submitted</param>
+		/// <param name="user">the User which created this file</param>
+		/// <param name="client">the name of the client/workspace which contains this file</param>
+		/// <param name="stream">the name of the stream being edited/reverted/resolved</param>
+		public File(
+			DepotPath depotPath,
+			ClientPath clientPath,
+			Revision rev,
+			Revision haveRev,
+			int change,
+			FileAction action,
+			FileType type,
+			DateTime submittime,
+			string user,
+			string client,
+			string stream)
+			: base(depotPath, clientPath, null, rev)
+		{
+			Stream = stream;
 			ChangeId = change;
 			Action = action;
 			Type = type;
@@ -82,10 +119,10 @@ namespace Perforce.P4
 			Client = client;
 		}
 
-        /// <summary>
-        /// Given a Tagged object from the server, instantiate this File from the object
-        /// </summary>
-        /// <param name="obj">Tagged Object to Parse</param>
+		/// <summary>
+		/// Given a Tagged object from the server, instantiate this File from the object
+		/// </summary>
+		/// <param name="obj">Tagged Object to Parse</param>
 		public void ParseFilesCmdTaggedData(TaggedObject obj)
 		{
 			if (obj.ContainsKey("depotFile"))
@@ -142,6 +179,11 @@ namespace Perforce.P4
 			if (obj.ContainsKey("client"))
 			{
 				Client = obj["client"];
+			}
+
+			if (obj.ContainsKey("stream"))
+			{
+				Stream = obj["stream"];
 			}
 		}
 

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+
 
 namespace Perforce.P4
 {
@@ -9,7 +9,7 @@ namespace Perforce.P4
 	/// Describes the mapping type.
 	/// </summary>
 	public enum MapType { None, Include, Exclude, Overlay,
-        Share, Isolate, Import, ImportSubmittable, StreamPathExclude }
+        Share, Isolate, Import, ImportSubmittable, StreamPathExclude, Ditto }
 
 	/// <summary>
 	/// A single entry in a view map.
@@ -144,9 +144,9 @@ namespace Perforce.P4
 				{
 					if (line.Contains(' ') == false)
 					{
-                        if (line.StartsWith("-/") || line.StartsWith("+/"))
+                        if (line.StartsWith("-/") || line.StartsWith("+/") || line.StartsWith("&/"))
                         {
-                            parts[0] = line.TrimStart('-', '+');
+                            parts[0] = line.TrimStart('-', '+', '&');
                         }
                         else
                         {
@@ -166,7 +166,7 @@ namespace Perforce.P4
 					}
 				}
 			}
-			parts[0] = line.Substring(start, cnt).TrimStart('-','+');
+			parts[0] = line.Substring(start, cnt).TrimStart('-','+','&');
 
 			if (line.Length > 0)
 			{
@@ -226,6 +226,10 @@ namespace Perforce.P4
                 else if (line.StartsWith("exclude"))
 				{
 					lineType = MapType.StreamPathExclude;
+				}
+				else if ((line[0] == '&') || (line.StartsWith("\"&")))
+				{
+					lineType = MapType.Ditto;
 				}
 			}
 			String[] sides = SplitViewLine(line.ToString());
@@ -359,6 +363,16 @@ namespace Perforce.P4
 						else
 							left = String.Format("{0}", left);
 					}
+					else if (entry.Type == MapType.Ditto)
+					{
+						if (left.Contains(' '))
+						{
+							left = String.Format("&\"{0}\"", left);
+						}
+						else
+							left = String.Format("&{0}", left);
+					}
+
 				}
 
 				try

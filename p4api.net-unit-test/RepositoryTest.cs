@@ -4775,5 +4775,68 @@ namespace p4api.net.unit.test
                 unicode = !unicode;
             }
         }
+
+        /// <summary>
+        ///A test for GetDittoMappingFilesTest
+        ///</summary>
+        [TestMethod()]
+        public void GetDittoMappingFilesTest()
+        {
+            bool unicode = false;
+
+            string uri = "localhost:6666";
+            string user = "admin";
+            string pass = string.Empty;
+            string ws_client = "ditto-client";
+
+
+            for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
+            {
+                Process p4d = Utilities.DeployP4TestServer(TestDir, 6, unicode);
+                Server server = new Server(new ServerAddress(uri));
+                try
+                {
+                    Repository rep = new Repository(server);
+
+                    using (Connection con = rep.Connection)
+                    {
+                        con.UserName = user;
+                        con.Client = new Client();
+                        con.Client.Name = ws_client;
+                        string clientRoot = TestDir + "\\clients\\ditto-client";
+
+                        bool connected = con.Connect(null);
+                        Assert.IsTrue(connected);
+
+                        Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+                        ViewMap paths = new ViewMap()
+                        {
+                            { new MapEntry(MapType.Ditto, new DepotPath("//depot/MyCode/..."), new ClientPath("//ditto-client/MyCode1/...")) },
+                            { new MapEntry(MapType.Ditto, new DepotPath("//depot/MyCode/..."), new ClientPath("//ditto-client/MyCode2/...")) }
+                        };
+                        
+                        FileSpec fs = new FileSpec(new ClientPath("//ditto-client/..."), null);
+                        con.Client.ViewMap = paths;
+                        con.Client.Root = clientRoot;
+                        rep.CreateClient(con.Client);
+
+                        con.Client.SyncFiles(new Options(), fs);
+
+                        P4Command cmd = new P4Command(con, "have", true, null);
+                        P4CommandResult results = cmd.Run();
+                        Assert.IsNotNull(results.TaggedOutput);
+
+                        Client newClient = rep.GetClient(ws_client);
+                        Assert.AreEqual(newClient.ViewMap[0].Type, MapType.Ditto);
+
+                    }
+                }
+                finally
+                {
+                    Utilities.RemoveTestServer(p4d, TestDir);
+                }
+                unicode = !unicode;
+            }
+        }
     }
 }

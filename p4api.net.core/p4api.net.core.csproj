@@ -8,10 +8,10 @@
     <PackageId>p4api.net.core</PackageId>
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
     <Copyright>Copyright (C) 2020 Perforce Software, Inc.</Copyright>
-    <Version>2020.2.207.5590</Version>
-    <FileVersion>2020.2.207.5590</FileVersion>
-    <AssemblyVersion>2020.2.207.5590</AssemblyVersion>
-    <InformationalVersion>2020.2.207.5590</InformationalVersion>
+    <Version>2011.0.0</Version>
+    <FileVersion>2011.0.0</FileVersion>
+    <AssemblyVersion>2011.0.0</AssemblyVersion>
+    <InformationalVersion>2011.0.0</InformationalVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -92,6 +92,8 @@
     <Compile Include="..\p4api.net\Server.cs" Link="Server.cs" />
     <Compile Include="..\p4api.net\SimpleList.cs" Link="SimpleList.cs" />
     <Compile Include="..\p4api.net\Stream.cs" Link="Stream.cs" />
+	<Compile Include="..\p4api.net\StreamIntegrationLog.cs" Link="StreamIntegrationLog.cs" />
+	<Compile Include="..\p4api.net\StreamLog.cs" Link="StreamLog.cs" />
     <Compile Include="..\p4api.net\StreamMetaData.cs" Link="StreamMetaData.cs" />
     <Compile Include="..\p4api.net\StringEnum.cs" Link="StringEnum.cs" />
     <Compile Include="..\p4api.net\StringList.cs" Link="StringList.cs" />

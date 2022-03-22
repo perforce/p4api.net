@@ -50,73 +50,73 @@ namespace Perforce.P4
 		/// <param name="options">The '-i' flags is needed when creating a new job</param>
 		/// <returns>The Job object if new job was created, null if creation failed</returns>
 		/// <remarks> The '-i' flags is added if not specified by the caller
-		/// <br/> 
+		/// <br/>
 		/// <br/><b>p4 help job</b>
-		/// <br/> 
+		/// <br/>
 		/// <br/>     job -- Create or edit a job (defect) specification
-		/// <br/> 
+		/// <br/>
 		/// <br/>     p4 job [-f] [jobName]
 		/// <br/>     p4 job -d jobName
 		/// <br/>     p4 job -o [jobName]
 		/// <br/>     p4 job -i [-f]
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The 'p4 job' command creates and edits job specifications using an
 		/// <br/> 	ASCII form. A job is a defect, enhancement, or other unit of
 		/// <br/> 	intended work.The 'p4 fix' command associates changelists with jobs.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	With no arguments, 'p4 job' creates an empty job specification
 		/// <br/> 	and invokes the user's editor.  When the specification is saved,
 		/// <br/> 	a job name of the form jobNNNNNN is assigned.  If the jobName
 		/// <br/> 	parameter is specified on the command line, the job is created or
 		/// <br/> 	opened for editing.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	As jobs are entered or updated, all fields are indexed for searching
 		/// <br/> 	Text fields are broken into individual alphanumeric words (punctuation
 		/// <br/> 	and whitespace are ignored) and each word is case-folded and entered
 		/// <br/> 	into the word index.  Date fields are converted to an internal
 		/// <br/> 	representation (seconds since 1970/01/01 00:00:00) and entered
 		/// <br/> 	into the date index.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The fields that compose a job are defined by the 'p4 jobspec' command.
 		/// <br/> 	Perforce provides a default job specification that you can edit.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -d flag deletes the specified job. You cannot delete a job if
 		/// <br/> 	it has pending or submitted fixes associated with it.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -o flag writes the job specification to the standard output.
 		/// <br/> 	The user's editor is not invoked.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -i flag reads a job specification from the standard input. The
 		/// <br/> 	user's editor is not invoked.
-		/// <br/> 
+		/// <br/>
 		/// <br/> 	The -f flag enables you set fields that are read-only by default.
 		/// <br/> 	The -f flag requires 'admin' access, which is granted using the
 		/// <br/> 	'p4 protect' command.
-		/// <br/> 
-		/// <br/> 
+		/// <br/>
+		/// <br/>
 		/// </remarks>
         /// <example>
         ///		To create a new job with a name 'Myjob':
-        ///		<code> 
-        ///		
+        ///		<code>
+        ///
         ///			Job job = new Job();
         ///			job.Id = "Myjob";
         ///			job.Add("Status", "open");
         ///			job.Add("User", "admin");
         ///			job.Add("Description", "this is a test job");
         ///			Job job = _repository.CreateJob( job, null);
-        ///			
+        ///
         ///		</code>
         ///		To create a job with name of the form jobNNNNNN:
         ///		<code>
-        ///        
+        ///
         ///         Job job = new Job();
         ///			job.Id = "new";
         ///			job.Add("Status", "open");
         ///			job.Add("User", "admin");
         ///			job.Add("Description", "this is a test job");
         ///			Job job = _repository.CreateJob( job, JobCmdFlags.Input);
-        ///		    
+        ///
         ///		</code>
         /// </example>
         /// <seealso cref="JobCmdFlags"/>
@@ -170,15 +170,15 @@ namespace Perforce.P4
 		/// <returns>The Job object if new job was created, null if creation failed</returns>
         /// <example>
         ///		To create a new job name of the form jobNNNNNN:
-        ///		<code> 
-        ///		
+        ///		<code>
+        ///
         ///			Job job = new Job();
         ///			job.Id = new;
         ///			job.Add("Status", "open");
         ///			job.Add("User", "admin");
         ///			job.Add("Description", "this is a test job");
         ///			Job job = _repository.CreateJob( job );
-        ///			
+        ///
         ///		</code>
         /// </example>
 		public Job CreateJob(Job job)
@@ -192,12 +192,12 @@ namespace Perforce.P4
 		/// <returns>The Job object if new job was saved, null if creation failed</returns>
         /// <example>
         ///		To update the description of job 'job000001':
-        ///		<code> 
-        ///		
+        ///		<code>
+        ///
         ///			Job job = _repository.GetJob("job000001");
         ///			job["Description"] += "\n\Updated description";
         ///			_repository.UpdateJob("job000001");
-        ///			
+        ///
         ///		</code>
         /// </example>
 		public Job UpdateJob(Job job)
@@ -212,10 +212,10 @@ namespace Perforce.P4
 		/// <returns>The Job object if new job was found, null if the requested job does not exist</returns>
         /// <example>
         ///		Get the record for job 'job000001':
-        ///		<code> 
-        ///		
+        ///		<code>
+        ///
         ///			Job job = _repository.GetJob("job000001", null);
-        ///			
+        ///
         ///		</code>
         /// </example>
 		public Job GetJob(string job, Options options)
@@ -266,10 +266,10 @@ namespace Perforce.P4
         /// <returns>The Job object if new job was found, null if the requested job does not exist</returns>
         /// <example>
         ///		Get the record for job 'job000001':
-        ///		<code> 
-        ///		
+        ///		<code>
+        ///
         ///			Job job = _repository.GetJob("job000001");
-        ///			
+        ///
         ///		</code>
         /// </example>
 		public Job GetJob(string job)
@@ -284,71 +284,71 @@ namespace Perforce.P4
         /// <returns>A list containing the matching jobs</returns>
         /// <remarks>
         /// <br/><b>p4 help jobs</b>
-        /// <br/> 
+        /// <br/>
         /// <br/>     jobs -- Display list of jobs
-        /// <br/> 
+        /// <br/>
         /// <br/>     p4 jobs [-e jobview -i -l -m max -r] [file[revRange] ...]
         /// <br/>     p4 jobs -R
-        /// <br/> 
+        /// <br/>
         /// <br/> 	Lists jobs in the server. If a file specification is included, fixes
         /// <br/> 	for submitted changelists affecting the specified files are listed.
         /// <br/> 	The file specification can include wildcards and a revision range.
         /// <br/> 	 See 'p4 help revisions' for details about specifying revisions.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	The -e flag lists jobs matching the expression specified in the
         /// <br/> 	jobview parameter. For a description of jobview syntax, see 'p4 help
         /// <br/> 	jobview'.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	The -i flag includes any fixes made by changelists integrated into
         /// <br/> 	the specified files.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	The -l flag produces long output with the full text of the job
         /// <br/> 	descriptions.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	The -m max flag limits the output to the first 'max' jobs, ordered
         /// <br/> 	by their job name.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	The -r flag sorts the jobs in reverse order (by job name).
-        /// <br/> 
+        /// <br/>
         /// <br/> 	The -R flag rebuilds the jobs table and reindexes each job, which
         /// <br/> 	is necessary after upgrading to 98.2.  'p4 jobs -R' requires that the
         /// <br/> 	user be an operator or have 'super' access granted by 'p4 protect'.
-        /// <br/> 
-        /// <br/> 
+        /// <br/>
+        /// <br/>
         /// </remarks>
         /// <example>
-        ///		   
+        ///
         ///		To get a list of 100 jobs that include files under a given filepath:
-        ///		<code> 
-        ///			         
+        ///		<code>
+        ///
         ///         FileSpec path = new FileSpec(new DepotPath(@"//depot/..."), null);
         ///         IList&#60;Job&#62; jobs = rep.GetJobs((new Options(JobsCmdFlags.LongDescriptions, null, 100)), path);
-        ///			
+        ///
         ///		</code>
         ///
         ///		To get a list of 100 jobs with the status "open":
         ///		<code>
-        ///	                    
+        ///
         ///         string jobView = "status=open";
-        ///         IList&#60;Job&#62; jobs = rep.GetJobs((new Options(JobsCmdFlags.LongDescriptions, jobView, 100)), path);	
-        ///         
+        ///         IList&#60;Job&#62; jobs = rep.GetJobs((new Options(JobsCmdFlags.LongDescriptions, jobView, 100)), path);
+        ///
         ///		</code>
         ///		To get a list of 10 jobs in reverse order:
         ///     <code>
-        ///	                    
-        ///        IList&#60;Job&#62; jobs = rep.GetJobs((new Options(JobsCmdFlags.ReverseSort, null, 10));	
-        ///         
+        ///
+        ///        IList&#60;Job&#62; jobs = rep.GetJobs((new Options(JobsCmdFlags.ReverseSort, null, 10));
+        ///
         ///		</code>
-        ///		
+        ///
         ///     To get a list of 10 jobs that include any fixes made by changelists integrated into
         ///  	the specified files:
         ///  	<code>
-        ///  	
+        ///
         ///         FileSpec path = new FileSpec(new DepotPath(@"//depot/..."), null);
         ///         IList&#60;Job&#62; jobs = rep.GetJobs((new Options(JobsCmdFlags.IncludeIntegratedFixes, null, 10)), path);
-        ///  	
+        ///
         ///     </code>
-        ///     
+        ///
         /// </example>
         /// <seealso cref="JobsCmdFlags"/>
         public IList<Job> GetJobs(Options options, params FileSpec[] files)
@@ -356,7 +356,7 @@ namespace Perforce.P4
 			P4Command cmd = null;
             if ((files != null) && (files.Length > 0))
 			{
-                cmd = new P4Command(this, "jobs", true, FileSpec.ToStrings(files));
+                cmd = new P4Command(this, "jobs", true, FileSpec.ToEscapedStrings(files));
 			}
 			else
 			{
@@ -393,13 +393,13 @@ namespace Perforce.P4
 		/// <param name="options">Only the '-f' flag is valid when deleting an existing job</param>
         /// <example>
         ///		To delete job000002 from the repository :
-        ///		<code> 
-        ///		
+        ///		<code>
+        ///
         ///			Job u = _repository.GetJob("job000002");
         ///			_repository.DeleteJob(u, null);
-        ///			
+        ///
         ///		</code>
-        ///	</example>	
+        ///	</example>
 		public void DeleteJob(Job job, Options options)
 		{
 			if (job == null)
@@ -413,7 +413,7 @@ namespace Perforce.P4
 				options = new Options();
 			}
 			options["-d"] = null;
-			
+
 			P4CommandResult results = cmd.Run(options);
 			if (results.Success == false)
 			{

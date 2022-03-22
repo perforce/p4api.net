@@ -2,7 +2,7 @@
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)p4bridge.dll">
       <Link>p4bridge.dll</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 </Project>

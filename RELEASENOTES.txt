@@ -1,0 +1,1067 @@
+                           Release Notes for
+                P4API.NET, the Helix P4API for .NET
+
+                          Version 2021.2
+
+Introduction
+
+        This document lists all user-visible changes to P4API.NET
+        between release 2011.1 and 2021.2
+
+Limitations:
+
+        Perforce numbers releases YYYY.R/CCCCC, e.g. 2002.1/30547.
+        YYYY is the year; R is the release of that year; CCCCC is the
+        bug fix change level. Each bug fix in these release notes is
+        marked by its change number. Any build includes (1) all bug fixes
+        of all previous releases and (2) all bug fixes of the current
+        release up to the bug fix change level.
+
+--------------------------------------------------------------------------
+
+Building P4API.NET from Source
+
+        1) Download the Perforce C++ API build from the Perforce FTP site
+        at "ftp://ftp.perforce.com/perforce/<rel>/<platform>/
+        p4api_vs2013_static.zip". <rel> should be the directory that
+        corresponds to the same release of this .NET API. Using the
+        2017.1 or later P4API will not allow building with
+        libp4sslstub.lib. <platform> should correspond to bin.ntx86
+        or bin.ntx64 to build 32-bit or 64-bit binaries.
+
+        2) Extract the Perforce C++ API.
+
+        3) Copy the "include" and "lib" directories from the Perforce C++
+        API directory into the "p4api" directory.
+
+        4) Open the .NET API solution with Visual Studio 2013.
+
+        5) Set the build configuration to Release/x86 or Release/x64,
+        making sure the platform appropriate P4API libs have been included,
+        and build the solution by right clicking on the solution and
+        selecting "Build Solution" from the menu.
+
+        6) The newly built binaries will be in the "Release" subdirectory
+        of the "bin" or "bin\x64 directory depending on the selected
+        configuration.
+
+        NOTES:
+
+        The release configuration builds only the C# .NET API DLL and the
+        C++ .NET API bridge DLL.
+
+        To build the help file project (p4api.net.shfbproj) you will need
+        the Sandcastle Help File Builder from http://shfb.codeplex.com/.
+
+        SSL support
+        -----------
+
+        Perforce Server 2012.1 supports SSL connections and the C++ API has
+        been compiled with this support.
+
+        Beginning with the 2017.1 release of the Perforce C/C++ API, the
+        dependency on OpenSSL is now enforced and the SSL stub library has
+        been removed. Executables linked against the P4API libraries must
+        also be linked against real OpenSSL libraries: the latest 1.1.1
+        patch is recommended. Acquire the open SSL libraries
+        (ssleay32.lib and libeay32.lib) and place them in the p4api/lib
+        directory.
+
+        P4API.NET is now dependent on NLog (http://nlog-project.org/). The
+        related package will be installed automatically by Visual Studio
+        if the NuGet Package Manager is installed and has
+        http://nlog-project.org/ specified as a Source.
+
+--------------------------------------------------------------------------
+
+Compatibility Statements
+
+        Discontinued versions
+
+          2020.1 is the last release for p4api.net64.zip and
+          p4api.net86.zip. They are obsoleted by the new p4api.net
+          and p4api.net.core NuGet packages which work on Any CPU.
+          2020.1 is the last release of p4api.net-src.zip on the Perforce
+          ftp site. It is now hosted on GitHub:
+          https://github.com/perforce/p4api.net
+
+        Server Compatibility
+
+          You can use this release of P4API.NET with any release of the
+          Perforce server at or later than 2018.1
+
+        API Compatibility
+
+          The 2021.2 release of P4API.NET requires the 2021.2 Helix Core
+          API for C/C++ (P4API), built with Visual Studio 2013 or later.
+
+        C#/.NET Compatibility
+
+          The 2021.2 release of P4API.NET, when built from source, is
+          compatible with .NET 4.0. Older versions (down to 2.0) might work
+          but are not supported. The p4api.net.core.<version>.nupkg is
+          compatible with .NET Core 2.0
+          The 2021.1 release of P4API.NET is the last release to target
+          .NET Core 2.0. Next release will move to .NET Core 6.0
+
+        Platform Compatibility
+
+          While P4API.NET is generally usable on Windows platforms, this
+          release is certified only on the following platforms:
+
+                Windows 10, Server 2016, Server 2019.
+
+        Compiler Compatibility
+
+          To build P4API.NET from source, you must use the same compiler as
+          what was used to build the Perforce C++ API.
+
+          Attempting to use a different compiler or a different version
+          of the compiler causes linker errors due to differences in name
+          handling between compilers.
+
+        Compatibility with Previous Releases
+
+          Unless otherwise stated below, the 2021.2 release of P4API.NET is
+          compatible with previous releases from Perforce Software.
+
+        Known Limitations
+
+          The Perforce client-server protocol is not designed to support
+          multiple concurrent queries over the same connection. For this
+          reason, multi-threaded applications using the C++ API or the
+          derived APIs (P4API.NET, P4Perl, etc.) should ensure that a
+          separate connection is used for each thread or that only one
+          thread may use a shared connection at a time.
+
+          The p4api.net.chm help file that is distributed with
+          p4api.net64.zip, p4api.net86.zip, and p4api.net-src.zip needs
+          to be Unblocked by clicking on the file->Properties and checking
+          the [] Unblock checkbox. Otherwise no content will appear when
+          the file is opened.
+
+--------------------------------------------------------------------------
+
+Key to symbols used in change notes below.
+
+          * -- requires new P4API.NET
+         ** -- requires P4API.NET built with new P4API
+        *** -- requires new p4d server program
+
+
+--------------------------------------------------------------------------
+
+New functionality in 2021.2
+
+        (Job #109876) * ** ***
+            Updated P4API.NET to support 2020.2 release of Helix Core.
+
+        #2233539 (Job #105277) *
+            Added ditto mapping to ViewMap class.
+
+        #2240026 (Job #109429) * ** ***
+            Added streamcmds edit/revert/resolve.
+
+        #2250156 (Job #109573 #105435) *
+            Improvment to nuget packing, changed "CopyToOutputDirectory",
+            from "Copy Always" to "Copy If Newer".
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2021.2
+
+        #2233028 (Job 108933) *
+            Fixed issue where, when creating a Stream on P4D server,
+            (version 2021.1 or older), would result in error: 
+            "Unknown field name 'ParentView'".
+
+        #2237173 (Job #109275) *
+            When parsinh returned changelist, Identity field, is correctly
+            populated, before it would take the value of Stream.
+
+--------------------------------------------------------------------------
+
+New functionality in 2020.2
+
+        #2037001	#2036771 #2036714  #2036473 (Job 105312) * ** ***
+            Updated P4API.NET to support 2020.2 release of Helix Core.
+
+        #2069428 (Job 105312) * ** ***
+            Added support for comments to Stream spec ViewMap.
+
+        #2036525 (Job 103853) * ** ***
+            Updated Client spec to 2020.2.
+
+        (Job 104854) *
+            Binaries of P4API.NET are statically linked with OpenSSL 1.1.1i.
+
+--------------------------------------------------------------------------
+
+New functionality in 2020.1
+
+        #1933495 (Job 71267, 94689 ) *
+            There is now Any CPU versions of P4API.NET. p4api.net and
+            p4api.net.core are available at https://www.nuget.org/
+            or can be downloaded and installed with	the NuGet package
+            manager in Visual Studio.
+
+        #1933495 (Job 95051 ) *
+            There is now a .NET Core version of P4API.NET. p4api.net.core
+            is available at	https://www.nuget.org/ or can be downloaded
+            and installed with the NuGet package manager in Visual Studio.
+
+        #1933495 (Job 100697 ) *
+            The p4bridge.dll is now built with openssl 1.1.1.
+
+        #1919867 (Job 99492 ) *
+            FileAction.Archive has been added to FileMetaData.
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2020.1
+
+        #1930506 (Job 101658) *
+            GetInfo in the p4bridge will now return and empty string
+            instead of a nullptr, which could previously cause a crash
+            in the calling application.
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2019.3
+
+        #1880615 (Job 85495) *
+            In FileResolveRecord the '#' character is now trimmed from
+            the revision specifiers so that int.TryParse can return
+            something other than 0.
+
+        #1880534 (Job 76750) *
+            Version.Date is now correctly parsed in
+            FromGetServerMetaDataCmdTaggedOutput. The date will still be
+            in the format M/D/YYYY 12:00:00 AM as a DateTime object always
+            shows time. If the end user only wants the date, they can use
+            DateTime.ToString().
+
+        #1880486 (Job 79134) *
+            GetProtectionTable(Options options) has been obsoleted in
+            favor of GetProtectionTable(). There is no reason to provided
+            any flags with this command and the -o flag will be added
+            every time.
+
+        #1880408 (Job 84053) *
+            Default values have been added for Options, SubmitOptions,
+            and LineEnd for Client so they will never be null, which
+            could cause an exception when using Client.ToString().
+
+        #1880376 (Job 72025) *
+            GetStream(string stream, string parent, Options options) has
+            been obsoleted. Parent argument was redundant. It has been
+            replaced with GetStream(string stream, Options options).
+
+        #1879924 (Job 79425) *
+            Repository.GetJob() no longer returns a job that does not
+            exist on the server, it will now return null. GetJob("") will
+            return a new job.
+
+        #1879905 (Job 100191) *
+            GetConfigFile() now uses GetConfigs() and returns the first
+            item which will be the config file closest to the current
+            working directory.
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2019.2 Patch 2
+
+        #1874815 (Job 100402) *
+            P4Server.Set will no longer result in corrupted values when
+            setting P4USER or P4CLIENT to values with Japanese characters.
+
+--------------------------------------------------------------------------
+
+New functionality in 2019.2 Patch 1
+
+        #1848057 (Job 99516) *
+            P4Server now has a bool, UrlHandled() that is set to true if
+            ClientUser:HandleUrl is called.
+
+--------------------------------------------------------------------------
+
+New functionality in 2019.2
+
+        #1827100 (Job 99096) *
+            The DepotType enum now has more recently added types: Tangent,
+            Extension, and Graph.
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2019.2
+
+        #1834051 (Job 99015) *
+            GetProtectionEntries will now return exclusionary lines
+            when run with AllUsers flag. The ProtectionEntry now returns
+            an unmap bool to indicate if the path is excluded.
+
+        #1833938 (Job 99016) *
+            GetProtectionEntries now returns correct ProtectionMode
+            for =open, =read, =branch, and =write permissions.
+
+        #1833797 (Job 99009) *
+            GetProtectionEntries will no longer fail with -M or -m flags.
+            Those options are no longer available in
+            GetProtectionEntriesCmdFlags. A GetMaxProtectionAccess method
+            has been added to be used with
+            GetMaxProtectionAccessCmdOptions and
+            GetMaxProtectionAccessCmdFlags which contain the -M or -m
+            flags.
+
+        #1820145 (Job 99131) *
+            GetDepots now returns depots of DepotType Graph.
+
+--------------------------------------------------------------------------
+
+New functionality in 2019.1
+
+        #1766020 (Job 97960) *
+            A MapType of ImportSubmittable is now an enumerable in
+            MapEntry.MapType for Stream mappings of import+.
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2019.1
+
+        #1768596 (Job 98043) *
+            The command options for ResolveFiles, MoveFile,
+            IntegrateFiles, DeleteFiles, AddFiles and Lock no longer
+            allow 0 to be specified as a changelist number.
+
+        #1766020 (Job 97976) *
+            ViewMap no longer trims leading - or + from a path that is
+            not either an exclusionary or overlay mapping.
+
+        #1764301 (Job 97882) *
+            DateTimeVersion now correctly handles "-" date separators on
+            non-US locale hosts.
+
+--------------------------------------------------------------------------
+
+New functionality in 2018.4
+
+        #1707027 (Job 96454) *
+            P4API.NET now has a GetTicket(ticketFile, port, user) method.
+
+        #1706727 (Job 81054) *
+            SetTicketFileAPI is exposed in the C++ API by the addition of
+            GetTicketFile and SetTicketFile.
+
+        #1699740 (Job 59503) *
+            P4API.NET is now able to call "p4 diff" directly with the
+            addition of Repository.GetFileDiffs.
+
+        #1697805 (Job 94473) *
+            The -e and -r flags have been added to ChangesCmdOptions.
+
+        #1697529 (Job 84160) *
+            P4API.NET now throws login failures as exceptions when the
+            fail is due to protections.
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2018.4
+
+        #1727848 (Job 97015) *
+            FileMetaData.IsStale no longer returns false if the have
+            revision of the file is 0.
+
+        #1721650 (Job 96872) *
+            P4API.NET can now connect and login to a server that is
+            configured to block all commands unless the user is logged in.
+
+        #1708199 (Job 96467) *
+            GetLabel() no longer throws an exception if the viewmap has any
+            exclusionary mappings.
+
+        #1698682 (Job 80718) *
+            FileSpec strings are now escaped in GetSubmittedIntegrations
+            and depot path strings are now unescaped when parsing
+            integration records.
+
+        #1695295 (Job 87770) *
+            DateTimeVersion() now returns time along with the date.
+
+        #1694527 (Job 96599) *
+            GetSyncedFiles now reliably reports all files when run against
+            a large number of files (~400,000).
+
+        #1694527 (Job 85941) *
+            Parallel operations now return specific errors from command
+            failures. In particular, overwrite (can't clobber) errors will
+            be returned when they are encountered in a parallel sync.
+
+        #1694527 (Job 95320) *
+            Repository.Connection.Client.SyncFiles will no longer throw
+            exceptions when run on a large number of files (~400,000).
+
+        #1691851 (Job 85728) *
+            P4API.NET will now return FileMetaData for newly added files
+            that have not been submitted.
+
+        #1682587 (Job 85618) *
+            A new CounterCmdOptions has been added. The misspelled
+            CoutnerCmdOptions has been obsoleted.
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2018.3
+
+        #1673045 (Job 95808, 94771) *
+            Locking has been improved for P4Server's
+            RunCommand/Close/DisconnectTimer to avoid RunCommand errors
+            when disconnected due to idle.
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2018.2 Patch 1
+
+        #1658096 (Job 94926) *
+            GetFileMetadataCmdFlags.ExcludeClientData now correctly sets
+            the -Os command flag.
+
+        #1658090 (Job 95131) *
+            p4api.net now resets text_results in clear_results(). The
+            previous change using .Clear() would not remove old
+            text_results in the case where the next command would not
+            return text results (e.g. attempting to print a deleted file
+            or a binary file).
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2018.2
+
+        1650993 (Job 95001, 94897) *
+            p4api.net now clears text_results and Binary_results in
+            clear_results().
+
+--------------------------------------------------------------------------
+
+New functionality in 2018.1
+
+        1626159 (Job 94404) *
+
+            Error messages have been updated from current error
+            messages in P4API.
+
+        1625325 (Job 94403) *
+
+            A DisableParallel enum has been added to
+            SubmitFilesCmdFlags and ShelveFilesCmdFlags.
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2018.1
+
+        1634030 (Job 93505) *
+            p4api.net now handles the case of a Connection.Credential
+            being set to null and will also clear the
+            getP4Server().Password.
+
+        1604606 (Job 93785) *
+            Reviews  are now processed properly in
+            FromUserCmdTaggedOutput() method
+
+        1601523 (Job 93827) *
+            p4api.net now handles unicode files correctly.
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2017.3
+
+        1574022 (Job 69159) *
+            TCP connection no longer remains in the ESTABLISHED state
+            after P4CommandTimeOutException.
+
+--------------------------------------------------------------------------
+
+New functionality in 2017.3
+
+        1582443 (Job 84166, 67594, 49408) *
+
+            It is now possible to create a connection based on path; e.g.
+            if a .p4config or env variables exist, using a path should
+            return the correct configuration for the connection.
+
+        1545176 (Job 54873) *
+
+            The locally set Perforce variables (P4PORT, P4USER, P4CLIENT)
+            are now accessible.
+
+        1526478 (Job 69159) *
+            There is now a single and multi-threaded version of P4Server.
+
+            Single=threaded -> only one p4 TCP connection, which needs to
+            locked and managed on its own (e.g. LastResult) in a MT
+            application.
+            Multi-threaded -> each request from a different thread gets
+            its own TCP connection; this is not thread pooling, each
+            thread has a dedicated TCP connection.
+
+            The now unused enviro and connectionmanager implementations
+            have been removed.
+
+--------------------------------------------------------------------------
+
+New functionality in 2017.2
+
+        1526478 (Job 76946) *
+            ReconcileFiles and ReconcileStatus commands have been added
+            to p4api.net.
+
+--------------------------------------------------------------------------
+
+New functionality in 2017.1
+
+        Now using the 2016.2 version of the P4 api to build the bridge.
+
+        BRIDGE CHANGES:
+          bridge unit tests clean up. Removed warnings, all tests run
+          clean.
+
+          added private enviro to the P4BridgeServer to allow overriding
+          parameters locally. This is a work-around for bug 86738.
+
+          added TestEnviro, TestParallelSync, TestSetVars and TestRsh to
+          bridge unit tests.
+
+          added these entry points to p4bridge-api.h and .cpp:
+            Update(const char *var, const char *val);
+            ClearUpdate(const char *var);
+
+          added these entry points to P4BridgeServer
+            Update(const char *var, const char *value);
+            ClearUpdate(const char *var);
+            SetProtocol(var, value);
+
+          added NLog for test logging
+
+          added test timings in log file
+
+        P4API.NET CHANGES:
+
+          added additional documentation to many C# classes.
+
+          added these entry points to P4Server Class:
+            Update(string var, string val);
+            ClearUpdate(string var);
+            SetCharacterSet(IntPtr pServer, String charSet, String
+            FileCharSet);
+
+          improved reliability of API Unit tests during exceptions.
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2017.1 Patch 1
+
+        #1536775 (Job 92161, 92227) *
+            P4API.NET no longer changes or removes the P4CLIENT
+            environment variable on connection.
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2017.1
+
+        1522723 (Job 89400) *
+            GetHashCode() now provided for Perforce classes in P4API.
+
+                (Job 85941) **
+            Parallel sync now returns overwrite errors.
+
+--------------------------------------------------------------------------
+
+New functionality in 2016.1
+
+        Now using the 2015.2 version of the P4 api to build the bridge
+        dll.
+
+        1263499 (Job 80052) *
+            Enhancements to Connection class.
+            - More null checks.
+            - Exposed the KeepAliveDelay in the Connection class.
+
+        1263511 (Job 80573*
+            Added CancelCommand(uint cmdId) the Connection class.
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2015.2
+
+        1098025 (Job #78976 ) *
+            Subgroups are not saved when saving a group .
+
+        1099364 (Job #079032 ) *
+            Remove Server Requirement from P4MapApi.
+
+        1104985 (Job #078982 ) *
+            Not setting ProgramVersion can override what ProgramName is
+            set to.
+
+        1203737 (Jobs #79728 & #79745 ) *
+            FileMetaDataParsing emits a index not found exception when
+	        parsing data with numbered arguments with sparse data.
+
+--------------------------------------------------------------------------
+
+New functionality in 2015.2
+
+        #1101495 (Job #079032 ) *
+            added GetP4ConfigFile() and GetP4ConfigFile(string cwd) to
+            make it possible for clients to access those functions in the
+            bridge.
+
+--------------------------------------------------------------------------
+
+New functionality in 2014.3
+
+        #932980 (Job #77163) *
+            A new method, LoadTicketFile() has been added to expose
+            GetTicketFile() in the C++ API.
+
+--------------------------------------------------------------------------
+
+New functionality in 2014.2
+
+        #840029 (Job #73979) *
+            Informational messages are now passed back with their related
+            message numbers to help client applications determine what
+            error or info is returned, no matter what language it may have
+            translated into.
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2014.2 Patch 3
+
+        #970862 (Job #76968) *
+            P4API.NET no longer reports its name and version as
+            [dot-net-api-p4/1.0] during a connection to a repository. The
+            name and version are now reported as the hosting application.
+            In the case of plugin developed with P4API.NET, the hosting
+            application will be the host of the plugin. For example, the
+            server log entries of a connection made by P4VS with P4API.NET
+            will show as the Visual Studio application.
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2014.2 Patch 2
+
+        #976861 (Job #71195) *
+            Extra white spaces on the end of P4CHARSET value no longer
+            result in an "Unknown or unsupported charset" error.
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2014.2 Patch 1
+
+        #960568 (Job #75389, #75997) *
+            A memory leak has been fixed which could previously cause
+            crashes in client applications built with the .NET API.
+            Connections are now properly closed on the server side after
+            a command has run.
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2014.2
+
+        #851722 (Job #72929) *
+            Set up and tear down of unit tests has been improved so that
+            tests will no longer fail on a VM with timing errors causing
+            file access errors.
+
+--------------------------------------------------------------------------
+
+New functionality in 2014.1
+
+        #799421 (Job #71523) *
+            -A flag has been added to GetFileMetadataCmdOptions.
+
+        #797367 (Job #71583, #71582, #71579) *
+            openattrProp-<name>, attrProp-<name>, and openattr-<name> have
+            been added to FileMetaData.
+
+        #796246 (Job #71584) *
+            totalFileCount has been added to FileMetaData.
+
+        #795785 (Job #71489) *
+            Options have been added for GetDepotFiles.
+
+        #795719 (Job #71541) *
+            attrDigest.has been added to FileMetaData.
+
+        #795719 (Job #71524, #71522) *
+            -U, -Oa, -Od, -Oe flags have been added to
+            GetFileMetadataCmdFlags.
+
+        #794025 (Job #71513, #71512) *
+            -s and -x flags have been added to GetOpenedFilesCmdFlags.
+
+        #793280 (Job #71487) *
+            -U flag has been added to the options for GetDepotFiles.
+
+        #790870 (Job #71389, #71388) *
+            'leaveunchanged' and 'promote' options are now supported for
+            the 'p4 shelve' command.
+
+        #786724 (Job #70324) *
+            There is now an UpdateChangelist method that accepts an
+            options parameter.
+
+        #773728 (Job #57787) *
+            When specifying the default changelist for
+            SubmitFilesCmdFlags which takes an int, '0' as well as '-1'
+            are now allowed.
+
+        #773728 (Job #66520) *
+            ServerID has been added to the Label specification.
+
+        #773728 (Job #70737, #70735) *
+            global, unload, all labels, and server id options have been
+            added to LabelsCmdFlags.
+
+        #770551 (Job #70697) *
+            There is now an UpdateGroup method that accepts an options
+            parameter.
+
+        #770546 (Job #70686) *
+            There is now an UpdateUser method that accepts an options
+            parameter.
+
+        #770168 (Job #70665) *
+            UpdateStream now populates fields from default values.
+
+        #767577 (Job #69707) *
+            -Od flag has been added to GetDepotFileDiffsCmdFlags.
+
+        #766483 (Job #63322) *
+            Multi-line fields in specifications are now auto indented
+            to avoid syntax errors on form submission.
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2014.1 Patch 1
+
+        #842472 (Job #72727) *
+            NewChangelist() no longer uses 0 as a changelist id if the
+            integer parse of the id fails when the id is "new".
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2014.1
+
+        #810960 (Job #71854) *
+            Group creation no longer fails on a server at 2009.1 or
+            older.
+
+        #803114 (Job #71831, #71830, #71829, #71828) *
+            GetUsers, GetStreams, GetFixes, and GetDepots no longer
+            return incorrect date fields.
+
+        #799282 (Job #71675) *
+            GetFileMetaDataCmdOptions no longer fails to create options by
+            not passing an attribute pattern to the base Options
+
+        #803114 (Job #71829) *
+            Getfixes no longer returns incorrect date fields..
+
+        #793665 (Job #71194) *
+            ^M characters are no longer added to description fields with
+            multiple lines..
+
+        #799292 (Job #71161) *
+            DeleteStream() no longer automatically uses the -f flag..
+
+        #781628 (Job #71086) *
+            ResolveFiles(ResolveFileDelegate resolveHandler,
+            Options options, params FileSpec[] files) no longer ignores
+            the -c flag when building list of files to resolve..
+
+        #774516 (Job #70831) *
+            SubmitCmdOptions no longer adds -c flag when submitting
+            shelved files from the changelist object.
+
+        #773298 (Job #70768) *
+            Stream.Parse(file) now properly reads the stream name.
+
+        #770168 (Job #70666) *
+            When a type is passed into the Stream options, its case is
+            now adjusted appropriately for forms.
+
+        #767354 (Job #53626) *
+            Workspace description fields no longer have a Windows newline
+            appended to it.
+
+        #000000 (Job #00000) *
+            GetChangelist now converts the UTC tagged output returned by
+            p4 describe to server time.
+
+--------------------------------------------------------------------------
+
+New functionality in 2013.3/721607
+
+        #713694 (Job #68801) *
+            GetChangelist now converts the UTC tagged output returned by
+            p4 describe to server time.
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2013.3/759562 Patch 2
+
+        #748431 (Job #69972) *
+            The Server metadata now gets updated when using
+            TrustAndConnect().
+
+        #742191 (Job #69896) *
+            Login(string password) will no longer result in a null
+            exception if Client is null.
+
+        #730326 (Job #59340) *
+            Functions have been standardized to return IList<>.
+
+        #730326 (Job #66353) *
+            GetFileContents will now work with binary files.
+
+        #730326 (Job #69048) *
+            P4Ignore client side functionality is now exposed in the
+            .NET API.
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2013.3/726879 Patch 1
+
+        #726283 (Job #69478) *
+            GetChangelist will no longer return an index out of range
+            error if the server UTC offset does not have a time zone
+            description.
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2013.3/721607
+
+        #675439 (Job #67483) *
+            GetDepotFileDiffs now correctly applies options parameters.
+
+        #674148 (Job #67437) *
+            GetStreams now returns descriptions for streams.
+
+--------------------------------------------------------------------------
+
+New functionality in 2013.2/661822
+
+        #607789 (Job #63619) *
+            Labels now support the autoreload option
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2013.2/661822
+
+        #653493 (Job #66627) *
+            UpdateSubmittedChangelist() now takes an options parameter.
+            This enables admin level users to update other users submitted
+            changelists with the -f flag.
+
+        #653464 (Job #66589) *
+            If a job has an entry in the Job field that value is also
+            assigned to job.Id on job creation.
+
+        #600913 (Job #64007) *
+            GetBranchSpecs now correctly uses options when command is run.
+
+        #600913 (Job #64009) *
+            BranchSpecsCmdFlags and LabelsCmdFlags now use -o instead of
+            -t for the time display flag
+
+        #600913 (Job #64010) *
+            BranchSpecsCmdFlags and LabelsCmdFlags no longer allow both
+            -E and -e to be used simultaneously.
+
+--------------------------------------------------------------------------
+
+New functionality in 2013.1/592857
+
+        #556573 *
+            A Directory field has been added to FileMetaData.
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2013.1/592857
+
+        #557140 (Job #61458) *
+            The delete command for labels, branchspecs, and streams no
+            longer passes the -f flag by default.
+
+        #561741 (Job #61826) *
+            Spaces in the left side of a viewmap entry are now properly
+            escaped.
+
+        #535181 (Job #58560) *
+            Additional memory leaks have been fixed with new and delete.
+
+        #532032 (Job #58173, #58174) *
+            Jobs and Changelist form updates no longer send fields that
+            are not part of the form.
+
+--------------------------------------------------------------------------
+
+New functionality in 2012.2/631250
+
+        #527055 (Job #59977) *
+            The command timeout has been increased to 30 seconds.
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2012.2/631250
+
+        #526298 (Job #59918) *
+            GetServerMetaData now correctly returns ServerDate.
+
+        #525655 (Job #58041, #59976) *
+            Memory leak has been fixed for commands run with tagged
+            output set.
+
+        #500542 (Job #58487) *
+            64-bit build configuration now correctly references needed
+            SSL libraries.
+
+        #500521 (Job #58420) *
+            Tagged data no longer only returned in ASCII format.
+
+        #504462 (Job #58703) *
+            Resolve options now contain -Aa for file attribute resolves.
+
+--------------------------------------------------------------------------
+
+New functionality in 2012.1/486881
+
+        #423655 (Job #51852) **
+            ServerID field has been added to the client object.
+
+        #423655 (Job #53097) **
+            AtChange field has been added to the client object.
+
+        #408161 (Job #51851) **
+            P4API.NET binaries are now built with SSL.
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2012.1/505818 Patch 1
+
+        #504461 (Job #58703) **
+            ResolveFilesCmdFlags Options now correctly passes -Aa when the
+            ResolveFilesCmdFlags.FileAttributesOnly option is set.
+
+        #500542 (Job #58487) *
+            The build configuration for x64 now links to the ssl stub
+            library (libp4sslstub.lib).
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2012.1/486881
+
+        #486617 (Job #57520) *
+            ChangesCmdFlags.IncludeIntegrated and
+            ChangesCmdFlags.IncludeTime now pass the correct flag.
+
+        #484097 (Job #56600) *
+            Repository.GetLabels() now passes the options parameter.
+
+        #484097 (Job #55729) *
+            P4.Label.Options has been deprecated and P4.Label.Locked has
+            been fixed to set the locked or unlocked status of a label.
+
+        #481742 (Job #56546) *
+            In P4BridgeServer.cpp memory is now deallocated with delete[]
+            when it was allocated with new[].
+
+        #459511 (Job #55861) *
+            RevertFilesCmdOptions now accepts the integer 0 for the default
+            pending changelist.
+
+        #442346 (Job #54793) *
+            SyncFilesCmdOptions now passes the correct flags for all sync
+            options.
+
+        #427749 (Job #53203) *
+            Repository.GetFixes no longer fails when a job id is passed
+            to it in the Options.
+
+        #416619 (Job #52068) *
+            Repository.CreateClient no longer includes an empty Stream
+            field if one does not exist in the client spec.
+
+--------------------------------------------------------------------------
+
+New functionality in 2011.1/347706
+
+        # 343772 *
+            Initial release of P4API.NET
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2011.1/413730 Patch 1
+
+        #398821 (Job #49363) *
+            Options now contains specialized classes for every
+            Perforce operation.
+
+        #396903 (Job #49367) *
+            FileType class does not handle historical filetypes:
+              ctempobj
+              ctext
+              cxtext
+              ktext
+              kxtext
+              ltext
+              tempobj
+              ubinary
+              uresource
+              uxbinary
+              xbinary
+              xltext
+              xtext
+              xtempobj
+              xunicode
+              xutf16
+
+        #396447 (Job #49373) *
+            Repository.GetChangeslist now runs 'p4 describe'.
+
+        #393406 (Job #50147) *
+            Client.Submit no longer crashes when the returned action
+            is null.
+
+        #381347 (Job #49804) *
+            Repository.UpdateChangelist() no longer throws an exception
+            when given a Changelist with the ID set.
+
+        #374319 (Job #49962) *
+            Repository.GetFileHistory() now correctly sets
+            FileHistory.date.
+
+        #360541 (Job #50979) *
+            P4API.NET no longer crashes when using multiple clients
+            in multiple threads.
+
+        #355202 (Job #49963) *
+            Repository.GetFileHistory() now returns a digest.
+
+        #354287 (Job #48668) *
+            DeleteResolves flag is now correctly =0x2000.
+
+        #349886 (Job #49817, Job #49361) *
+            Repository.GetFiles and Repository.GetFileMetaData now check
+            for null TaggedOutput.
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2011.1/347706
+
+        #344981 (Job #49358) *
+            FileAction enumeration is now correct for deleted files.
+            'Delete' is returned rather than 'None'.
+
+--------------------------------------------------------------------------

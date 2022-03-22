@@ -36,7 +36,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 /// <summary>
 /// Specifies type of Change List
@@ -325,9 +324,9 @@ namespace Perforce.P4
 				Identity = objectInfo["changeIdentity"];
 
 			if (objectInfo.ContainsKey("Stream"))
-				Identity = objectInfo["Stream"];
+				Stream = objectInfo["Stream"];
 			else if (objectInfo.ContainsKey("stream"))
-				Identity = objectInfo["stream"];
+				Stream = objectInfo["stream"];
 
 			if (objectInfo.ContainsKey("Status"))
 			{
