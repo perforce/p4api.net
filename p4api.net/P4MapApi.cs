@@ -49,30 +49,10 @@ namespace Perforce.P4
     /// </summary>
     public class P4MapApi : IDisposable
     {
-        const string bridgeDll = "p4bridge.dll";
         static P4MapApi()
         {
-            Assembly p4apinet = Assembly.GetExecutingAssembly();
-            PortableExecutableKinds peKind;
-            ImageFileMachine machine;
-            p4apinet.ManifestModule.GetPEKind(out peKind, out machine);
-
-            // only set this path if it is Any CPU (ILOnly)
-            if (peKind.ToString() == "ILOnly")
-            {
-                string currentArchSubPath = "x86";
-
-                // Is this a 64 bits process?
-                if (IntPtr.Size == 8)
-                {
-                    currentArchSubPath = "x64";
-                }
-                SetDllDirectory(currentArchSubPath);
-            }
+            P4BridgeLoader.Load();
         }
-
-        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        static extern bool SetDllDirectory(string lpPathName);
 
         /// <summary>
         /// Translate a returned string based on the UseUnicode setting
@@ -221,14 +201,14 @@ namespace Perforce.P4
         /// </summary>
         /// <returns>IntPtr to the new object</returns>
         /// <remarks>Call DeletMapApi() on the returned pointer to free the object</remarks>
-        [DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(P4BridgeLoader.P4BridgeDll, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr CreateMapApi();
 
         /// <summary>
         ///  Helper function to delete a MapApi object allocated by CreateMApApi().
         /// </summary>
         /// <param name="pMap">IntPtr for the object to be deleted</param>
-        [DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(P4BridgeLoader.P4BridgeDll, CallingConvention = CallingConvention.Cdecl)]
         private static extern void DeleteMapApi(IntPtr pMap);
 
         /**************************************************************************
@@ -240,7 +220,7 @@ namespace Perforce.P4
         *
         **************************************************************************/
 
-        [DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(P4BridgeLoader.P4BridgeDll, CallingConvention = CallingConvention.Cdecl)]
         private static extern void Clear(IntPtr pMap);
 
         /// <summary>
@@ -248,7 +228,7 @@ namespace Perforce.P4
         /// </summary>
         public void Clear() { Clear(pMapApi); }
 
-        [DllImport(bridgeDll, EntryPoint = "Count",
+        [DllImport(P4BridgeLoader.P4BridgeDll, EntryPoint = "Count",
             CallingConvention = CallingConvention.Cdecl)]
         private static extern int GetCount(IntPtr pMap);
 
@@ -257,7 +237,7 @@ namespace Perforce.P4
         /// </summary>
         public int Count { get { return GetCount(pMapApi); } }
 
-        [DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(P4BridgeLoader.P4BridgeDll, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr GetLeft(IntPtr pMap, int i);
 
         /// <summary>
@@ -283,7 +263,7 @@ namespace Perforce.P4
         *
         **************************************************************************/
 
-        [DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(P4BridgeLoader.P4BridgeDll, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr GetRight(IntPtr pMap, int i);
 
         /// <summary>
@@ -298,7 +278,7 @@ namespace Perforce.P4
             return MarshalPtrToString(pStr);
         }
 
-        [DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(P4BridgeLoader.P4BridgeDll, CallingConvention = CallingConvention.Cdecl)]
         private static extern int GetType(IntPtr pMap, int i);
 
         /// <summary>
@@ -324,11 +304,11 @@ namespace Perforce.P4
         *
         **************************************************************************/
 
-        [DllImport(bridgeDll, EntryPoint = "Insert1",
+        [DllImport(P4BridgeLoader.P4BridgeDll, EntryPoint = "Insert1",
             CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         private static extern void InsertA(IntPtr pMap, String lr, P4MapApi.Type t);
 
-        [DllImport(bridgeDll, EntryPoint = "Insert1",
+        [DllImport(P4BridgeLoader.P4BridgeDll, EntryPoint = "Insert1",
             CallingConvention = CallingConvention.Cdecl)]
         private static extern void InsertW(IntPtr pMap, IntPtr lr, P4MapApi.Type t);
 
@@ -364,12 +344,12 @@ namespace Perforce.P4
         *
         **************************************************************************/
 
-        [DllImport(bridgeDll, EntryPoint = "Insert2",
+        [DllImport(P4BridgeLoader.P4BridgeDll, EntryPoint = "Insert2",
             CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         private static extern void InsertA(IntPtr pMap, String l,
                                            String r, P4MapApi.Type t);
 
-        [DllImport(bridgeDll, EntryPoint = "Insert2",
+        [DllImport(P4BridgeLoader.P4BridgeDll, EntryPoint = "Insert2",
             CallingConvention = CallingConvention.Cdecl)]
         private static extern void InsertW(IntPtr pMap, IntPtr l,
                                            IntPtr r, P4MapApi.Type t);
@@ -404,7 +384,7 @@ namespace Perforce.P4
         *
         **************************************************************************/
 
-        [DllImport(bridgeDll, EntryPoint = "Join1",
+        [DllImport(P4BridgeLoader.P4BridgeDll, EntryPoint = "Join1",
             CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr Join(IntPtr pLeft, IntPtr pRight);
 
@@ -435,7 +415,7 @@ namespace Perforce.P4
         *
         **************************************************************************/
 
-        [DllImport(bridgeDll, EntryPoint = "Join2",
+        [DllImport(P4BridgeLoader.P4BridgeDll, EntryPoint = "Join2",
             CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr Join(IntPtr pLeft, Direction ld,
                                           IntPtr pRight, Direction rd);
@@ -470,11 +450,11 @@ namespace Perforce.P4
         *
         **************************************************************************/
 
-        [DllImport(bridgeDll, EntryPoint = "Translate",
+        [DllImport(P4BridgeLoader.P4BridgeDll, EntryPoint = "Translate",
             CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr TranslateA(IntPtr pMap, String p, Direction d);
 
-        [DllImport(bridgeDll, EntryPoint = "Translate",
+        [DllImport(P4BridgeLoader.P4BridgeDll, EntryPoint = "Translate",
             CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr TranslateW(IntPtr pMap, IntPtr p, Direction d);
 
