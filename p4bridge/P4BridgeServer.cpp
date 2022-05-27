@@ -942,13 +942,7 @@ int P4BridgeServer::run_command( const char *cmd, int cmdId, int tagged, char **
 		}
 		if (idx2 < idx1)
 		{
-			pProgramName = new char[(idx1 - idx2) + 1];
-			idx1 = idx2;
-			while ((idx1 < MAX_PATH) && (pModPath[idx1] != '\0'))
-			{
-				pProgramName[idx1-idx2] = pModPath[idx1++];
-			}
-			pProgramName[idx1-idx2] = '\0';
+			pProgramName = pModPath + idx2;
 		}
 	}
 	DELETE_ARRAY(pModPath);
