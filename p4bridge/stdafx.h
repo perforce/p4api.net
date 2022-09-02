@@ -37,32 +37,41 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
+#ifdef OS_NT
 #include "targetver.h"
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef OS_NT
 #include <share.h>
 
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
 // Windows Header Files:
 #include <windows.h>
-
-#ifndef P4INT64
-#define P4INT64 __int64
 #endif
+
+#include <i18napi.h>
+#include <clientapi.h>
+
 
 #include "utils.h"
 #include "p4base.h"
-#include "DoublyLinkedList.h"
 #include "Lock.h"
 
-#include <I18NAPI.h>
-
-#include <clientapi.h>
 #include <string>
 
 using std::string;
+
+#if defined (_MSC_VER)
+# define EXPORT extern "C" __declspec(dllexport)
+#elif defined(__GNUC__)
+# define EXPORT extern "C" __attribute__((visibility("default")))
+#else
+#define EXPORT
+#endif
 
 #ifndef StrVarName
 #include <strops.h>

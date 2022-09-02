@@ -21,34 +21,7 @@ Limitations:
 
 Building P4API.NET from Source
 
-        1) Download the Perforce C++ API build from the Perforce FTP site
-        at "ftp://ftp.perforce.com/perforce/<rel>/<platform>/
-        p4api_vs2013_static.zip". <rel> should be the directory that
-        corresponds to the same release of this .NET API. Using the
-        2017.1 or later P4API will not allow building with
-        libp4sslstub.lib. <platform> should correspond to bin.ntx86
-        or bin.ntx64 to build 32-bit or 64-bit binaries.
-
-        2) Extract the Perforce C++ API.
-
-        3) Copy the "include" and "lib" directories from the Perforce C++
-        API directory into the "p4api" directory.
-
-        4) Open the .NET API solution with Visual Studio 2013.
-
-        5) Set the build configuration to Release/x86 or Release/x64,
-        making sure the platform appropriate P4API libs have been included,
-        and build the solution by right clicking on the solution and
-        selecting "Build Solution" from the menu.
-
-        6) The newly built binaries will be in the "Release" subdirectory
-        of the "bin" or "bin\x64 directory depending on the selected
-        configuration.
-
-        NOTES:
-
-        The release configuration builds only the C# .NET API DLL and the
-        C++ .NET API bridge DLL.
+        Instructions for building are in the source code markdown (.md) files
 
         To build the help file project (p4api.net.shfbproj) you will need
         the Sandcastle Help File Builder from http://shfb.codeplex.com/.
@@ -56,16 +29,13 @@ Building P4API.NET from Source
         SSL support
         -----------
 
-        Perforce Server 2012.1 supports SSL connections and the C++ API has
-        been compiled with this support.
+        P4API.NET supports SSL connections, and requires linking with SSL 
+        libraries.
 
-        Beginning with the 2017.1 release of the Perforce C/C++ API, the
-        dependency on OpenSSL is now enforced and the SSL stub library has
-        been removed. Executables linked against the P4API libraries must
-        also be linked against real OpenSSL libraries: the latest 1.1.1
-        patch is recommended. Acquire the open SSL libraries
-        (ssleay32.lib and libeay32.lib) and place them in the p4api/lib
-        directory.
+        Executables linked against the P4API libraries must
+        also be linked against OpenSSL libraries 1.1.1 or 1.0.2: but the 1.1.1
+        is recommended. Use the OpenSSL libraries as mentioned 
+        in p4api.net\BUILD.md.
 
         P4API.NET is now dependent on NLog (http://nlog-project.org/). The
         related package will be installed automatically by Visual Studio
@@ -93,46 +63,33 @@ Compatibility Statements
         API Compatibility
 
           The 2021.2 release of P4API.NET requires the 2021.2 Helix Core
-          API for C/C++ (P4API), built with Visual Studio 2013 or later.
+          API for C/C++ (P4API), built with Visual Studio 2019 or later.
 
         C#/.NET Compatibility
 
-          The 2021.2 release of P4API.NET, when built from source, is
-          compatible with .NET 4.0. Older versions (down to 2.0) might work
-          but are not supported. The p4api.net.core.<version>.nupkg is
-          compatible with .NET Core 2.0
-          The 2021.1 release of P4API.NET is the last release to target
-          .NET Core 2.0. Next release will move to .NET Core 6.0
+          The 2021.2 release of P4API.NET, when built from source using p4apicore.net.sln, is
+          compatible with '.NET Framework 4.6.2', '.NET 6.0' and '.NET Standard 2.0'. 
+          Other .Net Framework, .NET Core and .NET Standard versions might work, 
+          but are not supported.
 
         Platform Compatibility
 
-          While P4API.NET is generally usable on Windows platforms, this
+          While P4API.NET is generally usable on Windows, Linux and MacOS platforms, the 
           release is certified only on the following platforms:
 
-                Windows 10, Server 2016, Server 2019.
+                Windows 10, Windows Server 2019, Windows Server 2022, Ubuntu 20.04 and MacOS 12.2
 
         Compiler Compatibility
 
-          To build P4API.NET from source, you must use the same compiler as
-          what was used to build the Perforce C++ API.
-
-          Attempting to use a different compiler or a different version
-          of the compiler causes linker errors due to differences in name
-          handling between compilers.
+          Details regarding compiler compatibility can be found in the source code markdown (.md)
+          files i.e. p4api.net\BUILD.md and p4api.net\p4bridge\P4Bridge.md
 
         Compatibility with Previous Releases
 
           Unless otherwise stated below, the 2021.2 release of P4API.NET is
-          compatible with previous releases from Perforce Software.
+          API compatible with previous releases from Perforce Software.
 
         Known Limitations
-
-          The Perforce client-server protocol is not designed to support
-          multiple concurrent queries over the same connection. For this
-          reason, multi-threaded applications using the C++ API or the
-          derived APIs (P4API.NET, P4Perl, etc.) should ensure that a
-          separate connection is used for each thread or that only one
-          thread may use a shared connection at a time.
 
           The p4api.net.chm help file that is distributed with
           p4api.net64.zip, p4api.net86.zip, and p4api.net-src.zip needs
@@ -151,10 +108,63 @@ Key to symbols used in change notes below.
 
 --------------------------------------------------------------------------
 
+New functionality in 2021.2 Patch 1
+
+        #2314383 (Job 100448, 101660, 103635, 106773) * ** *** 
+            Updated P4API.NET to support .NET 6.0  (.NET CORE) on three platforms.
+            we now provide cross platform support for Windows, OSX and Linux
+
+            This change was pretty much a re-write of the entire product. 
+            Windows Structured Error Handling was removed and replaced with exceptions.
+            Unit test frameworks were extended to be cross-platform.  
+            New Documentation was added to the source directories as .md (Markdown) files.   
+
+            The C++ bridge is now built using Cmake, and requires cmake 3.20 or better.
+            Build instructions are in the .md files provided with the source distribution.
+
+       #2314383 (Job 104608 108267) * ** ***
+            Created MarkDown documentation with build instructions. (for GitHub users)
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2021.2 Patch 1
+
+        #2314383 (Job 108575, 106214, 102654) * **
+            Crash when using SSL to connect to a non-ssl server.
+
+        #2314383 (Job 108504) * **
+            Repository.GetDepotFileDiffs() does not handle shelved files correctly.
+
+        #2314383 (Job 103635) * **
+            Better naming for p4bridge.dll.
+
+        #2314383 (Job 106773) * **
+            Fixed Callback crash on delegate LogMessageDelegate.
+
+        #2314383 (Job 100836) * **
+            Bridge is intercepting Control-C before C# can handle it
+
+        #2314383 (Job100191) * **
+            GetConfigFile() is always returning the highest config file it can find.
+
+        #2314383 (Job 107901) * **
+            Crash when using TrustAndConnect from .NET Core.
+
+        #2314383 (Job 105498) * **
+            P4Server Connect() options are not picked up by multithreaded P4ServerMT.
+
+        #2314383 (Job 105501) * **
+            TrustAndConnect() does not set options correctly.
+
+        #2314383 (Job 105497) * **
+            Connection.Connect() does not dispose of _p4serverMT correctly.
+            
+--------------------------------------------------------------------------
+
 New functionality in 2021.2
 
         (Job #109876) * ** ***
-            Updated P4API.NET to support 2020.2 release of Helix Core.
+            Updated P4API.NET to support 2021.2 release of Helix Core.
 
         #2233539 (Job #105277) *
             Added ditto mapping to ViewMap class.
@@ -163,7 +173,7 @@ New functionality in 2021.2
             Added streamcmds edit/revert/resolve.
 
         #2250156 (Job #109573 #105435) *
-            Improvment to nuget packing, changed "CopyToOutputDirectory",
+            Improvement to Nuget packaging, changed "CopyToOutputDirectory",
             from "Copy Always" to "Copy If Newer".
 
 --------------------------------------------------------------------------
@@ -176,8 +186,8 @@ Bugs fixed in 2021.2
             "Unknown field name 'ParentView'".
 
         #2237173 (Job #109275) *
-            When parsinh returned changelist, Identity field, is correctly
-            populated, before it would take the value of Stream.
+            When parsing returned changelist, Identity field is now correctly
+            populated instead of taking the value of Stream.
 
 --------------------------------------------------------------------------
 

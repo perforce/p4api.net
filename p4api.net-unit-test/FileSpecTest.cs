@@ -67,7 +67,7 @@ namespace p4api.net.unit.test
             VersionSpec vs = new DateTimeVersion(dateTime);
             FileSpec target = new FileSpec(cp, vs);
             string dateTimeString =  vs.ToString();
-            string expected = String.Format("@{0}", dateTime.ToString("yyyy/MM/dd:HH:mm:ss"));
+            string expected = String.Format("@{0}", dateTime.ToString("yyyy/MM/dd:HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture));
             Assert.AreEqual(expected, dateTimeString);
 
             dateTime = DateTime.Now;
@@ -75,7 +75,7 @@ namespace p4api.net.unit.test
             vs = new DateTimeVersion(dateTime);
             target = new FileSpec(cp, vs);
             dateTimeString = vs.ToString();
-            expected = cp.ToString() + "@" + dateTime.ToString("yyyy/MM/dd:HH:mm:ss");
+            expected = cp.ToString() + "@" + dateTime.ToString("yyyy/MM/dd:HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture);
             Assert.AreEqual(expected, FileSpec.ToStrings(target)[0]);
         }
 
@@ -221,11 +221,18 @@ namespace p4api.net.unit.test
 		[TestMethod()]
 		public void ToStringTest()
 		{
+#if _WINDOWS
 			string target = @"C:\workspace@root\test#1%2.txt";
+#else
+			string target = "/workspace@root/test#1%2.txt";	
+#endif
 			FileSpec LocalSpec = new FileSpec(null, null, new LocalPath(target), new NoneRevision());
 
+#if _WINDOWS
 			string expected = @"c:\workspace@root\test#1%2.txt#none";
-
+#else
+			string expected = "/workspace@root/test#1%2.txt#none";
+#endif
 			string actual = LocalSpec.ToString();
 
 			Assert.AreEqual(expected, actual);
@@ -237,20 +244,65 @@ namespace p4api.net.unit.test
 		[TestMethod()]
 		public void ToEscapedPathTest()
 		{
+#if _WINDOWS
 			string target = @"C:\workspace@root\test#1%2.txt";
+#else
+			string target = "/workspace@root/test#1%2.txt";
+#endif
 			FileSpec LocalSpec = new FileSpec(null, null, new LocalPath(target), new NoneRevision());
 
+#if _WINDOWS
 			string expected = @"c:\workspace%40root\test%231%252.txt#none";
+#else
+			string expected = "/workspace%40root/test%231%252.txt#none";
+#endif
 
 			string actual = LocalSpec.ToEscapedString();
 
 			Assert.AreEqual(expected, actual);
+#if _WINDOWS
+            target = @"c:\workspace%40root\test%231%252.txt";
+#else
+			target = "/workspace%40root/test%231%252.txt";		
+#endif
 
-			target = @"c:\workspace%40root\test%231%252.txt";
 			actual = PathSpec.UnescapePath(target);
+#if _WINDOWS
 			expected = @"c:\workspace@root\test#1%2.txt";
+#else
+			expected = "/workspace@root/test#1%2.txt";
+#endif
+            Assert.AreEqual(expected, actual);
+        }
 
-			Assert.AreEqual(expected, actual);
+        /// <summary>
+        ///A test for SplitDepotPath
+        ///</summary>
+        [TestMethod()]
+        public void SplitDepotPathTest()
+        {
+            string fpath;
+            string vspec;
+            string mypath = "//depot/this/file/ismine#42";
+
+            bool result = Perforce.P4.FileSpec.SplitDepotPath(mypath, out fpath, out vspec);
+            Assert.AreEqual("//depot/this/file/ismine", fpath);
+            Assert.AreEqual("#42", vspec);
+            Assert.IsTrue(result);
+
+            mypath = "//depot/this/file/ismine@=42";
+
+            result = Perforce.P4.FileSpec.SplitDepotPath(mypath, out fpath, out vspec);
+            Assert.AreEqual("//depot/this/file/ismine", fpath);
+            Assert.AreEqual("@=42", vspec);
+            Assert.IsTrue(result);
+
+            mypath = "//depot/this/file/ismine";
+
+            result = Perforce.P4.FileSpec.SplitDepotPath(mypath, out fpath, out vspec);
+            Assert.AreEqual("//depot/this/file/ismine", fpath);
+            Assert.AreEqual("", vspec);
+            Assert.IsFalse(result);
 		}
 
 		/// <summary>

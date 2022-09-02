@@ -174,52 +174,58 @@ namespace Perforce.P4
 
         /// <summary>
         /// Read the fields from the tagged output of a diff2 command
+        /// extra parameters added to fix job108504 which is due to p4api limitations mentioned in job032051 and job032135
         /// </summary>
         /// <param name="objectInfo">Tagged output from the 'diff2' command</param>
 		/// <param name="connection"></param>
         /// <param name="options"></param>
-        public void FromGetDepotFileDiffsCmdTaggedOutput(TaggedObject objectInfo, Connection connection, Options options)
+        /// <param name="leftFile">Left FileSpec</param>
+        /// <param name="rightFile">Right FileSpec</param>
+        public void FromGetDepotFileDiffsCmdTaggedOutput(TaggedObject objectInfo, Connection connection, Options options, string leftFile = "", string rightFile = "")
 		{
 			DepotFileDiff ParsedDepotFileDiff = new DepotFileDiff();
-			string ldepotfile = string.Empty;
-			string rdepotfile = string.Empty;
-			int lrev = -1;
-			int rrev = -1;
 
 			if (objectInfo.ContainsKey("status"))
 			{ _type = objectInfo["status"]; }
 
-			if (objectInfo.ContainsKey("depotFile"))
-			{ ldepotfile = objectInfo["depotFile"]; }
+            string ldepotfile = objectInfo.ContainsKey("depotFile") ? objectInfo["depotFile"] : string.Empty;
+            string rdepotfile = objectInfo.ContainsKey("depotFile2") ? objectInfo["depotFile2"] : string.Empty;
 
-			if (objectInfo.ContainsKey("rev"))
+            // shelved files are not handled correctly in the tagged output, use the passed in name instead
+            if (leftFile.Contains("@="))
 			{
-				int.TryParse(objectInfo["rev"], out lrev);
+                LeftFile = new FileSpec(new DepotPath(ldepotfile),
+                    new ShelvedInChangelistIdVersion(leftFile.Substring(leftFile.LastIndexOf('@'))));
 			}
+            else
+            {
+                int rev = objectInfo.ContainsKey("rev") ? Int32.Parse(objectInfo["rev"]) : -1;
+                LeftFile = new FileSpec(new DepotPath(ldepotfile), new Revision(rev));
+            }
 
-			if (objectInfo.ContainsKey("depotFile2"))
-			{ rdepotfile = objectInfo["depotFile2"]; }
-
-			if (objectInfo.ContainsKey("rev2"))
+            // shelved files are not handled correctly in the tagged output
+            if (rightFile.Contains("@="))
+            {
+                RightFile = new FileSpec(new DepotPath(rdepotfile),
+                   new ShelvedInChangelistIdVersion(rightFile.Substring(rightFile.LastIndexOf('@'))));
+            }
+            else
 			{
-				int.TryParse(objectInfo["rev2"], out rrev);
+                int rev2 = objectInfo.ContainsKey("rev2") ? Int32.Parse(objectInfo["rev2"]) : -1;
+                RightFile = new FileSpec(new DepotPath(rdepotfile), new Revision(rev2));
 			}
-
-			LeftFile = new FileSpec(new DepotPath(ldepotfile), new Revision(lrev));
-
-			RightFile = new FileSpec(new DepotPath(rdepotfile), new Revision(rrev));
 
 			if (objectInfo["status"] == "content")
 			{
-				string filepathl = ldepotfile + "#" + lrev;
-				string filepathr = rdepotfile + "#" + rrev;
-				P4.P4Command getDiffData = new P4Command(connection, "diff2", false, filepathl, filepathr);
-			
-				P4.P4CommandResult r = getDiffData.Run(options);
+                using (P4Command getDiffData =
+                    new P4Command(connection, "diff2", false, LeftFile.ToString(), RightFile.ToString()))
+                {
+                    P4CommandResult r = getDiffData.Run(options);
 				if (r.Success != true)
 				{
 					P4Exception.Throw(r.ErrorList);
 				}
+
 				if (r.TextOutput != null)
 				{
 					Diff = r.TextOutput.ToString();
@@ -229,6 +235,7 @@ namespace Perforce.P4
 					Diff = r.InfoOutput.ToString();
 				}
 			}
+            }
 
 			ParsedDepotFileDiff = new DepotFileDiff(Type, LeftFile, RightFile, Diff);
 

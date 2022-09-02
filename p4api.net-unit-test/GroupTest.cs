@@ -58,31 +58,22 @@ namespace p4api.net.unit.test
         #endregion
 
         private static String GroupSpec =
-                                                    "Group:\tTest\r\n" +
-                                                    "\r\n" +
-                                                    "MaxResults:\t100\r\n" +
-                                                    "\r\n" +
-                                                    "MaxScanRows:\t10\r\n" +
-                                                    "\r\n" +
-                                                    "MaxLockTime:\t20\r\n" +
-                                                    "\r\n" +
-                                                    "MaxOpenFiles:\t50\r\n" +
-                                                    "\r\n" +
-                                                    "Timeout:\t30\r\n" +
-                                                    "\r\n" +
-                                                    "PasswordTimeout:\t40\r\n" +
-                                                    "\r\n" +
-                                                    "Subgroups:\r\n"+
-                                                    "\tSG1\r\n" +
-                                                    "\tSG2\r\n" +
-                                                    "\r\n" +
-                                                    "Owners:\r\n"+
-                                                    "\tAlpha\r\n" +
-                                                    "\tBeta\r\n" +
-                                                    "\r\n" +
-                                                    "Users:\r\n"+
-                                                    "\tAlice\r\n"+
-                                                    "\tBob\r\n";
+                "Group:\tTest" + Environment.NewLine + Environment.NewLine 
+                + "MaxResults:\t100" + Environment.NewLine + Environment.NewLine
+                + "MaxScanRows:\t10" + Environment.NewLine + Environment.NewLine
+                + "MaxLockTime:\t20" + Environment.NewLine + Environment.NewLine
+                + "MaxOpenFiles:\t50" + Environment.NewLine + Environment.NewLine
+                + "Timeout:\t30" + Environment.NewLine + Environment.NewLine
+                + "PasswordTimeout:\t40" + Environment.NewLine + Environment.NewLine
+                + "Subgroups:" + Environment.NewLine
+                + "\tSG1" + Environment.NewLine 
+                + "\tSG2" + Environment.NewLine + Environment.NewLine 
+                + "Owners:" + Environment.NewLine
+                + "\tAlpha" + Environment.NewLine
+                + "\tBeta" + Environment.NewLine + Environment.NewLine
+                + "Users:" + Environment.NewLine
+                + "\tAlice" + Environment.NewLine
+                + "\tBob" + Environment.NewLine;
 
 
         /// <summary>

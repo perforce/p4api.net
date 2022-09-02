@@ -1,6 +1,7 @@
 using Perforce.P4;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using Microsoft.Extensions.Configuration;
 using NLog;
 
 namespace p4api.net.unit.test
@@ -13,11 +14,18 @@ namespace p4api.net.unit.test
     public class DepotTest
     {
         private static Logger logger = LogManager.GetCurrentClassLogger();
+        private UnitTestConfiguration configuration;
+        private string TestDir = "";
+        static ServerAddress address;
+        
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
         public void SetupTest()
         {
+            configuration = UnitTestSettings.GetApplicationConfiguration();
+            TestDir = configuration.TestDirectory;
+            address = new ServerAddress(configuration.ServerPort);
             Utilities.LogTestStart(TestContext);
         }
         [TestCleanup]
@@ -31,7 +39,7 @@ namespace p4api.net.unit.test
         static DateTime modified = new DateTime(2011, 03, 05);
         static string description = "created by perforce";
         static DepotType type = DepotType.Local;
-        static ServerAddress address = new ServerAddress("perforce:1666");
+        
         static string suffix = null;
         static string map = "Depot/...";
         static string streamdepth = "//Depot/1";
@@ -84,7 +92,7 @@ namespace p4api.net.unit.test
         {
             ServerAddress expected = new ServerAddress("perforce:8080");
             setTarget();
-            Assert.AreEqual(target.Address, new ServerAddress("perforce:1666"));
+            Assert.AreEqual(target.Address, new ServerAddress(configuration.ServerPort));
             target.Address = expected;
             ServerAddress actual = target.Address;
             Assert.AreEqual(expected, actual);

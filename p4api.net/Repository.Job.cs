@@ -125,16 +125,17 @@ namespace Perforce.P4
 			if (job == null)
 			{
 				throw new ArgumentNullException("job");
-
 			}
-			P4Command cmd = new P4Command(this, "job", true);
 
+            using (P4Command cmd = new P4Command(this, "job", true))
+            {
 			cmd.DataSet = job.ToString();
 
 			if (options == null)
 			{
 				options = new Options();
 			}
+
 			options["-i"] = null;
 
 			P4CommandResult results = cmd.Run(options);
@@ -148,7 +149,6 @@ namespace Perforce.P4
 					string newId = words[1];
 					Job newJob = GetJob(newId);
 					return newJob;
-
 				}
 				else
 				{
@@ -161,8 +161,10 @@ namespace Perforce.P4
 			{
 				P4Exception.Throw(results.ErrorList);
 			}
+
 			return null;
 		}
+        }
 		/// <summary>
 		/// Create a new job in the repository.
 		/// </summary>
@@ -223,7 +225,6 @@ namespace Perforce.P4
 			if (job == null)
 			{
 				throw new ArgumentNullException("job");
-
 			}
             // first confirm the job exists
             if (!string.IsNullOrEmpty(job))
@@ -233,12 +234,13 @@ namespace Perforce.P4
                     return null;
             }
 
-            P4Command cmd = new P4Command(this, "job", true, job);
-
+            using (P4Command cmd = new P4Command(this, "job", true, job))
+            {
 			if (options == null)
 			{
 				options = new Options();
 			}
+
 			options["-o"] = null;
 
 			P4CommandResult results = cmd.Run(options);
@@ -248,6 +250,7 @@ namespace Perforce.P4
 				{
 					return null;
 				}
+
 				Job value = new Job();
 				value.FromJobCmdTaggedOutput((results.TaggedOutput[0]));
 
@@ -257,8 +260,10 @@ namespace Perforce.P4
 			{
 				P4Exception.Throw(results.ErrorList);
 			}
+
 			return null;
 		}
+        }
         /// <summary>
         /// Get the record for an existing job from the repository.
         /// </summary>
@@ -353,15 +358,10 @@ namespace Perforce.P4
         /// <seealso cref="JobsCmdFlags"/>
         public IList<Job> GetJobs(Options options, params FileSpec[] files)
 		{
-			P4Command cmd = null;
-            if ((files != null) && (files.Length > 0))
+            using (P4Command cmd = (files?.Length ?? 0) > 0
+                ? new P4Command(this, "jobs", true, FileSpec.ToEscapedStrings(files))
+                : new P4Command(this, "jobs", true))
 			{
-                cmd = new P4Command(this, "jobs", true, FileSpec.ToEscapedStrings(files));
-			}
-			else
-			{
-				cmd = new P4Command(this, "jobs", true);
-			}
 
 			P4CommandResult results = cmd.Run(options);
 			if (results.Success)
@@ -370,6 +370,7 @@ namespace Perforce.P4
 				{
 					return null;
 				}
+
 				List<Job> value = new List<Job>();
 				Dictionary<string, Job> map = new Dictionary<string, Job>();
 				foreach (TaggedObject obj in results.TaggedOutput)
@@ -378,14 +379,18 @@ namespace Perforce.P4
 					job.FromJobCmdTaggedOutput(obj);
 					value.Add(job);
 				}
+
 				return value;
 			}
 			else
 			{
 				P4Exception.Throw(results.ErrorList);
 			}
+
 			return null;
 		}
+        }
+
 		/// <summary>
 		/// Delete a job from the repository
 		/// </summary>
@@ -406,12 +411,14 @@ namespace Perforce.P4
 			{
 				throw new ArgumentNullException("job");
 			}
-			P4Command cmd = new P4Command(this, "job", true, job.Id);
 
+            using (P4Command cmd = new P4Command(this, "job", true, job.Id))
+            {
 			if (options == null)
 			{
 				options = new Options();
 			}
+
 			options["-d"] = null;
 
 			P4CommandResult results = cmd.Run(options);
@@ -422,3 +429,5 @@ namespace Perforce.P4
 		}
 	}
 }
+}
+

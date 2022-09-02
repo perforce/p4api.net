@@ -49,9 +49,19 @@ namespace Perforce.P4
     /// </summary>
     public class P4MapApi : IDisposable
     {
-        const string bridgeDll = "p4bridge.dll";
+#if NET5_0_OR_GREATER
+        const string bridgeDll = "p4bridge";
         static P4MapApi()
         {
+            if (DllManager.ResolverSet) 
+                return;
+            NativeLibrary.SetDllImportResolver(typeof(P4MapApi).Assembly, DllManager.ImportResolver);
+            DllManager.ResolverSet = true;
+        }
+#else
+         private const string bridgeDll = "p4bridge.dll";
+         static P4MapApi()
+         {
             Assembly p4apinet = Assembly.GetExecutingAssembly();
             PortableExecutableKinds peKind;
             ImageFileMachine machine;
@@ -74,6 +84,7 @@ namespace Perforce.P4
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         static extern bool SetDllDirectory(string lpPathName);
 
+#endif
         /// <summary>
         /// Translate a returned string based on the UseUnicode setting
         /// </summary>

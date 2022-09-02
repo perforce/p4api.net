@@ -1,5 +1,5 @@
 #pragma once
-#include "unittestframework.h"
+#include "UnitTestFrameWork.h"
 class TestUtils :
     public UnitTestSuite
 {
@@ -11,7 +11,7 @@ public:
 
     bool Setup();
 
-    bool TearDown(char* testName);
+    bool TearDown(const char* testName);
 
     static bool TestAllocString();
 };

@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "UnitTestFrameWork.h"
 #include "TestP4BridgeServerLogging.h"
 
@@ -25,13 +25,15 @@ bool TestP4BridgeServerLogging::Setup()
     return true;
 }
 
-bool TestP4BridgeServerLogging::TearDown(char* testName)
+bool TestP4BridgeServerLogging::TearDown(const char* testName)
 {
+#ifdef _DEBUG_MEMORY
 	p4base::PrintMemoryState(testName);
+#endif
     return true;
 }
 
-int _stdcall TestP4BridgeServerLogging::LogCallback(int level, const char* file, int line, const char* message)
+int STDCALL TestP4BridgeServerLogging::LogCallback(int level, const char* file, int line, const char* message)
 {
 	const char* msg = message;
 
@@ -66,13 +68,14 @@ bool TestP4BridgeServerLogging::BadLogFnPtrTest()
 
     ASSERT_FALSE(LOG_INFO("Info"));
 
-    P4BridgeServer::SetLogCallFn((LogCallbackFn*) 0xFFFFFFFF);
+    // cross platform issues, exceptions like these can't be caught except with SEH.
+    //P4BridgeServer::SetLogCallFn((LogCallbackFn*) 0xFFFFFFFF);
 
-    ASSERT_FALSE(LOG_INFO("Info"));
+    //ASSERT_FALSE(LOG_INFO("Info"));
 
-    P4BridgeServer::SetLogCallFn((LogCallbackFn*) 0x123456789ACDEF0);
+    //P4BridgeServer::SetLogCallFn((LogCallbackFn*) 0x123456789ACDEF0);
 
-    ASSERT_FALSE(LOG_INFO("Info"));
+    //ASSERT_FALSE(LOG_INFO("Info"));
 
     return true;
 }

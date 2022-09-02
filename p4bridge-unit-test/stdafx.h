@@ -37,35 +37,35 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
+#ifdef OS_NT
 #include "targetver.h"
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <share.h>
+//#include <share.h>
 
+#ifdef OS_NT
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
 // Windows Header Files:
 #include <windows.h>
-
-#ifndef P4INT64
-#define P4INT64 __int64
 #endif
 
+//#ifndef P4INT64
+//#define P4INT64 long long
+//#endif
 
-
-//#include "TestP4Base.h"
-//#include "..\p4bridge\p4base.h"
-//#include "..\p4bridge\DoublyLinkedList.h"
-//#include "..\p4bridge\Lock.h"
-//#include "..\p4bridge\utils.h"
+#if !defined(OS_NT)
+#include <pthread.h>
+#endif
 
 #include "utils.h"
 #include "p4base.h"
-#include "DoublyLinkedList.h"
-#include "lock.h"
+//#include "DoublyLinkedList.h"
+#include "Lock.h"
 
-#include <I18NAPI.h>
+#include <i18napi.h>
 
 #include <clientapi.h>
 

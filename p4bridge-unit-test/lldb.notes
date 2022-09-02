@@ -1,0 +1,12 @@
+https://www.mono-project.com/docs/debug+profile/debug/lldb-source-map/
+
+//// for osx using clion to debug 
+// lookup a p4api symbol to find where the source was when built
+(lldb) image lookup -vn Enviro
+
+// Get a lot of output, look for this output which tells you what directory the library was built in:
+//  CompileUnit: id = {0x00000000}, file = "/private/var/tmp/132407837/depot/r21.1/p4/sys/enviro.cc", language = "unknown"
+
+// now configure source map, attaching build directory to source file,  allowing clion and lldb to debug through the p4api
+(lldb) settings set -- target.source-map /private/var/tmp/132407837/depot/r21.1/p4 /Users/nmorse/Perforce/nmorse_ws_new/depot/r21.1/p4
+

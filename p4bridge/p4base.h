@@ -39,6 +39,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  ******************************************************************************/
 
+#if defined (_MSC_VER)
+# define EXPORT extern "C" __declspec(dllexport)
+#elif defined(__GNUC__)
+# define EXPORT extern "C" __attribute__((visibility("default")))
+#else
+#define EXPORT
+#endif
+
 //Forward ref
 class ILockable;
 
@@ -76,7 +84,7 @@ enum p4types {
  *  unregisters it. The static method ValidateHandle() allows a handle passed
  *  into the DLL against the registry of handles that have been exported.
  ******************************************************************************/
-class p4base abstract
+class p4base
 {
 private:
     p4base() {};
@@ -92,7 +100,7 @@ public:
     static int ValidateHandle( p4base* pObject, int type );
 
     // Simple type identification for registering objects
-    virtual int Type(void) = 0;
+    virtual int Type() = 0;
 
 private:
 	static ILockable Locker;
@@ -113,8 +121,8 @@ protected:
     static p4base** pLastObject;
 
     // doubly linked list of objects of a given type
-    p4base* pNextItem;
-    p4base* pPrevItem;
+    p4base* pNextItem{ nullptr };
+    p4base* pPrevItem{ nullptr };
 
 	// Maintain a count of items in the list
 	static int ItemCount;
@@ -127,29 +135,33 @@ protected:
 	static int NextItemIds[p4typesCount];
 
 public:
-	static int GetItemCount() { return ItemCount;}
-	static int GetItemCount(int type) { return ItemCounts[type]; }
-	static int GetTotalItemCount() { return TotalItems;}
-	static int GetTotalItemCount(int type) { return NextItemIds[type];}
+	static int GetItemCount();
+	static int GetItemCount(int type);
+	static int GetTotalItemCount();
+	static int GetTotalItemCount(int type);
 	
 	// Give each item a unique ID
 	int GetItemId()  { return ItemId;}
 
 	static const char* GetTypeStr(int type);
-
-	static void PrintMemoryState(char *Title);
-	static void DumpMemoryState(char *Title);
-private:
-	void LogMemoryEvent(char * Event);
+#ifdef _DEBUG_MEMORY
+	static void PrintMemoryState(const char *Title);
+	static void DumpMemoryState(const char *Title);
 #endif
+private:
+#ifdef _DEBUG_MEMORY
+	void LogMemoryEvent(const char * Event);
+#endif
+#endif  // _DEBUG
+
 };
 
 // These macros validate the Handle passed into a routine and return the 
 //   correct failure value for the return type of the function.
-#define VALIDATE_HANDLE_P(Hdl, type) if(!p4base::ValidateHandle( (p4base*) Hdl, type )) return NULL;
+#define VALIDATE_HANDLE_P(Hdl, type) if(!p4base::ValidateHandle( (p4base*) Hdl, type )) return nullptr;
 #define VALIDATE_HANDLE_V(Hdl, type) if(!p4base::ValidateHandle( (p4base*) Hdl, type )) return ;
 #define VALIDATE_HANDLE_I(Hdl, type) if(!p4base::ValidateHandle( (p4base*) Hdl, type )) return 0;
 #define VALIDATE_HANDLE_B(Hdl, type) if(!p4base::ValidateHandle( (p4base*) Hdl, type )) return false;
 #define VALIDATE_HANDLE(Hdl, type) p4base::ValidateHandle( (p4base*) Hdl, type )
 #define VALIDATE_HANDLE_C(Hdl, type) if(!p4base::ValidateHandle( (p4base*) Hdl, type )) return '\0';
-;
+

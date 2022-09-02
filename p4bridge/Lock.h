@@ -18,7 +18,12 @@ public:
 	void FreeCriticalSection();
 
 private:
+#ifdef OS_NT
 	CRITICAL_SECTION CriticalSection; 
+#else
+	pthread_mutex_t cs_mutex;
+#endif
+
 	int CriticalSectionInitialized;
 
 #ifdef _DEBUG

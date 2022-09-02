@@ -12,7 +12,7 @@ public:
 
     bool Setup();
 
-    bool TearDown(char* testName);
+    bool TearDown(const char* testName);
 
     static bool p4BaseSmokeTest();
 };

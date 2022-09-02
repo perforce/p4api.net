@@ -255,7 +255,7 @@ namespace Perforce.P4
 					{
 						if (idx > 0)
 						{
-							Description += "\r\n";
+							Description += Environment.NewLine;
 						}
 						Description += a[idx];
 					}
@@ -268,7 +268,7 @@ namespace Perforce.P4
 					{
 						if (idx > 0)
 						{
-							Description += "\r\n";
+							Description += Environment.NewLine;
 						}
 						Description += l[idx];
 					}
@@ -283,7 +283,7 @@ namespace Perforce.P4
                     {
                         if (addCRLF)
                         {
-                            Description += "\r\n";
+                            Description += Environment.NewLine;
                         }
                         else
                         {
@@ -332,21 +332,23 @@ namespace Perforce.P4
         /// Format of a label specification used to save a label to the server
         /// </summary>
         private static String LabelFormat =
-                                                    "Label:\t{0}\r\n" +
-                                                    "\r\n" +
-                                                    "Update:\t{1}\r\n" +
-                                                    "\r\n" +
-                                                    "Access:\t{2}\r\n" +
-                                                    "\r\n" +
-                                                    "Owner:\t{3}\r\n" +
-                                                    "\r\n" +
-                                                    "Description:\r\n\t{4}\r\n" +
-                                                    "\r\n" +
-                                                    "Options:\t{5}\r\n" +
-                                                    "\r\n" +
-                                                    "{6}" +
-                                                    "{7}" +
-                                                    "View:\r\n\t{8}\r\n";
+                "Label:\t{0}" + Environment.NewLine 
+                + Environment.NewLine 
+                + "Update:\t{1}" + Environment.NewLine
+                + Environment.NewLine
+                + "Access:\t{2}" + Environment.NewLine
+                + Environment.NewLine 
+                + "Owner:\t{3}" + Environment.NewLine 
+                + Environment.NewLine
+                + "Description:" + Environment.NewLine
+                + "\t{4}" + Environment.NewLine
+                + Environment.NewLine
+                + "Options:\t{5}" + Environment.NewLine
+                + Environment.NewLine 
+                + "{6}" 
+                + "{7}" 
+                + "View:" + Environment.NewLine 
+                + "\t{8}" + Environment.NewLine;
 
 
         /// <summary>
@@ -357,7 +359,7 @@ namespace Perforce.P4
         {
             String viewStr = String.Empty;
             if (ViewMap != null)
-                viewStr = ViewMap.ToString().Replace("\r\n", "\r\n\t").Trim();
+                viewStr = ViewMap.ToString().Replace($"{Environment.NewLine}", $"{Environment.NewLine}\t").Trim();            
             String OptionsStr = string.Empty;
 			if (Locked)
 			{
@@ -382,12 +384,12 @@ namespace Perforce.P4
             String revStr = String.Empty;
             if (Revision != null)
             {
-                revStr = string.Format("Revision:\t{0}\r\n\r\n", Revision);
+                revStr = $"Revision:\t{Revision}{Environment.NewLine}{Environment.NewLine}";
             }
             String serveridStr = String.Empty;
             if (ServerId != null)
             {
-                serveridStr = string.Format("ServerID:\t{0}\r\n\r\n", ServerId);
+                serveridStr = $"ServerID:\t{ServerId}{Environment.NewLine}{Environment.NewLine}";
             }
             String value = String.Format(LabelFormat, Id,
                 FormBase.FormatDateTime(Update), FormBase.FormatDateTime(Access),

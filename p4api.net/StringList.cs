@@ -175,7 +175,7 @@ namespace Perforce.P4
 
 		/// <summary>
 		/// Convert the list to a single String. Each element is
-		/// separated by a /r/n line separator.
+		/// separated by a NewLine separator.
 		/// </summary>
 		/// <returns></returns>
 		public override string ToString()
@@ -184,7 +184,7 @@ namespace Perforce.P4
 			for (int idx = 0; idx < Count; idx++)
 			{
 				if (v.Length > 0)
-					v += "/r/n";
+					v += Environment.NewLine;
 				v += this[idx];
 			}
 			return v;

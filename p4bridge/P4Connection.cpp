@@ -1,19 +1,23 @@
 #include "stdafx.h"
+
 #include "P4BridgeClient.h"
 #include "P4BridgeServer.h"
 #include "P4Connection.h"
 
+#include "clientapi.h"
+
 #ifdef _DEBUG_MEMORY
-P4Connection::P4Connection(P4BridgeServer* pServer, int _cmdId)
-	: p4base(tP4Connection)
+P4Connection::P4Connection(P4BridgeServer* pServer, int _cmdId) : ClientApi() , p4base(tP4Connection)
 #else
-P4Connection::P4Connection(P4BridgeServer* pServer, int _cmdId)
+
+P4Connection::P4Connection(P4BridgeServer* pServer, int _cmdId) : ClientApi()
 #endif
 {
 	cmdId = _cmdId;
-	clientNeedsInit = 1;
+		clientNeedsInit = 1;
+
 	ui = new P4BridgeClient(pServer, this);
-	isAlive = 1;
+		isAlive = 1;
 }
 
 P4Connection::~P4Connection(void)

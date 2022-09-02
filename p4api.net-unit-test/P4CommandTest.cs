@@ -16,13 +16,17 @@ namespace p4api.net.unit.test
 	[TestClass()]
 	public class P4CommandTest
 	{
-		String TestDir = "c:\\MyTestDir";
         private static Logger logger = LogManager.GetCurrentClassLogger();
+        private UnitTestConfiguration configuration;
+        private string TestDir = "";
+
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
         public void SetupTest()
         {
+            configuration = UnitTestSettings.GetApplicationConfiguration();
+            TestDir = configuration.TestDirectory;
             Utilities.LogTestStart(TestContext);
         }
         [TestCleanup]
@@ -68,9 +72,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
 		public void ArgsTest()
 		{
-			bool unicode = false;
-
-			string serverAddr = "localhost:6666";
+            string serverAddr = configuration.ServerPort;
 			string user = "admin";
 			string pass = string.Empty;
 			string ws_client = "admin_space";
@@ -83,17 +85,21 @@ namespace p4api.net.unit.test
 
 			for( int i = 0; i < 2; i++ ) // run once for ascii, once for unicode
 			{
+                var cptype = (Utilities.CheckpointType)i;
 				try
 				{
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
 					using( P4Server server = new P4Server( serverAddr, user, pass, ws_client ) )
 					{
-						if( unicode )
+                        if (cptype == Utilities.CheckpointType.U)
 							Assert.IsTrue( server.UseUnicode, "Unicode server detected as not supporting Unicode" );
 						else
 							Assert.IsFalse( server.UseUnicode, "Non Unicode server detected as supporting Unicode" );
 
-						P4Command target = new P4Command( server );
+                        using (P4Command target = new P4Command(server))
+                        {
 
 						StringList expected = new StringList(new string[]{ "a", "b", "c" });
 						target.Args = expected;
@@ -103,11 +109,12 @@ namespace p4api.net.unit.test
 						Assert.AreEqual( expected, actual );
 					}
 				}
+                }
 				finally
 				{
 					Utilities.RemoveTestServer( p4d, TestDir );
+                    p4d?.Dispose();
 				}
-				unicode = !unicode;
 			}
 			// reset the exception level
 			P4Exception.MinThrowLevel = oldExceptionLevel;
@@ -119,9 +126,7 @@ namespace p4api.net.unit.test
 		[TestMethod()]
 		public void RunTest()
 		{
-			bool unicode = false;
-
-			string serverAddr = "localhost:6666";
+            string serverAddr = configuration.ServerPort;
 			string user = "admin";
 			string pass = string.Empty;
 			string ws_client = "admin_space";
@@ -134,27 +139,32 @@ namespace p4api.net.unit.test
 
 			for( int i = 0; i < 2; i++ ) // run once for ascii, once for unicode
 			{
+                var cptype = (Utilities.CheckpointType)i;
 				try
 				{
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
 					using( P4Server server = new P4Server( serverAddr, user, pass, ws_client ) )
 					{
-						if( unicode )
+
+                        if (cptype == Utilities.CheckpointType.U)
 							Assert.IsTrue( server.UseUnicode, "Unicode server detected as not supporting Unicode" );
 						else
 							Assert.IsFalse( server.UseUnicode, "Non Unicode server detected as supporting Unicode" );
 
-						P4Command target = new P4Command( server, "help", false, null );
-
+                        using (P4Command target = new P4Command(server, "help", false, null))
+                        {
 						P4CommandResult results = target.Run();
 						Assert.IsTrue( results.Success );
 					}
 				}
+                }
 				finally
 				{
 					Utilities.RemoveTestServer( p4d, TestDir );
+                    p4d?.Dispose();
 				}
-				unicode = !unicode;
 			}
 			// reset the exception level
 			P4Exception.MinThrowLevel = oldExceptionLevel;
@@ -166,9 +176,7 @@ namespace p4api.net.unit.test
 		[TestMethod()]
 		public void RunTest1()
 		{
-			bool unicode = false;
-
-			string serverAddr = "localhost:6666";
+            string serverAddr = configuration.ServerPort;
 			string user = "admin";
 			string pass = string.Empty;
 			string ws_client = "admin_space";
@@ -181,18 +189,21 @@ namespace p4api.net.unit.test
 
 			for( int i = 0; i < 2; i++ ) // run once for ascii, once for unicode
 			{
+                var cptype = (Utilities.CheckpointType)i;
 				try
 				{
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
 					using( P4Server server = new P4Server( serverAddr, user, pass, ws_client ) )
 					{
-						if( unicode )
+                        if (cptype == Utilities.CheckpointType.U)
 							Assert.IsTrue( server.UseUnicode, "Unicode server detected as not supporting Unicode" );
 						else
 							Assert.IsFalse( server.UseUnicode, "Non Unicode server detected as supporting Unicode" );
 
-						P4Command target = new P4Command( server, "help", false, null );
-
+                        using (P4Command target = new P4Command(server, "help", false, null))
+                        {
 						P4CommandResult results = target.Run(new String[] { "print" });
 						Assert.IsTrue( results.Success );
 
@@ -201,22 +212,16 @@ namespace p4api.net.unit.test
 						Assert.IsNotNull( helpTxt );
 					}
 				}
+                }
 				finally
 				{
 					Utilities.RemoveTestServer( p4d, TestDir );
+                    p4d?.Dispose();
 				}
-				unicode = !unicode;
 			}
 			// reset the exception level
 			P4Exception.MinThrowLevel = oldExceptionLevel;
 		}
-
-		P4Command cmd1 = null;
-		P4Command cmd2 = null;
-		P4Command cmd3 = null;
-		P4Command cmd4 = null;
-		P4Command cmd5 = null;
-		P4Command cmd6 = null;
 
 		bool run = true;
 
@@ -225,29 +230,36 @@ namespace p4api.net.unit.test
         private void ReportCommandStart(P4Command cmd, DateTime time)
         {
             WriteLine(string.Format("Thread {2} starting command: {0:X8}, at {1}",
-                cmd1.CommandId, time.ToLongTimeString(), Thread.CurrentThread.ManagedThreadId));
+                cmd.CommandId, time.ToLongTimeString(), Thread.CurrentThread.ManagedThreadId));
         }
         private void ReportCommandStop(P4Command cmd, DateTime time)
         {
             WriteLine(string.Format("Thread {3} Finished command: {0:X8}, at {1}, run time {2} Milliseconds",
-                cmd1.CommandId, time.ToLongTimeString(), (DateTime.Now - time).TotalMilliseconds, Thread.CurrentThread.ManagedThreadId));
+                cmd.CommandId, time.ToLongTimeString(), (DateTime.Now - time).TotalMilliseconds, Thread.CurrentThread.ManagedThreadId));
         }
 
-        private void cmdThreadProc1()
+        private void cmdThreadProc1(object obj)
 		{
+            CancellationToken c_token = (CancellationToken)obj;
 			try
 			{
-                WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-                P4Server server = serverMT.getServer();
+                WriteLine(System.Reflection.MethodBase.GetCurrentMethod()?.Name);
+                using (P4Server server = serverMT.getServer())
+                {
                 while (run)
 				{
-					cmd1 = new P4Command(server, "fstat", false, "//depot/...");
+                        if (c_token.IsCancellationRequested)
+                        {
+                            break;
+                        }
 
-					DateTime StartedAt = DateTime.Now;
+                        using (P4Command cmd1 = new P4Command(server, "fstat", false, "//depot/..."))
+                        {
+                            DateTime startedAt = DateTime.Now;
 
-                    ReportCommandStart(cmd1, StartedAt);
+                            ReportCommandStart(cmd1, startedAt);
                     P4CommandResult result = cmd1.Run();
-                    ReportCommandStop(cmd1, StartedAt);
+                            ReportCommandStop(cmd1, startedAt);
 
 					P4CommandResult lastResult = server.LastResults;
 
@@ -260,6 +272,7 @@ namespace p4api.net.unit.test
 					{
 						Assert.IsNull(lastResult.InfoOutput);
 					}
+
 					if (result.ErrorList != null)
 					{
 						Assert.AreEqual(result.ErrorList.Count, lastResult.ErrorList.Count);
@@ -268,6 +281,7 @@ namespace p4api.net.unit.test
 					{
 						Assert.IsNull(result.ErrorList);
 					}
+
 					if (result.TextOutput != null)
 					{
 						Assert.AreEqual(result.TextOutput, lastResult.TextOutput);
@@ -276,6 +290,7 @@ namespace p4api.net.unit.test
 					{
 						Assert.IsNull(lastResult.TextOutput);
 					}
+
 					if (result.TaggedOutput != null)
 					{
 						Assert.AreEqual(result.TaggedOutput.Count, lastResult.TaggedOutput.Count);
@@ -284,6 +299,7 @@ namespace p4api.net.unit.test
 					{
 						Assert.IsNull(lastResult.TaggedOutput);
 					}
+
 					Assert.AreEqual(result.Cmd, lastResult.Cmd);
 					if (result.CmdArgs != null)
 					{
@@ -296,20 +312,29 @@ namespace p4api.net.unit.test
 
 					if (!result.Success)
 					{
-						WriteLine(string.Format("Thread 1, fstat failed:{0}",(result.ErrorList!=null && result.ErrorList.Count>0)?result.ErrorList[0].ErrorMessage :"<unknown error>"));
+                                WriteLine(string.Format("Thread 1, fstat failed:{0}",
+                                    (result.ErrorList != null && result.ErrorList.Count > 0)
+                                        ? result.ErrorList[0].ErrorMessage
+                                        : "<unknown error>"));
 					}
 					else
 					{
-						WriteLine(string.Format("Thread 1, fstat Success:{0}", (result.InfoOutput != null && result.InfoOutput.Count > 0) ? result.InfoOutput[0].Message : "<no output>"));
+                                WriteLine(string.Format("Thread 1, fstat Success:{0}",
+                                    (result.InfoOutput != null && result.InfoOutput.Count > 0)
+                                        ? result.InfoOutput[0].Message
+                                        : "<no output>"));
 					}
+
 					if (delay != TimeSpan.Zero)
 					{
 						Thread.Sleep(delay);
 					}
 				}
+                    }
 				WriteLine("Thread 1 cleanly exited");
 				return;
 			}
+            }
 			catch (ThreadAbortException)
 			{
 				Thread.ResetAbort();
@@ -321,15 +346,23 @@ namespace p4api.net.unit.test
 			}
 		}
 
-		private void cmdThreadProc2()
+        private void cmdThreadProc2(object obj)
 		{
+            CancellationToken c_token = (CancellationToken)obj;
 			try
 			{
                 WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-                P4Server server = serverMT.getServer();
+                using (P4Server server = serverMT.getServer())
+                {
                 while (run)
 				{
-                    cmd2 = new P4Command(server, "dirs", false, "//depot/*");
+                        if (c_token.IsCancellationRequested)
+                        {
+                            break;
+                        }
+
+                        using (P4Command cmd2 = new P4Command(server, "dirs", false, "//depot/*"))
+                        {
 
 					DateTime StartedAt = DateTime.Now;
 
@@ -348,6 +381,7 @@ namespace p4api.net.unit.test
 					{
 						Assert.IsNull(lastResult.InfoOutput);
 					}
+
 					if (result.ErrorList!=null)
 					{
 						Assert.AreEqual(result.ErrorList.Count, lastResult.ErrorList.Count);
@@ -356,6 +390,7 @@ namespace p4api.net.unit.test
 					{
 						Assert.IsNull(result.ErrorList);
 					}
+
 					if (result.TextOutput!=null)
 					{
 						Assert.AreEqual(result.TextOutput, lastResult.TextOutput);
@@ -364,6 +399,7 @@ namespace p4api.net.unit.test
 					{
 						Assert.IsNull(lastResult.TextOutput);
 					}
+
 					if (result.TaggedOutput!=null)
 					{
 						Assert.AreEqual(result.TaggedOutput.Count, lastResult.TaggedOutput.Count);
@@ -372,6 +408,7 @@ namespace p4api.net.unit.test
 					{
 						Assert.IsNull(lastResult.TaggedOutput);
 					}
+
 					Assert.AreEqual(result.Cmd, lastResult.Cmd);
 					if (result.CmdArgs!=null)
 					{
@@ -384,17 +421,27 @@ namespace p4api.net.unit.test
 
 					if (!result.Success)
 					{
-						WriteLine(string.Format("Thread 2, dirs failed:{0}", (result.ErrorList != null && result.ErrorList.Count > 0) ? result.ErrorList[0].ErrorMessage : "<unknown error>"));
+                                WriteLine(string.Format("Thread 2, dirs failed:{0}",
+                                    (result.ErrorList != null && result.ErrorList.Count > 0)
+                                        ? result.ErrorList[0].ErrorMessage
+                                        : "<unknown error>"));
 					}
 					else
 					{
-						WriteLine(string.Format("Thread 2, dirs Success:{0}", (result.InfoOutput != null && result.InfoOutput.Count > 0) ? result.InfoOutput[0].Message : "<no output>"));
+                                WriteLine(string.Format("Thread 2, dirs Success:{0}",
+                                    (result.InfoOutput != null && result.InfoOutput.Count > 0)
+                                        ? result.InfoOutput[0].Message
+                                        : "<no output>"));
 					}
+
 					if (delay != TimeSpan.Zero)
 					{
 						Thread.Sleep(delay);
 					}
 				}
+                    }
+                }
+
 				WriteLine("Thread 2 cleanly exited");
 			}
 			catch (ThreadAbortException)
@@ -408,15 +455,23 @@ namespace p4api.net.unit.test
 			}
 		}
 
-		private void cmdThreadProc3()
+        private void cmdThreadProc3(object obj)
 		{
+            CancellationToken c_token = (CancellationToken)obj;
 			try
 			{
                 WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-                P4Server server = serverMT.getServer();
+                using (P4Server server = serverMT.getServer())
+                {
                 while (run)
 				{
-                    cmd3 = new P4Command(server, "edit", false, "-n", @"//depot/...");
+                        if (c_token.IsCancellationRequested)
+                        {
+                            break;
+                        }
+
+                        using (P4Command cmd3 = new P4Command(server, "edit", false, "-n", @"//depot/..."))
+                        {
 
 					DateTime StartedAt = DateTime.Now;
 
@@ -435,6 +490,7 @@ namespace p4api.net.unit.test
 					{
 						Assert.IsNull(lastResult.InfoOutput);
 					}
+
 					if (result.ErrorList != null)
 					{
 						Assert.AreEqual(result.ErrorList.Count, lastResult.ErrorList.Count);
@@ -443,6 +499,7 @@ namespace p4api.net.unit.test
 					{
 						Assert.IsNull(result.ErrorList);
 					}
+
 					if (result.TextOutput != null)
 					{
 						Assert.AreEqual(result.TextOutput, lastResult.TextOutput);
@@ -451,6 +508,7 @@ namespace p4api.net.unit.test
 					{
 						Assert.IsNull(lastResult.TextOutput);
 					}
+
 					if (result.TaggedOutput != null)
 					{
 						Assert.AreEqual(result.TaggedOutput.Count, lastResult.TaggedOutput.Count);
@@ -459,6 +517,7 @@ namespace p4api.net.unit.test
 					{
 						Assert.IsNull(lastResult.TaggedOutput);
 					}
+
 					Assert.AreEqual(result.Cmd, lastResult.Cmd);
 					if (result.CmdArgs != null)
 					{
@@ -471,17 +530,27 @@ namespace p4api.net.unit.test
 
 					if (!result.Success)
 					{
-						WriteLine(string.Format("Thread 3, edit failed:{0}", (result.ErrorList != null && result.ErrorList.Count>0) ? result.ErrorList[0].ErrorMessage : "<unknown error>"));
+                                WriteLine(string.Format("Thread 3, edit failed:{0}",
+                                    (result.ErrorList != null && result.ErrorList.Count > 0)
+                                        ? result.ErrorList[0].ErrorMessage
+                                        : "<unknown error>"));
 					}
 					else
 					{
-						WriteLine(string.Format("Thread 3, edit Success:{0}", (result.InfoOutput != null && result.InfoOutput.Count > 0) ? result.InfoOutput[0].Message : "<no output>"));
+                                WriteLine(string.Format("Thread 3, edit Success:{0}",
+                                    (result.InfoOutput != null && result.InfoOutput.Count > 0)
+                                        ? result.InfoOutput[0].Message
+                                        : "<no output>"));
 					}
+
                     if (delay != TimeSpan.Zero)
 					{
 						Thread.Sleep(delay);
 					}
 				}
+                    }
+                }
+
 				WriteLine("Thread 3 cleanly exited");
 			}
 			catch (ThreadAbortException)
@@ -495,16 +564,24 @@ namespace p4api.net.unit.test
 			}
 		}
 
-		private void cmdThreadProc4()
+        private void cmdThreadProc4(object obj)
 		{
+            CancellationToken cToken = (CancellationToken)obj;
 			try
 			{
-                WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-                P4Server server = serverMT.getServer();
+                WriteLine(System.Reflection.MethodBase.GetCurrentMethod()?.Name);
+                using (P4Server server = serverMT.getServer())
+                {
                 while (run)
 				{
-                    using (P4Server _P4Server = new P4Server("localhost:6666", null, null, null))
+                        if (cToken.IsCancellationRequested)
+                        {
+                            break;
+                        }
+
+                        using (P4Server _P4Server = new P4Server(configuration.ServerPort, null, null, null))
 					{
+
 						string val = P4Server.Get("P4IGNORE");
 						bool _p4IgnoreSet = !string.IsNullOrEmpty(val);
 
@@ -519,7 +596,9 @@ namespace p4api.net.unit.test
 
 						Assert.IsTrue(_P4Server.ApiLevel > 0);
 					}
-					cmd4 = new P4Command(server, "fstat", false, "//depot/...");
+
+                        using (P4Command cmd4 = new P4Command(server, "fstat", false, "//depot/..."))
+                        {
 
 					DateTime StartedAt = DateTime.Now;
 
@@ -538,6 +617,7 @@ namespace p4api.net.unit.test
 					{
 						Assert.IsNull(lastResult.InfoOutput);
 					}
+
 					if (result.ErrorList != null)
 					{
 						Assert.AreEqual(result.ErrorList.Count, lastResult.ErrorList.Count);
@@ -546,6 +626,7 @@ namespace p4api.net.unit.test
 					{
 						Assert.IsNull(result.ErrorList);
 					}
+
 					if (result.TextOutput != null)
 					{
 						Assert.AreEqual(result.TextOutput, lastResult.TextOutput);
@@ -554,6 +635,7 @@ namespace p4api.net.unit.test
 					{
 						Assert.IsNull(lastResult.TextOutput);
 					}
+
 					if (result.TaggedOutput != null)
 					{
 						Assert.AreEqual(result.TaggedOutput.Count, lastResult.TaggedOutput.Count);
@@ -562,6 +644,7 @@ namespace p4api.net.unit.test
 					{
 						Assert.IsNull(lastResult.TaggedOutput);
 					}
+
 					Assert.AreEqual(result.Cmd, lastResult.Cmd);
 					if (result.CmdArgs != null)
 					{
@@ -571,19 +654,30 @@ namespace p4api.net.unit.test
 					{
 						Assert.IsNull(lastResult.CmdArgs);
 					}
+
 					if (!result.Success)
 					{
-						WriteLine(string.Format("Thread 4, fstat failed:{0}",(result.ErrorList!=null && result.ErrorList.Count>0)?result.ErrorList[0].ErrorMessage :"<unknown error>"));
+                                WriteLine(string.Format("Thread 4, fstat failed:{0}",
+                                    (result.ErrorList != null && result.ErrorList.Count > 0)
+                                        ? result.ErrorList[0].ErrorMessage
+                                        : "<unknown error>"));
 					}
 					else
 					{
-						WriteLine(string.Format("Thread 4, fstat Success:{0}", (result.InfoOutput != null && result.InfoOutput.Count > 0) ? result.InfoOutput[0].Message : "<no output>"));
+                                WriteLine(string.Format("Thread 4, fstat Success:{0}",
+                                    (result.InfoOutput != null && result.InfoOutput.Count > 0)
+                                        ? result.InfoOutput[0].Message
+                                        : "<no output>"));
 					}
+
 					if (delay != TimeSpan.Zero)
 					{
 						Thread.Sleep(delay);
 					}
 				}
+                    }
+                }
+
 				WriteLine("Thread 4 cleanly exited");
 			}
 			catch (ThreadAbortException)
@@ -597,15 +691,23 @@ namespace p4api.net.unit.test
 			}
 		}
 
-		private void cmdThreadProc5()
+        private void cmdThreadProc5(object obj)
 		{
+            CancellationToken cToken = (CancellationToken)obj;
 			try
 			{
-                WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-                P4Server server = serverMT.getServer();
+                WriteLine(System.Reflection.MethodBase.GetCurrentMethod()?.Name);
+                using (P4Server server = serverMT.getServer())
+                {
                 while (run)
 				{
-                    cmd5 = new P4Command(server, "dirs", false, "//depot/*");
+                        if (cToken.IsCancellationRequested)
+                        {
+                            break;
+                        }
+
+                        using (P4Command cmd5 = new P4Command(server, "dirs", false, "//depot/*"))
+                        {
 
 					DateTime StartedAt = DateTime.Now;
 
@@ -624,6 +726,7 @@ namespace p4api.net.unit.test
 					{
 						Assert.IsNull(lastResult.InfoOutput);
 					}
+
 					if (result.ErrorList != null)
 					{
 						Assert.AreEqual(result.ErrorList.Count, lastResult.ErrorList.Count);
@@ -632,6 +735,7 @@ namespace p4api.net.unit.test
 					{
 						Assert.IsNull(result.ErrorList);
 					}
+
 					if (result.TextOutput != null)
 					{
 						Assert.AreEqual(result.TextOutput, lastResult.TextOutput);
@@ -640,6 +744,7 @@ namespace p4api.net.unit.test
 					{
 						Assert.IsNull(lastResult.TextOutput);
 					}
+
 					if (result.TaggedOutput != null)
 					{
 						Assert.AreEqual(result.TaggedOutput.Count, lastResult.TaggedOutput.Count);
@@ -648,6 +753,7 @@ namespace p4api.net.unit.test
 					{
 						Assert.IsNull(lastResult.TaggedOutput);
 					}
+
 					Assert.AreEqual(result.Cmd, lastResult.Cmd);
 					if (result.CmdArgs != null)
 					{
@@ -660,17 +766,27 @@ namespace p4api.net.unit.test
 
 					if (!result.Success)
 					{
-						WriteLine(string.Format("Thread 5, dirs failed:{0}", (result.ErrorList != null && result.ErrorList.Count > 0) ? result.ErrorList[0].ErrorMessage : "<unknown error>"));
+                                WriteLine(string.Format("Thread 5, dirs failed:{0}",
+                                    (result.ErrorList != null && result.ErrorList.Count > 0)
+                                        ? result.ErrorList[0].ErrorMessage
+                                        : "<unknown error>"));
 					}
 					else
 					{
-						WriteLine(string.Format("Thread 5, dirs Success:{0}", (result.InfoOutput != null && result.InfoOutput.Count > 0) ? result.InfoOutput[0].Message : "<no output>"));
+                                WriteLine(string.Format("Thread 5, dirs Success:{0}",
+                                    (result.InfoOutput != null && result.InfoOutput.Count > 0)
+                                        ? result.InfoOutput[0].Message
+                                        : "<no output>"));
 					}
+
 					if (delay != TimeSpan.Zero)
 					{
 						Thread.Sleep(delay);
 					}
 				}
+                    }
+                }
+
 				WriteLine("Thread 5 cleanly exited");
 			}
 			catch (ThreadAbortException)
@@ -684,20 +800,28 @@ namespace p4api.net.unit.test
 			}
 		}
 
-		private void cmdThreadProc6()
+        private void cmdThreadProc6(object obj)
 		{
+            CancellationToken cToken = (CancellationToken)obj;
 			try
 			{
-                WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-                P4Server server = serverMT.getServer();
+                WriteLine(System.Reflection.MethodBase.GetCurrentMethod()?.Name);
+                using (P4Server server = serverMT.getServer())
+                {
                 while (run)
 				{
-					cmd6 = new P4Command(server, "edit", false, "-n", "//depot/...");
+                        if (cToken.IsCancellationRequested)
+                        {
+                            break;
+                        }
 
-					DateTime StartedAt = DateTime.Now;
-                    ReportCommandStart(cmd6, StartedAt);
+                        using (P4Command cmd6 = new P4Command(server, "edit", false, "-n", "//depot/..."))
+                        {
+
+                            DateTime startedAt = DateTime.Now;
+                            ReportCommandStart(cmd6, startedAt);
                     P4CommandResult result = cmd6.Run();
-                    ReportCommandStop(cmd6, StartedAt);
+                            ReportCommandStop(cmd6, startedAt);
 
                     P4CommandResult lastResult = server.LastResults;
 
@@ -710,6 +834,7 @@ namespace p4api.net.unit.test
 					{
 						Assert.IsNull(lastResult.InfoOutput);
 					}
+
 					if (result.ErrorList != null)
 					{
 						Assert.AreEqual(result.ErrorList.Count, lastResult.ErrorList.Count);
@@ -718,6 +843,7 @@ namespace p4api.net.unit.test
 					{
 						Assert.IsNull(result.ErrorList);
 					}
+
 					if (result.TextOutput != null)
 					{
 						Assert.AreEqual(result.TextOutput, lastResult.TextOutput);
@@ -726,6 +852,7 @@ namespace p4api.net.unit.test
 					{
 						Assert.IsNull(lastResult.TextOutput);
 					}
+
 					if (result.TaggedOutput != null)
 					{
 						Assert.AreEqual(result.TaggedOutput.Count, lastResult.TaggedOutput.Count);
@@ -734,6 +861,7 @@ namespace p4api.net.unit.test
 					{
 						Assert.IsNull(lastResult.TaggedOutput);
 					}
+
 					Assert.AreEqual(result.Cmd, lastResult.Cmd);
 					if (result.CmdArgs != null)
 					{
@@ -746,17 +874,27 @@ namespace p4api.net.unit.test
 
 					if (!result.Success)
 					{
-						WriteLine(string.Format("Thread 6, edit failed:{0}", (result.ErrorList != null && result.ErrorList.Count>0) ? result.ErrorList[0].ErrorMessage : "<unknown error>"));
+                                WriteLine(string.Format("Thread 6, edit failed:{0}",
+                                    (result.ErrorList != null && result.ErrorList.Count > 0)
+                                        ? result.ErrorList[0].ErrorMessage
+                                        : "<unknown error>"));
 					}
 					else
 					{
-						WriteLine(string.Format("Thread 6, edit Success:{0}", (result.InfoOutput != null && result.InfoOutput.Count > 0) ? result.InfoOutput[0].Message : "<no output>"));
+                                WriteLine(string.Format("Thread 6, edit Success:{0}",
+                                    (result.InfoOutput != null && result.InfoOutput.Count > 0)
+                                        ? result.InfoOutput[0].Message
+                                        : "<no output>"));
 					}
+
 					if (delay != TimeSpan.Zero)
 					{
 						Thread.Sleep(delay);
 					}
 				}
+                    }
+                }
+
 				WriteLine("Thread 6 cleanly exited");
 			}
 			catch (ThreadAbortException)
@@ -803,7 +941,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void RunAsyncTestA()
         {
-            RunAsyncTest(false);
+            RunAsyncTest(Utilities.CheckpointType.A);
         }
 
         /// <summary>
@@ -812,17 +950,22 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void RunAsyncTestU()
         {
-            RunAsyncTest(true);
+            RunAsyncTest(Utilities.CheckpointType.U);
         }
 
-        public void RunAsyncTest(bool unicode)
+        public void RunAsyncTest(Utilities.CheckpointType cptype)
 		{
 #if _LOG_TO_FILE
-			using (sw = new System.IO.StreamWriter("C:\\Logs\\RunAsyncTestLog.Txt", true))
+#if _WINDOWS
+			string logpath = @"\Logs\RunAsyncTestLog.Txt";
+#else
+			string logpath = "/tmp/RunAsyncTestLog.Txt";
+#endif
+			using (sw = new System.IO.StreamWriter(logpath, true))
 			{
 				LogFile.SetLoggingFunction(LogFn);
 #endif
-				string serverAddr = "localhost:6666";
+            string serverAddr = configuration.ServerPort;
 				string user = "admin";
 				string pass = string.Empty;
 				string ws_client = "admin_space";
@@ -835,35 +978,47 @@ namespace p4api.net.unit.test
 
 				try
 				{
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
+                p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
 					using (serverMT = new P4ServerMT(serverAddr, user, pass, ws_client))
 					{
-                        P4Server server = serverMT.getServer();
-						if (unicode)
+                    using (CancellationTokenSource cts1 = new CancellationTokenSource())
+                    using (CancellationTokenSource cts2 = new CancellationTokenSource())
+                    using (CancellationTokenSource cts3 = new CancellationTokenSource())
+                    using (CancellationTokenSource cts4 = new CancellationTokenSource())
+                    using (CancellationTokenSource cts5 = new CancellationTokenSource())
+                    using (CancellationTokenSource cts6 = new CancellationTokenSource())
+                    {
+
+                        using (P4Server server = serverMT.getServer())
+                        {
+                            if (cptype == Utilities.CheckpointType.U)
 							Assert.IsTrue(server.UseUnicode, "Unicode server detected as not supporting Unicode");
 						else
 							Assert.IsFalse(server.UseUnicode, "Non Unicode server detected as supporting Unicode");
+                        }
                             
 						run = true;
 
-						Thread t1 = new Thread(new ThreadStart(cmdThreadProc1));
+                        Thread t1 = new Thread(new ParameterizedThreadStart(cmdThreadProc1));
 						t1.Name = "RunAsyncTest Thread t1";
-						Thread t2 = new Thread(new ThreadStart(cmdThreadProc2));
+                        Thread t2 = new Thread(new ParameterizedThreadStart(cmdThreadProc2));
 						t2.Name = "RunAsyncTest Thread t2";
-						Thread t3 = new Thread(new ThreadStart(cmdThreadProc3));
+                        Thread t3 = new Thread(new ParameterizedThreadStart(cmdThreadProc3));
 						t3.Name = "RunAsyncTest Thread t3";
 
-						Thread t4 = new Thread(new ThreadStart(cmdThreadProc4));
+                        Thread t4 = new Thread(new ParameterizedThreadStart(cmdThreadProc4));
 						t4.Name = "RunAsyncTest Thread t4";
-						Thread t5 = new Thread(new ThreadStart(cmdThreadProc5));
+                        Thread t5 = new Thread(new ParameterizedThreadStart(cmdThreadProc5));
 						t5.Name = "RunAsyncTest Thread t5";
-						Thread t6 = new Thread(new ThreadStart(cmdThreadProc6));
+                        Thread t6 = new Thread(new ParameterizedThreadStart(cmdThreadProc6));
 						t6.Name = "RunAsyncTest Thread t6";
 
-						t1.Start();
+                        t1.Start(cts1.Token);
 						Thread.Sleep(TimeSpan.FromSeconds(5)); // wait to start a 4th thread
-						t2.Start();
-						t3.Start();
+                        t2.Start(cts2.Token);
+                        t3.Start(cts3.Token);
 						Thread.Sleep(TimeSpan.FromSeconds(5)); // wait to start a 4th thread
 
 						run = false;
@@ -871,40 +1026,43 @@ namespace p4api.net.unit.test
 						if (t1.Join(1000) == false)
 						{
 							WriteLine("Thread 1 did not cleanly exit");
-							t1.Abort();
+                            cts1.Cancel();
 						}
+
 						if (t2.Join(1000) == false)
 						{
 							WriteLine("Thread 2 did not cleanly exit");
-							t2.Abort();
+                            cts2.Cancel();
 						}
+
 						if (t3.Join(1000) == false)
 						{
 							WriteLine("Thread 3 did not cleanly exit");
-							t3.Abort();
+                            cts3.Cancel();
 						}
 
 						Thread.Sleep(TimeSpan.FromSeconds(15)); // wait 15 seconds so will disconnect
 
-						run = true; ;
+                        run = true;
+                        ;
 
-						t1 = new Thread(new ThreadStart(cmdThreadProc1));
+                        t1 = new Thread(new ParameterizedThreadStart(cmdThreadProc1));
 						t1.Name = "RunAsyncTest Thread t1b";
-						t2 = new Thread(new ThreadStart(cmdThreadProc2));
+                        t2 = new Thread(new ParameterizedThreadStart(cmdThreadProc2));
 						t2.Name = "RunAsyncTest Thread t2b";
-						t3 = new Thread(new ThreadStart(cmdThreadProc3));
+                        t3 = new Thread(new ParameterizedThreadStart(cmdThreadProc3));
 						t3.Name = "RunAsyncTest Thread t3b";
 
-						t1.Start();
-						t2.Start();
-						t3.Start();
+                        t1.Start(cts1.Token);
+                        t2.Start(cts2.Token);
+                        t3.Start(cts3.Token);
 						Thread.Sleep(TimeSpan.FromSeconds(1)); // wait to start a 4th thread
 
-						t4.Start();
+                        t4.Start(cts4.Token);
 						Thread.Sleep(TimeSpan.FromSeconds(2)); // wait to start a 5th thread
-						t5.Start();
+                        t5.Start(cts5.Token);
 						Thread.Sleep(TimeSpan.FromSeconds(3)); // wait to start a 6th thread
-						t6.Start();
+                        t6.Start(cts6.Token);
 
 						Thread.Sleep(TimeSpan.FromSeconds(15)); // run all threads for 15 seconds
 
@@ -913,42 +1071,49 @@ namespace p4api.net.unit.test
 						if (t1.Join(1000) == false)
 						{
 							WriteLine("Thread 1 did not cleanly exit");
-							t1.Abort();
+                            cts1.Cancel();
 						}
+
 						if (t2.Join(1000) == false)
 						{
 							WriteLine("Thread 2 did not cleanly exit");
-							t2.Abort();
+                            cts2.Cancel();
 						}
+
 						if (t3.Join(1000) == false)
 						{
 							WriteLine("Thread 3 did not cleanly exit");
-							t3.Abort();
+                            cts3.Cancel();
 						}
+
 						if (t4.Join(1000) == false)
 						{
 							WriteLine("Thread 4 did not cleanly exit");
-							t4.Abort();
+                            cts4.Cancel();
 						}
+
 						if (t5.Join(1000) == false)
 						{
 							WriteLine("Thread 5 did not cleanly exit");
-							t5.Abort();
+                            cts5.Cancel();
 						}
+
 						if (t6.Join(1000) == false)
 						{
 							WriteLine("Thread 6 did not cleanly exit");
-							t6.Abort();
+                            cts6.Cancel();
+                        }
 						}
 					}
 				}
 				catch (Exception ex)
 				{
-					Assert.Fail("Test threw an exception: {0}\r\n{1}", ex.Message, ex.StackTrace);
+                Assert.Fail($"Test threw an exception: {ex.Message}{Environment.NewLine}{ex.StackTrace}");
 				}
 				finally
 				{
 					Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
 				}
 
                 // reset the exception level

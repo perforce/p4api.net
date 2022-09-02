@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "p4api.net-unit-test"
+		},
+		{
+			"path": "p4api.net.core"
+		}
+	],
+	"settings": {}
+}

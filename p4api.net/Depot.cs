@@ -104,102 +104,102 @@ namespace Perforce.P4
         /// the git data model.
         /// </summary>
         Graph = 0x0080,
-    }
+	}
 
-    /// <remarks>
-    /// <br/><b>p4 help depot</b>
-    /// <br/> 
-    /// <br/>     depot -- Create or edit a depot specification
-    /// <br/> 
-    /// <br/>     p4 depot name
-    /// <br/>     p4 depot -d [-f] name
-    /// <br/>     p4 depot -o name
-    /// <br/>     p4 depot -i
-    /// <br/> 
-    /// <br/> 	Create a new depot specification or edit an existing depot
-    /// <br/> 	specification. The specification form is put into a temporary file
-    /// <br/> 	and the editor (configured by the environment variable $P4EDITOR)
-    /// <br/> 	is invoked.
-    /// <br/> 
-    /// <br/> 	The depot specification contains the following fields:
-    /// <br/> 
-    /// <br/> 	Depot:       The name of the depot.  This name cannot be the same as
-    /// <br/> 		     any branch, client, or label name.
-    /// <br/> 
-    /// <br/> 	Owner:       The user who created this depot.
-    /// <br/> 
-    /// <br/> 	Date:        The date that this specification was last modified.
-    /// <br/> 
-    /// <br/> 	Description: A short description of the depot (optional).
-    /// <br/> 
-    /// <br/> 	Type:        One of the types: 'local', 'stream', 'remote', 'spec',
-    /// <br/> 		     'archive', or 'unload'.
-    /// <br/> 
-    /// <br/> 		     A 'local' depot (the default) is managed directly by
-    /// <br/> 		     the server and its files reside in the server's root
-    /// <br/> 		     directory.
-    /// <br/> 
-    /// <br/> 		     A 'stream' depot is a local depot dedicated to the
-    /// <br/> 		     storage of files in a stream.
-    /// <br/> 
-    /// <br/> 		     A 'remote' depot refers to files in another Perforce
-    /// <br/> 		     server.
-    /// <br/> 
-    /// <br/> 		     A 'spec' depot automatically archives all edited forms
-    /// <br/> 		     (branch, change, client, depot, group, job, jobspec,
-    /// <br/> 		     protect, triggers, typemap, and user) in special,
-    /// <br/> 		     read-only files.  The files are named:
-    /// <br/> 		     //depotname/formtype/name[suffix].  Updates to jobs made
-    /// <br/> 		     by the 'p4 change', 'p4 fix', and 'p4 submit' commands
-    /// <br/> 		     are also saved, but other automatic updates such as
-    /// <br/> 		     as access times or opened files (for changes) are not.
-    /// <br/> 		     A server can contain only one 'spec' depot.
-    /// <br/> 
-    /// <br/> 		     A 'archive' depot defines a storage location to which
-    /// <br/> 		     obsolete revisions may be relocated.
-    /// <br/> 
-    /// <br/> 		     An 'unload' depot defines a storage location to which
-    /// <br/> 		     database records may be unloaded and from which they
-    /// <br/> 		     may be reloaded.
-    /// <br/> 
-    /// <br/> 	Address:     For remote depots, the $P4PORT (connection address)
-    /// <br/> 		     of the remote server.
-    /// <br/> 
-    /// <br/> 	Suffix:      For spec depots, the optional suffix to be used
-    /// <br/> 		     for generated paths. The default is '.p4s'.
-    /// <br/> 
-    /// <br/> 	Map:         Path translation information, in the form of a file
-    /// <br/> 		     pattern with a single ... in it.  For local depots,
-    /// <br/> 		     this path is relative to the server's root directory
-    /// <br/> 		     or to server.depot.root if it has been configured
-    /// <br/> 		     (Example: depot/...).  For remote depots, this path
-    /// <br/> 		     refers to the remote server's namespace
-    /// <br/> 		     (Example: //depot/...).
-    /// <br/> 
-    /// <br/> 	SpecMap:     For spec depots, the optional description of which
-    /// <br/> 	             specs should be saved, as one or more patterns.
-    /// <br/> 
-    /// <br/> 	The -d flag deletes the specified depot.  If any files reside in the
-    /// <br/> 	depot, they must be removed with 'p4 obliterate' before deleting the
-    /// <br/> 	depot. If any archive files remain in the depot directory, they may
-    /// <br/> 	be referenced by lazy copies in other depots; use 'p4 snap' to break
-    /// <br/> 	those linkages. Snap lazy copies prior to obliterating the old depot
-    /// <br/> 	files to allow the obliterate command to remove any unreferenced
-    /// <br/> 	archives from the depot directory. If the depot directory is not
-    /// <br/> 	empty, you must specify the -f flag to delete the depot.
-    /// <br/> 
-    /// <br/> 	The -o flag writes the depot specification to standard output. The
-    /// <br/> 	user's editor is not invoked.
-    /// <br/> 
-    /// <br/> 	The -i flag reads a depot specification from standard input. The
-    /// <br/> 	user's editor is not invoked.
-    /// <br/> 
-    /// <br/> 
-    /// </remarks>
-    /// <summary>
-    /// A depot specification in a Perforce repository. 
-    /// </summary>
-    public class Depot
+		/// <remarks>
+		/// <br/><b>p4 help depot</b>
+		/// <br/> 
+		/// <br/>     depot -- Create or edit a depot specification
+		/// <br/> 
+		/// <br/>     p4 depot name
+		/// <br/>     p4 depot -d [-f] name
+		/// <br/>     p4 depot -o name
+		/// <br/>     p4 depot -i
+		/// <br/> 
+		/// <br/> 	Create a new depot specification or edit an existing depot
+		/// <br/> 	specification. The specification form is put into a temporary file
+		/// <br/> 	and the editor (configured by the environment variable $P4EDITOR)
+		/// <br/> 	is invoked.
+		/// <br/> 
+		/// <br/> 	The depot specification contains the following fields:
+		/// <br/> 
+		/// <br/> 	Depot:       The name of the depot.  This name cannot be the same as
+		/// <br/> 		     any branch, client, or label name.
+		/// <br/> 
+		/// <br/> 	Owner:       The user who created this depot.
+		/// <br/> 
+		/// <br/> 	Date:        The date that this specification was last modified.
+		/// <br/> 
+		/// <br/> 	Description: A short description of the depot (optional).
+		/// <br/> 
+		/// <br/> 	Type:        One of the types: 'local', 'stream', 'remote', 'spec',
+		/// <br/> 		     'archive', or 'unload'.
+		/// <br/> 
+		/// <br/> 		     A 'local' depot (the default) is managed directly by
+		/// <br/> 		     the server and its files reside in the server's root
+		/// <br/> 		     directory.
+		/// <br/> 
+		/// <br/> 		     A 'stream' depot is a local depot dedicated to the
+		/// <br/> 		     storage of files in a stream.
+		/// <br/> 
+		/// <br/> 		     A 'remote' depot refers to files in another Perforce
+		/// <br/> 		     server.
+		/// <br/> 
+		/// <br/> 		     A 'spec' depot automatically archives all edited forms
+		/// <br/> 		     (branch, change, client, depot, group, job, jobspec,
+		/// <br/> 		     protect, triggers, typemap, and user) in special,
+		/// <br/> 		     read-only files.  The files are named:
+		/// <br/> 		     //depotname/formtype/name[suffix].  Updates to jobs made
+		/// <br/> 		     by the 'p4 change', 'p4 fix', and 'p4 submit' commands
+		/// <br/> 		     are also saved, but other automatic updates such as
+		/// <br/> 		     as access times or opened files (for changes) are not.
+		/// <br/> 		     A server can contain only one 'spec' depot.
+		/// <br/> 
+		/// <br/> 		     A 'archive' depot defines a storage location to which
+		/// <br/> 		     obsolete revisions may be relocated.
+		/// <br/> 
+		/// <br/> 		     An 'unload' depot defines a storage location to which
+		/// <br/> 		     database records may be unloaded and from which they
+		/// <br/> 		     may be reloaded.
+		/// <br/> 
+		/// <br/> 	Address:     For remote depots, the $P4PORT (connection address)
+		/// <br/> 		     of the remote server.
+		/// <br/> 
+		/// <br/> 	Suffix:      For spec depots, the optional suffix to be used
+		/// <br/> 		     for generated paths. The default is '.p4s'.
+		/// <br/> 
+		/// <br/> 	Map:         Path translation information, in the form of a file
+		/// <br/> 		     pattern with a single ... in it.  For local depots,
+		/// <br/> 		     this path is relative to the server's root directory
+		/// <br/> 		     or to server.depot.root if it has been configured
+		/// <br/> 		     (Example: depot/...).  For remote depots, this path
+		/// <br/> 		     refers to the remote server's namespace
+		/// <br/> 		     (Example: //depot/...).
+		/// <br/> 
+		/// <br/> 	SpecMap:     For spec depots, the optional description of which
+		/// <br/> 	             specs should be saved, as one or more patterns.
+		/// <br/> 
+		/// <br/> 	The -d flag deletes the specified depot.  If any files reside in the
+		/// <br/> 	depot, they must be removed with 'p4 obliterate' before deleting the
+		/// <br/> 	depot. If any archive files remain in the depot directory, they may
+		/// <br/> 	be referenced by lazy copies in other depots; use 'p4 snap' to break
+		/// <br/> 	those linkages. Snap lazy copies prior to obliterating the old depot
+		/// <br/> 	files to allow the obliterate command to remove any unreferenced
+		/// <br/> 	archives from the depot directory. If the depot directory is not
+		/// <br/> 	empty, you must specify the -f flag to delete the depot.
+		/// <br/> 
+		/// <br/> 	The -o flag writes the depot specification to standard output. The
+		/// <br/> 	user's editor is not invoked.
+		/// <br/> 
+		/// <br/> 	The -i flag reads a depot specification from standard input. The
+		/// <br/> 	user's editor is not invoked.
+		/// <br/> 
+		/// <br/> 
+		/// </remarks>
+	/// <summary>
+	/// A depot specification in a Perforce repository. 
+	/// </summary>
+	public class Depot
 	{
         /// <summary>
         /// Default Constructor
@@ -416,23 +416,23 @@ namespace Perforce.P4
 		/// Format of a depot specification used to save a depot to the server
 		/// </summary>
 		private static String DepotSpecFormat =
-													"Depot:\t{0}\r\n" +
-													"\r\n" +
-													"Owner:\t{1}\r\n" +
-													"\r\n" +
-													"Date:\t{2}\r\n" +
-													"\r\n" +
-													"Description:\r\n\t{3}\r\n" +
-													"\r\n" +
-													"Type:\t{4}\r\n" +
-													"\r\n" +
-													"Address:\t{5}\r\n" +
-													"\r\n" +
-													"Suffix:\t{6}\r\n" +
-													"\r\n" +
-													"Map:\t{7}" +
-													"\r\n" +
-													"StreamDepth:\t{8}";
+													$"Depot:\t{{0}}{Environment.NewLine}" +
+													$"{Environment.NewLine}" +
+													$"Owner:\t{{1}}{Environment.NewLine}" +
+													$"{Environment.NewLine}" +
+													$"Date:\t{{2}}{Environment.NewLine}" +
+													$"{Environment.NewLine}" +
+													$"Description:{Environment.NewLine}\t{{3}}{Environment.NewLine}" +
+													$"{Environment.NewLine}" +
+													$"Type:\t{{4}}{Environment.NewLine}" +
+													$"{Environment.NewLine}" +
+													$"Address:\t{{5}}{Environment.NewLine}" +
+													$"{Environment.NewLine}" +
+													$"Suffix:\t{{6}}{Environment.NewLine}" +
+													$"{Environment.NewLine}" +
+													$"Map:\t{{7}}" +
+													$"{Environment.NewLine}" +
+													$"StreamDepth:\t{{8}}";
 													
 
 		/// <summary>

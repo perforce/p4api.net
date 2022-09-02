@@ -36,7 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 #include "P4BridgeClient.h"
 #include "P4Connection.h"
-#include "P4BridgeEnviro.h"
+
 #include "Lock.h"
 
 #include <string>
@@ -74,7 +74,20 @@ protected:
  *
  ******************************************************************************/
 
-typedef int _stdcall LogCallbackFn(int, const char*, int, const char*);
+namespace std {
+	class exception;
+}
+
+#ifndef STDCALL
+#if defined (_MSC_VER)
+#define STDCALL __stdcall
+#else
+#define STDCALL
+#endif
+#endif
+
+
+typedef int STDCALL LogCallbackFn(int, const char*, int, const char*);
 
 
 // Number returned by GetProtocol() if the server supports login, logout, etc.
@@ -85,11 +98,9 @@ typedef int _stdcall LogCallbackFn(int, const char*, int, const char*);
 
 /*******************************************************************************
  *
- *  P4BridgeClient
+ *  P4BridgeServer
  *
- *  Class used to wrap the ClientApi in the p4api. It provides the capability to
- *      connect to a P4 Server and execute commands. It initializes two 
- *      connections, one each for tagged/untagged output.
+ *  It provides the capability to connect to a P4 Server and handle callbacks and logging
  *
  ******************************************************************************/
 
@@ -103,21 +114,14 @@ public:
 	// logging support
 	static int LogMessage(int log_level, const char * file, int line, const char * message, ...);
 	static int LogMessageNoArgs(int log_level, const char * file, int line, const char * message);
-
-	ILockable Locker;
+	static void ReportException(std::exception& e, const char* fun);
 
 protected:
 	// Cannot create without initialization
-	P4BridgeServer(void);
+	P4BridgeServer();
 
 	// Get the protocol information from the server
 	int GetServerProtocols(P4ClientError **err);
-
-	// UI support
-	// Internal exception handler to handle platform exceptions i.e. Null 
-	//      pointer access
-	int HandleException(const char* fname, unsigned int line, const char* func, unsigned int c, struct _EXCEPTION_POINTERS *e, string** pErrorString);
-	static int sHandleException(unsigned int c, struct _EXCEPTION_POINTERS *e);
 
 	// Call back function used to send text results back to the client
 	//
@@ -278,7 +282,7 @@ public:
 	void Run_int(P4Connection* client, const char *cmd, P4BridgeClient* ui);
 
 	// The 800 pound gorilla in the room, execute a command
-	int run_command( const char *cmd, int cmdId, int tagged, char **args, int argc );
+	int run_command( const char *cmd, int cmdId, int tagged, char const * const * args, int argc );
 
 	int resolve( const char *file, int tagged );
 
@@ -304,10 +308,17 @@ public:
 
 	string get_config();
 	static string get_config( const char* cwd );
+
+	/* We provide a static Enviro */
+	/* it is inherited by the P4Connection class */
+
 	static const char* Get( const char *var );
 	static void Set( const char *var, const char *value );
 	static void Update(const char *var, const char *value );
 	static void Reload();
+	static void ListEnviro();
+	static void ListEnviro(Enviro* ptr);
+	static Enviro *GetEnviro(); 
 
 	static LogCallbackFn *SetLogCallFn(LogCallbackFn *log_fn);
 
@@ -399,9 +410,6 @@ protected:
 	
 	P4Connection* getConnection(int id = 99999999);
 
-	// TODO: messy, make a class for this?
-	static ILockable envLock;
-	static Enviro _enviro;	// storage, lock() first
 
 	static int IsIgnored_Int( const StrPtr &path );
 	string get_config_Int( );

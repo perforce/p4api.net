@@ -631,7 +631,7 @@ namespace Perforce.P4
 		}
 
 		/// <summary>
-		/// Cast the errors to a String. Each error is separated by \r\n
+        /// Cast the errors to a String. Each error is separated by NewLine
 		/// </summary>
 		/// <param name="l">the list to cast </param>
 		/// <returns></returns>
@@ -641,7 +641,7 @@ namespace Perforce.P4
 			foreach (P4ClientError e in l)
 			{
 				r.Append(e.ToString());
-				r.Append("/r/n");
+                r.Append($"{Environment.NewLine}");
 			}
 			return r.ToString();
 		}
@@ -808,7 +808,7 @@ namespace Perforce.P4
 		}
 
 		/// <summary>
-		/// Cast the errors to a String. Each error is separated by \r\n
+        /// Cast the errors to a String. Each error is separated by NewLine
 		/// </summary>
 		/// <param name="l">the list to cast </param>
 		/// <returns></returns>
@@ -822,7 +822,7 @@ namespace Perforce.P4
 			foreach (P4ClientInfoMessage m in l)
 			{
 				r.Append(m.ToString());
-				r.Append("/r/n");
+                r.Append($"{Environment.NewLine}");
 			}
 			return r.ToString();
 		}

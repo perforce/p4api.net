@@ -1,6 +1,7 @@
 using Perforce.P4;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections.Generic;
+using System;
 using NLog;
 
 namespace p4api.net.unit.test
@@ -10,6 +11,10 @@ namespace p4api.net.unit.test
 	///to contain all ViewMapTest Unit Tests
 	///</summary>
 	[TestClass()]
+#if NET462
+    [DeploymentItem("x64", "x64")]
+    [DeploymentItem("x86", "x86")]
+#endif
 	public class ViewMapTest
 	{
         private static Logger logger = LogManager.GetCurrentClassLogger();
@@ -260,7 +265,7 @@ namespace p4api.net.unit.test
 			string actual = target.ToString();
 
 			string expected =
-"//depot/main/p4/... //user_win-user/main/p4/...\r\n\"-//usr space/...\" \"//user_win-user/usr space/...\"\r\n+//spec/... //user_win-user/spec/...\r\n";
+$"//depot/main/p4/... //user_win-user/main/p4/...{Environment.NewLine}\"-//usr space/...\" \"//user_win-user/usr space/...\"{Environment.NewLine}+//spec/... //user_win-user/spec/...{Environment.NewLine}";
 
 			Assert.AreEqual(expected, actual);
 		}

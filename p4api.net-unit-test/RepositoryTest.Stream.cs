@@ -19,23 +19,24 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void CreateStreamTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
-
-            Process p4d = null;
-
+            
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     Server server = new Server(new ServerAddress(uri));
                 
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -89,8 +90,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -101,23 +103,24 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void CreateStreamInvalidParentTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     Server server = new Server(new ServerAddress(uri));
                
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -151,15 +154,17 @@ namespace p4api.net.unit.test
                         }
                         catch (System.ArgumentNullException e)
                         {
-                            Assert.AreEqual("Value cannot be null.\r\nParameter name: Parent", e.Message);
+                            Assert.AreEqual(e.ParamName, "Parent");
+                            Assert.IsTrue(e.Message.Contains("Value cannot be null"));
                         }
                     }
                 }
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -171,23 +176,24 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void CreateParentlessNonMainlineStreamTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     Server server = new Server(new ServerAddress(uri));
                
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -223,16 +229,17 @@ namespace p4api.net.unit.test
                         }
                         catch (ArgumentNullException e)
                         {
-                            Assert.AreEqual("Value cannot be null.\r\nParameter name: Parent", e.Message,
-                                ("Error in stream specification.\nMissing required field 'Parent'.\n"));
+                            Assert.AreEqual(e.ParamName, "Parent");
+                            Assert.IsTrue(e.Message.Contains("Value cannot be null"));
                         }
                     }
                 }
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -244,23 +251,24 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void CreateTaskStreamTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
-
-            Process p4d = null;
-
+            
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     Server server = new Server(new ServerAddress(uri));
                 
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -314,8 +322,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -325,23 +334,24 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void CreateNewStreamTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     Server server = new Server(new ServerAddress(uri));
                
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -458,8 +468,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -469,23 +480,24 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void UpdateStreamTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     Server server = new Server(new ServerAddress(uri));
                 
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -532,8 +544,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -543,23 +556,24 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void DeleteStreamTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     Server server = new Server(new ServerAddress(uri));
                
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -624,8 +638,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -636,22 +651,24 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void DeleteStreamWithChildTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
-            Process p4d = null;
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     Server server = new Server(new ServerAddress(uri));
                
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -682,8 +699,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -694,23 +712,24 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void DeleteStreamWithClientsTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
-
-            Process p4d = null;
-
+            
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     Server server = new Server(new ServerAddress(uri));
                 
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -741,8 +760,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -754,23 +774,24 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void DeleteStreamLockedTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "bernard";
             string pass = string.Empty;
             string ws_client = "admin_space";
-
-            Process p4d = null;
-
+            
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     Server server = new Server(new ServerAddress(uri));
                
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -816,45 +837,50 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
-
+        
         /// <summary>
-        ///A test for GetStreamjob072025
+        ///A test for GetStreamjob072025 Ascii
         ///</summary>
         [TestMethod()]
         public void GetStreamTestjob072025A()
         {
-            GetStreamTestjob072025(false);
+            GetStreamTestjob072025(Utilities.CheckpointType.A);
         }
+        
         /// <summary>
-        ///A test for GetStreamjob072025
+        ///A test for GetStreamjob072025 Unicode
         ///</summary>
         [TestMethod()]
         public void GetStreamTestjob072025U()
         {
-            GetStreamTestjob072025(true);
+            GetStreamTestjob072025(Utilities.CheckpointType.U);
         }
+        
         /// <summary>
         ///A test for GetStreamjob072025
         ///</summary>
-        public void GetStreamTestjob072025(bool unicode)
+        public void GetStreamTestjob072025(Utilities.CheckpointType cptype)
         {
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
             Process p4d = null;
-
+            Repository rep = null;
             try
             {
-                p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
+                p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
                 Server server = new Server(new ServerAddress(uri));
 
-                Repository rep = new Repository(server);
+                rep = new Repository(server);
 
                 using (Connection con = rep.Connection)
                 {
@@ -886,6 +912,8 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
             }
         }
 
@@ -895,23 +923,24 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetStreamTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     Server server = new Server(new ServerAddress(uri));
                 
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -934,7 +963,7 @@ namespace p4api.net.unit.test
 
                         // get a stream spec for a stream that doesn't exist
                         string targetStream1 = "//Rocket/GUI2";
-                        Stream s1 = rep.GetStream(targetStream1, "//Rocket/MAIN",
+                        Stream s1 = rep.GetStream(targetStream1,
                             new StreamCmdOptions(StreamCmdFlags.None, "//Rocket/MAIN", StreamType.Development.ToString()));
                         Assert.IsNotNull(s1);
                         Assert.AreEqual(targetStream1, s1.Id);
@@ -944,6 +973,8 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
             }
         }
@@ -954,23 +985,24 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetStreamWithSpacesViewMapTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
-
-            Process p4d = null;
-
+            
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 13, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 13, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     Server server = new Server(new ServerAddress(uri));
                
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -1015,6 +1047,8 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
             }
         }
@@ -1025,23 +1059,24 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetStreamsTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     Server server = new Server(new ServerAddress(uri));
                 
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -1057,6 +1092,7 @@ namespace p4api.net.unit.test
                         IList<Stream> s = rep.GetStreams(new Options(StreamsCmdFlags.None,
                             "Parent=//flow/mainline & Type=development", null, "//...", 3));
 
+
                         Assert.IsNotNull(s);
                         Assert.AreEqual(3, s.Count);
                         Assert.AreEqual("D2", s[1].Name);
@@ -1070,8 +1106,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -1081,23 +1118,24 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetStreamsCheckDescriptionTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     Server server = new Server(new ServerAddress(uri));
                 
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -1124,8 +1162,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -1135,23 +1174,24 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetStreamMetaDataTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
-
-            Process p4d = null;
-
+            
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 13, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 13, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     Server server = new Server(new ServerAddress(uri));
                 
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -1164,7 +1204,7 @@ namespace p4api.net.unit.test
 
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
 
-                        Stream s = rep.GetStream("//Rocket/GUI",null,null);
+                        Stream s = rep.GetStream("//Rocket/GUI",null);
                         StreamMetaData smd = rep.GetStreamMetaData(s, null);
                         Assert.IsNotNull(smd);
                         Assert.AreEqual(smd.Stream, new DepotPath("//Rocket/GUI"));
@@ -1177,7 +1217,7 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(smd.IntegToParentHow, StreamMetaData.IntegAction.Copy);
 
                         // test the -r flag
-                        Stream s1 = rep.GetStream("//Rocket/GUI", null, null);
+                        Stream s1 = rep.GetStream("//Rocket/GUI", null);
                         StreamMetaData smd1 = rep.GetStreamMetaData(s, new Options(GetStreamMetaDataCmdFlags.Reverse));
                         Assert.IsNotNull(smd1);
                         Assert.AreEqual(smd1.Stream, new DepotPath("//Rocket/GUI"));
@@ -1190,7 +1230,7 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(smd1.IntegFromParentHow, StreamMetaData.IntegAction.Merge);
 
                         // test the -a flag
-                        Stream s2 = rep.GetStream("//Rocket/GUI", null, null);
+                        Stream s2 = rep.GetStream("//Rocket/GUI", null);
                         StreamMetaData smd2 = rep.GetStreamMetaData(s, new Options(GetStreamMetaDataCmdFlags.All));
                         Assert.IsNotNull(smd2);
                         Assert.AreEqual(smd2.Stream, new DepotPath("//Rocket/GUI"));
@@ -1210,41 +1250,47 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
-        [TestMethod()]
+        /// <summary>
         ///A test for GetStreamImportSubmittableU
         ///</summary>
+        [TestMethod()]
         public void GetStreamImportSubmittableU()
         {
-            GetStreamImportSubmittable(true);
+            GetStreamImportSubmittable(Utilities.CheckpointType.U);
         }
 
-        [TestMethod()]
+        /// <summary>
         ///A test for GetStreamImportSubmittableA
         ///</summary>
+        [TestMethod()]
         public void GetStreamImportSubmittableA()
         {
-            GetStreamImportSubmittable(false);
+            GetStreamImportSubmittable(Utilities.CheckpointType.A);
         }
         
-        public void GetStreamImportSubmittable(bool unicode)
+        public void GetStreamImportSubmittable(Utilities.CheckpointType cptype)
         {
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
-
+            
             Process p4d = null;
-
-            Server server = new Server(new ServerAddress(uri));
+            Repository rep = null;
+            
             try
             {
-                p4d = Utilities.DeployP4TestServer(TestDir, 13, unicode);
-                Repository rep = new Repository(server);
+                p4d = Utilities.DeployP4TestServer(TestDir, 13, cptype);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+                Server server = new Server(new ServerAddress(uri));
+                rep = new Repository(server);
 
                 using (Connection con = rep.Connection)
                 {
@@ -1268,39 +1314,46 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
             }
         }
 
-        [TestMethod()]
+        /// <summary>
         ///A test for GetStreamImportSubmittableU
         ///</summary>
+        [TestMethod()]
         public void GetStreamMappingLeadingPlusMinusU()
         {
-            GetStreamMappingLeadingPlusMinus(true);
+            GetStreamMappingLeadingPlusMinus(Utilities.CheckpointType.U);
         }
 
-        [TestMethod()]
+        /// <summary>
         ///A test for GetStreamImportSubmittableA
         ///</summary>
+        [TestMethod()]
         public void GetStreamMappingLeadingPlusMinusA()
         {
-            GetStreamMappingLeadingPlusMinus(false);
+            GetStreamMappingLeadingPlusMinus(Utilities.CheckpointType.A);
         }
 
-        public void GetStreamMappingLeadingPlusMinus(bool unicode)
+        public void GetStreamMappingLeadingPlusMinus(Utilities.CheckpointType cptype)
         {
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
             Process p4d = null;
-
-            Server server = new Server(new ServerAddress(uri));
+            Repository rep = null;
+            
             try
             {
-                p4d = Utilities.DeployP4TestServer(TestDir, 13, unicode);
-                Repository rep = new Repository(server);
+                p4d = Utilities.DeployP4TestServer(TestDir, 13, cptype);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+                Server server = new Server(new ServerAddress(uri));
+                rep = new Repository(server);
 
                 using (Connection con = rep.Connection)
                 {
@@ -1326,24 +1379,28 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
             }
         }
 
         [TestMethod()]
         public void CreateCustomFieldStreamTest()
         {                       
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
             Process p4d = null;
+            Repository rep = null;
             try
             {
-                p4d = Utilities.DeployP4TestServer(TestDir, 21, false);
-                Server server = new Server(new ServerAddress(uri));
+                p4d = Utilities.DeployP4TestServer(TestDir, 21, Utilities.CheckpointType.A);
+                Assert.IsNotNull(p4d, "Setup Failure");
 
-                Repository rep = new Repository(server);
+                Server server = new Server(new ServerAddress(uri));
+                rep = new Repository(server);
 
                 using (Connection con = rep.Connection)
                 {
@@ -1356,17 +1413,21 @@ namespace p4api.net.unit.test
                     Assert.AreEqual(con.Status, ConnectionStatus.Connected);
 
                     // Setting spec.custom=1
-                    P4Command configureCmd = new P4Command(con, "configure", true, null);
-                    Options opts = new Options();
-                    opts["set"] = "spec.custom=1";
-                    P4CommandResult setRes = configureCmd.Run(opts);
+                    using (P4Command configureCmd = new P4Command(con, "configure", true, null))
+                    {
+                        Options opts = new Options();
+                        opts["set"] = "spec.custom=1";
+                        P4CommandResult setRes = configureCmd.Run(opts);
+                    }
 
                     // Send custom spec to server
-                    P4Command specStreamCmd = new P4Command(con, "spec", false, null);
-                    Options specOpts = new Options();
-                    specOpts["-i"] = "stream";
-                    specStreamCmd.DataSet = CustomStreamSpec201;
-                    specStreamCmd.Run(specOpts);
+                    using (P4Command specStreamCmd = new P4Command(con, "spec", false, null))
+                    {
+                        Options specOpts = new Options();
+                        specOpts["-i"] = "stream";
+                        specStreamCmd.DataSet = CustomStreamSpec201;
+                        specStreamCmd.Run(specOpts);
+                    }
 
                     // Create a Stream spec
                     //Define values for stream properties
@@ -1382,7 +1443,7 @@ namespace p4api.net.unit.test
                     {
                         { "TestField", testField1 },
                         { "NewField", testField2 },
-                        { "DiffrentField", testField3 }
+                        { "DifferentField", testField3 }
                     };
                     ViewMap Paths = new ViewMap() 
                     {
@@ -1430,36 +1491,42 @@ namespace p4api.net.unit.test
                     Assert.AreEqual(readStream.Parent, parent);
                     Assert.AreEqual(readStream.Name, name);                    
                     Assert.AreEqual(readStream.OwnerName, ownerName);
-                    Assert.AreEqual(readStream.Description, description + "\r\n");
+                    Assert.AreEqual(readStream.Description, description + Environment.NewLine);
                     Assert.AreEqual(readStream.Paths[1].Left.ToString(), expectedP2);
                     Assert.AreEqual(readStream.Remapped[0].Left.ToString(), expectedP3);
                     Assert.AreEqual(readStream.Remapped[0].Right.ToString(), expectedP4);
                     Assert.AreEqual(readStream.Ignored[0].Left.ToString(), expectedP5);
                     Assert.AreEqual(readStream.CustomFields["TestField"], testField1);
                     Assert.AreEqual(readStream.CustomFields["NewField"].ToString(), testField2.ToString());
-                    Assert.AreEqual(readStream.CustomFields["DiffrentField"], testField3.ToString());                    
+                    Assert.AreEqual(readStream.CustomFields["DifferentField"], testField3.ToString());                    
                 }
             }
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
             }
         }
+        
         [TestMethod()]
         public void CreateSpecParentViewTest()
         {
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
             Process p4d = null;
+            Repository rep = null;
             try
             {
-                p4d = Utilities.DeployP4TestServer(TestDir, 21, false);
+                p4d = Utilities.DeployP4TestServer(TestDir, 21, Utilities.CheckpointType.A);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
                 Server server = new Server(new ServerAddress(uri));
 
-                Repository rep = new Repository(server);
+                rep = new Repository(server);
 
                 using (Connection con = rep.Connection)
                 {
@@ -1508,24 +1575,29 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
             }
         }
 
         [TestMethod()]
         public void ViewCommentsTest()
         {
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
             Process p4d = null;
+            Repository rep = null;
             try
             {
-                p4d = Utilities.DeployP4TestServer(TestDir, 21, false);
+                p4d = Utilities.DeployP4TestServer(TestDir, 21, Utilities.CheckpointType.A);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
                 Server server = new Server(new ServerAddress(uri));
 
-                Repository rep = new Repository(server);
+                rep = new Repository(server);
 
                 using (Connection con = rep.Connection)
                 {
@@ -1574,6 +1646,8 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
             }
         }
 
@@ -1604,7 +1678,7 @@ Fields:
         715 ParentView word 0 required
         NNN TestField word 32 optional
         NNN NewField llist 32 optional
-        NNN DiffrentField word 32 optional
+        NNN DifferentField word 32 optional
 
 Words:
         Paths 2
@@ -1664,14 +1738,14 @@ Comments:
         [TestMethod()]
         public void StreamCommandEdit()
         {
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string ws_client = "admin_space";
 
             Process p4d = null;
             try
             {
-                p4d = Utilities.DeployP4TestServer(TestDir, 21, false);
+                p4d = Utilities.DeployP4TestServer(TestDir, 21, (Utilities.CheckpointType)0);
                 Server server = new Server(new ServerAddress(uri));
 
                 Repository rep = new Repository(server);
@@ -1745,14 +1819,14 @@ Comments:
         [TestMethod()]
         public void StreamCommandRevert()
         {
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string ws_client = "admin_space";
 
             Process p4d = null;
             try
             {
-                p4d = Utilities.DeployP4TestServer(TestDir, 21, false);
+                p4d = Utilities.DeployP4TestServer(TestDir, 21, (Utilities.CheckpointType)0);
                 Server server = new Server(new ServerAddress(uri));
                 Repository rep = new Repository(server);
 
@@ -1825,7 +1899,7 @@ Comments:
         [TestMethod()]
         public void StreamCommandResolve()
         {
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user1 = "admin";
             string ws_client1 = "admin_space";
             string user2 = "alex";
@@ -1834,7 +1908,7 @@ Comments:
             Process p4d = null;
             try
             {
-                p4d = Utilities.DeployP4TestServer(TestDir, 8, false);
+                p4d = Utilities.DeployP4TestServer(TestDir, 8, (Utilities.CheckpointType)0);
                 Server server = new Server(new ServerAddress(uri));
 
                 Repository rep = new Repository(server);
@@ -1899,7 +1973,7 @@ Comments:
                     #endregion openStreamClient1
 
                     #region editStreamClient2
-                   
+
                     con.UserName = user2;
                     con.Client = new Client();
                     con.Client.Name = ws_client2;
@@ -1935,7 +2009,8 @@ Comments:
                     try
                     {
                         con.Client.ResolveStream(resolveOptions);
-                    } catch (P4Exception e)
+                    }
+                    catch (P4Exception e)
                     {
                         Assert.AreEqual("Stream needs resolve action: -ay/-at", e.Message);
                     }
@@ -1957,14 +2032,14 @@ Comments:
         [TestMethod()]
         public void StreamCommandStreamLog()
         {
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string ws_client = "admin_space";
 
             Process p4d = null;
             try
             {
-                p4d = Utilities.DeployP4TestServer(TestDir, 21, false);
+                p4d = Utilities.DeployP4TestServer(TestDir, 21, (Utilities.CheckpointType)0);
                 Server server = new Server(new ServerAddress(uri));
 
                 Repository rep = new Repository(server);
@@ -2028,12 +2103,12 @@ Comments:
                     Assert.IsFalse(submittedChange.Pending);
                     Assert.AreEqual(id, submittedChange.Stream);
 
-                    string[] streams = { "//Rocket/streamcmds-streamLog", "//flow/D1", "//flow/D2" };                                                           
-                    
+                    string[] streams = { "//Rocket/streamcmds-streamLog", "//flow/D1", "//flow/D2" };
+
                     Dictionary<string, List<StreamLog>> streamLog = rep.GetStreamLog(streams, new Options());
                     Assert.IsNotNull(streamLog);
                     Assert.AreEqual("edit", streamLog["//Rocket/streamcmds-streamLog"][0].Action);
-                    }
+                }
             }
             finally
             {

@@ -1,0 +1,57 @@
+.p4config
+*.sln.DotSettings.user
+
+# build directories
+cmake-build-*/
+cmakebuild/
+bin/
+build/
+out/
+obj/
+p4bridge-unit-test/p4bridge/
+p4bridgeStressTest/p4bridge/
+
+# p4api locations
+p4api/
+p4api_*/
+
+# cmake
+CMakeCache.txt
+CMakeFiles
+CMakeUserPresets.json
+cmake_install.cmake
+install_manifest.txt
+*.cmake
+
+# osx
+.DS_Store
+
+Makefile
+*.cbp
+*.user
+
+# testing
+*.TestSession
+
+# visual studio
+.vs/*/
+
+# jetbrains
+.idea/**/workspace.xml
+.idea/**/usage.statistics.xml
+.idea/**/tasks.xml
+.idea/**/shelf
+.idea/**/dictionaries
+.idea/**/contentModel.xml
+*.iws
+
+# vscode 
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+**/.history
+
+# vi
+*.swp

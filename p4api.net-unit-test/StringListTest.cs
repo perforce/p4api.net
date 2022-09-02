@@ -10,6 +10,10 @@ namespace p4api.net.unit.test
     ///to contain all StringListTest Unit Tests
     ///</summary>
     [TestClass()]
+#if NET462
+    [DeploymentItem("x64", "x64")]
+    [DeploymentItem("x86", "x86")]
+#endif
     public class StringListTest
     {
         private static Logger logger = LogManager.GetCurrentClassLogger();
@@ -176,9 +180,8 @@ namespace p4api.net.unit.test
         public void ToStringTest()
         {
             StringList target = new StringList(new String[] { "1", "003", "02" });
-            string expected = "1/r/n003/r/n02";
-            string actual;
-            actual = target.ToString();
+            string expected = "1"+ Environment.NewLine + "003" + Environment.NewLine + "02";
+            string actual = target.ToString();;
             Assert.AreEqual(expected, actual);
         }
 

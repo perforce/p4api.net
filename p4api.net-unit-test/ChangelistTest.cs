@@ -14,14 +14,17 @@ namespace p4api.net.unit.test
 	[TestClass()]
 	public class ChangelistTest
 	{
-		String TestDir = "c:\\MyTestDir";
-
         private static Logger logger = LogManager.GetCurrentClassLogger();
+        private UnitTestConfiguration configuration;
+        private String TestDir = "";
+
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
         public void SetupTest()
         {
+            configuration = UnitTestSettings.GetApplicationConfiguration();
+            TestDir = configuration.TestDirectory;
             Utilities.LogTestStart(TestContext);
         }
         [TestCleanup]
@@ -67,21 +70,24 @@ namespace p4api.net.unit.test
         [TestMethod()]
 		public void FixJobsTest()
 		{
-			bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-			string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
 			string user = "admin";
 			string pass = string.Empty;
 			string ws_client = "admin_space";
 
-
 			for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
 			{
-				Process p4d = Utilities.DeployP4TestServer(TestDir, 6, unicode);
-				Server server = new Server(new ServerAddress(uri));
+                Process p4d = null;
+                Repository rep = null;
 				try
 				{
-					Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 6, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
 					using (Connection con = rep.Connection)
 					{
@@ -116,8 +122,10 @@ namespace p4api.net.unit.test
 				finally
 				{
 					Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
 				}
-				unicode = !unicode;
+                cptype = Utilities.CheckpointType.U;
 			}
 		}
 
@@ -127,9 +135,9 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void InvalidZeroChangelistTest()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -137,11 +145,15 @@ namespace p4api.net.unit.test
 
             for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 6, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 6, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -177,8 +189,11 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+
+                cptype = Utilities.CheckpointType.U;
             }
         }
 
@@ -188,9 +203,9 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void InvalidLargeChangelistTest()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -198,11 +213,15 @@ namespace p4api.net.unit.test
 
             for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 6, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 6, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -239,8 +258,10 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+                cptype = Utilities.CheckpointType.U;
             }
         }
 
@@ -250,9 +271,9 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void LargeNegativeChangelistTest()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -260,11 +281,15 @@ namespace p4api.net.unit.test
 
             for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 6, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 6, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -291,8 +316,11 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+
+                cptype = Utilities.CheckpointType.U;
             }
         }
 
@@ -302,9 +330,9 @@ namespace p4api.net.unit.test
 		[TestMethod()]
 		public void SubmitTest()
 		{
-			bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-			string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
 			string user = "admin";
 			string pass = string.Empty;
 			string ws_client = "admin_space";
@@ -312,11 +340,17 @@ namespace p4api.net.unit.test
 
 			for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
 			{
-				Process p4d = Utilities.DeployP4TestServer(TestDir, 6, unicode);
-				Server server = new Server(new ServerAddress(uri));
+                Process p4d = null;
+                Repository rep = null;
 				try
 				{
-					Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 6, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
 					using (Connection con = rep.Connection)
 					{
@@ -334,7 +368,6 @@ namespace p4api.net.unit.test
 						Assert.AreEqual(con.Status, ConnectionStatus.Connected);
 
 						Assert.AreEqual("admin", con.Client.OwnerName);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
                         Changelist change = new Changelist(5, true);
 						change.initialize(con);
@@ -348,8 +381,11 @@ namespace p4api.net.unit.test
 				finally
 				{
 					Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
 				}
-				unicode = !unicode;
+
+                cptype = Utilities.CheckpointType.U;
 			}
 		}
 
@@ -359,9 +395,9 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void SubmitOptionsReopenTest()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -369,11 +405,17 @@ namespace p4api.net.unit.test
 
             for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 6, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                Process p4d = null;
+                Repository rep = null;
+
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 6, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
                     using (Connection con = rep.Connection)
                     {
@@ -391,7 +433,6 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
 
                         Assert.AreEqual("admin", con.Client.OwnerName);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
                         Changelist change = new Changelist(5, true);
                         change.initialize(con);
@@ -412,8 +453,11 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+
+                cptype = Utilities.CheckpointType.U;
             }
         }
 
@@ -423,9 +467,9 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void SubmitOptionsNoneTest()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -433,11 +477,17 @@ namespace p4api.net.unit.test
 
             for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 6, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                Process p4d = null;
+                Repository rep = null;
+
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 6, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
                     using (Connection con = rep.Connection)
                     {
@@ -455,7 +505,6 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
 
                         Assert.AreEqual("admin", con.Client.OwnerName);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
                         Changelist change = new Changelist(5, true);
                         change.initialize(con);
@@ -476,8 +525,11 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+
+                cptype = Utilities.CheckpointType.U;
             }
         }
 
@@ -487,9 +539,9 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void SubmitOptionsShelvedTest()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -497,11 +549,17 @@ namespace p4api.net.unit.test
 
             for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 6, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                Process p4d = null;
+                Repository rep = null;
+
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 6, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
                     using (Connection con = rep.Connection)
                     {
@@ -515,7 +573,6 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(con.Server.State, ServerState.Online);
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
                         Assert.AreEqual("admin", con.Client.OwnerName);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
                         Changelist change = new Changelist(5, true);
                         change.initialize(con);
@@ -534,7 +591,7 @@ namespace p4api.net.unit.test
                         }
                         catch (P4Exception e)
                         {
-                            String msg = String.Format("Command '{0}' throws exception '{1}' \r\n StackTrace: {2}",
+                            String msg = String.Format($"Command '{{0}}' throws exception '{{1}}' {Environment.NewLine} StackTrace: {{2}}",
                                 e.CmdLine, 
                                 e.Message,
                                 e.StackTrace);
@@ -548,8 +605,10 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+                cptype = Utilities.CheckpointType.U;
             }
         }
 
@@ -559,9 +618,9 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void SubmitOptionsIncludeJobsTest()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -569,11 +628,16 @@ namespace p4api.net.unit.test
 
             for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 6, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 6, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
                     using (Connection con = rep.Connection)
                     {
@@ -587,7 +651,7 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(con.Server.State, ServerState.Online);
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
                         Assert.AreEqual("admin", con.Client.OwnerName);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
+
 
                         Changelist change = new Changelist(5, true);
                         change.initialize(con);
@@ -602,8 +666,10 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+                cptype = Utilities.CheckpointType.U;
             }
         }
 
@@ -691,9 +757,9 @@ Files:
         [TestMethod()]
         public void SetStreamTest()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -701,11 +767,15 @@ Files:
 
             for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 6, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 6, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -727,8 +797,10 @@ Files:
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+                cptype = Utilities.CheckpointType.U;
             }
         }
     }

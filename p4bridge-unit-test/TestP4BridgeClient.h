@@ -1,5 +1,5 @@
 #pragma once
-#include "unittestframework.h"
+#include "UnitTestFrameWork.h"
 
 class TestP4BridgeClient :
     public UnitTestSuite
@@ -12,7 +12,7 @@ public:
 
     bool Setup();
 
-    bool TearDown(char* testName);
+    bool TearDown(const char* testName);
 
     static bool HandleErrorTest();
     static bool OutputInfoTest();

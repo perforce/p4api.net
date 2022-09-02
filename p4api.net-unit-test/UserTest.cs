@@ -11,6 +11,10 @@ namespace p4api.net.unit.test
 	///to contain all UserTest Unit Tests
 	///</summary>
 	[TestClass()]
+#if NET462
+    [DeploymentItem("x64", "x64")]
+    [DeploymentItem("x86", "x86")]
+#endif
 	public class UserTest
 	{
         private static Logger logger = LogManager.GetCurrentClassLogger();
@@ -74,7 +78,7 @@ namespace p4api.net.unit.test
 			List<string> reviews = null; // TODO: Initialize to an appropriate value
 			UserType type = new UserType(); // TODO: Initialize to an appropriate value
 			FormSpec spec = null; // TODO: Initialize to an appropriate value
-			User target = new User(id, fullname, password, emailaddress, updated, accessed, jobview, reviews, type, spec); // TODO: Initialize to an appropriate value
+            User target = new User(id, fullname, password, emailaddress, updated, accessed, jobview, "perforce", reviews, type, spec); // TODO: Initialize to an appropriate value
 			DateTime expected = new DateTime(2011, 04, 01);
 			DateTime actual = target.Accessed;
 			Assert.AreEqual(expected, actual);
@@ -96,7 +100,7 @@ namespace p4api.net.unit.test
 			List<string> reviews = null; // TODO: Initialize to an appropriate value
 			UserType type = new UserType(); // TODO: Initialize to an appropriate value
 			FormSpec spec = null; // TODO: Initialize to an appropriate value
-			User target = new User(id, fullname, password, emailaddress, updated, accessed, jobview, reviews, type, spec); // TODO: Initialize to an appropriate value
+            User target = new User(id, fullname, password, emailaddress, updated, accessed, jobview, "perforce", reviews, type, spec); // TODO: Initialize to an appropriate value
 			string expected = "perforce@perforce.com";
 			string actual = target.EmailAddress;
 			Assert.AreEqual(expected, actual);
@@ -118,7 +122,7 @@ namespace p4api.net.unit.test
 			List<string> reviews = null; // TODO: Initialize to an appropriate value
 			UserType type = new UserType(); // TODO: Initialize to an appropriate value
 			FormSpec spec = null; // TODO: Initialize to an appropriate value
-			User target = new User(id, fullname, password, emailaddress, updated, accessed, jobview, reviews, type, spec); // TODO: Initialize to an appropriate value
+            User target = new User(id, fullname, password, emailaddress, updated, accessed, jobview, "perforce", reviews, type, spec); // TODO: Initialize to an appropriate value
 			string expected = "John Smith";
 			string actual = target.FullName;
 			Assert.AreEqual(expected, actual);
@@ -140,7 +144,7 @@ namespace p4api.net.unit.test
 			List<string> reviews = null; // TODO: Initialize to an appropriate value
 			UserType type = new UserType(); // TODO: Initialize to an appropriate value
 			FormSpec spec = null; // TODO: Initialize to an appropriate value
-			User target = new User(id, fullname, password, emailaddress, updated, accessed, jobview, reviews, type, spec); // TODO: Initialize to an appropriate value
+            User target = new User(id, fullname, password, emailaddress, updated, accessed, jobview, "perforce", reviews, type, spec); // TODO: Initialize to an appropriate value
 			string expected = "jsmith";
 			string actual = target.Id;
 			Assert.AreEqual(expected, actual);
@@ -162,7 +166,7 @@ namespace p4api.net.unit.test
 			List<string> reviews = null; // TODO: Initialize to an appropriate value
 			UserType type = new UserType(); // TODO: Initialize to an appropriate value
 			FormSpec spec = null; // TODO: Initialize to an appropriate value
-			User target = new User(id, fullname, password, emailaddress, updated, accessed, jobview, reviews, type, spec); // TODO: Initialize to an appropriate value
+            User target = new User(id, fullname, password, emailaddress, updated, accessed, jobview, "perforce", reviews, type, spec); // TODO: Initialize to an appropriate value
 			string expected = "status=open type=bug";
 			string actual = target.JobView;
 			Assert.AreEqual(expected, actual);
@@ -184,7 +188,7 @@ namespace p4api.net.unit.test
 			List<string> reviews = null; // TODO: Initialize to an appropriate value
 			UserType type = new UserType(); // TODO: Initialize to an appropriate value
 			FormSpec spec = null; // TODO: Initialize to an appropriate value
-			User target = new User(id, fullname, password, emailaddress, updated, accessed, jobview, reviews, type, spec); // TODO: Initialize to an appropriate value
+            User target = new User(id, fullname, password, emailaddress, updated, accessed, jobview, "perforce", reviews, type, spec); // TODO: Initialize to an appropriate value
 			string expected = "password";
 			string actual = target.Password;
 			Assert.AreEqual(expected, actual);
@@ -221,7 +225,7 @@ namespace p4api.net.unit.test
 			List<string> reviews = null; // TODO: Initialize to an appropriate value
 			UserType type = UserType.Service;
 			FormSpec spec = null; // TODO: Initialize to an appropriate value
-			User target = new User(id, fullname, password, emailaddress, updated, accessed, jobview, reviews, type, spec); // TODO: Initialize to an appropriate value
+            User target = new User(id, fullname, password, emailaddress, updated, accessed, jobview, "perforce", reviews, type, spec); // TODO: Initialize to an appropriate value
 			UserType expected = UserType.Service;
 			UserType actual = target.Type;
 			Assert.AreEqual(expected, actual);
@@ -243,7 +247,7 @@ namespace p4api.net.unit.test
 			List<string> reviews = null; // TODO: Initialize to an appropriate value
 			UserType type = new UserType(); // TODO: Initialize to an appropriate value
 			FormSpec spec = null; // TODO: Initialize to an appropriate value
-			User target = new User(id, fullname, password, emailaddress, updated, accessed, jobview, reviews, type, spec); // TODO: Initialize to an appropriate value
+            User target = new User(id, fullname, password, emailaddress, updated, accessed, jobview, "perforce", reviews, type, spec); // TODO: Initialize to an appropriate value
 			DateTime expected = new DateTime(2011, 04, 01);
 			DateTime actual = target.Updated;
 			Assert.AreEqual(expected, actual);

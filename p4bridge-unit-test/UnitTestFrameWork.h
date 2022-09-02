@@ -1,13 +1,33 @@
 #pragma once
 
+namespace std {
+	class exception;
+}
+
 typedef bool UnitTest(void);
 
+#ifdef OS_NT
 struct _PROCESS_INFORMATION;
 typedef struct _PROCESS_INFORMATION * LPPROCESS_INFORMATION;
 
+inline void CleanResults(LPPROCESS_INFORMATION pi) {
+    if (pi != nullptr)
+    {
+        CloseHandle(pi->hProcess);
+        CloseHandle(pi->hThread);
+        delete (pi);
+        pi = nullptr;
+    }
+}
+
+#else
+#define STDCALL
+#define CleanResults(pi)
+#endif
+
 typedef struct testList
 {
-    char * TestName;
+    const char * TestName;
     UnitTest * Test;
     testList * pNext;
 } TestList;
@@ -23,29 +43,45 @@ private:
     static bool breakOnFailure;
     static bool endOnFailure;
 
+    static char rootbuf[4096];
+
 protected:
-    void RegisterTest(UnitTest * test, char* testName);
+    void RegisterTest(UnitTest * test, const char* testName);
 
-    int HandleException(const char* fname, unsigned int line, const char* func, unsigned int c, struct _EXCEPTION_POINTERS *e);
+    static void ReportException(std::exception& e);
 
-    LPPROCESS_INFORMATION RunProgram(char * cmdLine, char * cwd, bool newConsole, bool waitForExit);
+#ifdef OS_NT
+    LPPROCESS_INFORMATION RunProgram(const char * cmdLine, const char * cwd, bool newConsole, bool waitForExit);
     bool EndProcess(LPPROCESS_INFORMATION pi);
+#else
+    int RunProgram(const char *cmdLine, const char *cwd, bool newConsole, bool waitForExit);
+    bool EndProcess(int pid);
+#endif
+    static bool rmDir(const char * path);
 
-    bool rmDir(char * path);
+    static bool getCwd(char *buf, int bufsize);
+
+    static bool mkDir(const char * path);
+
+    static bool chDir(const char *path);
+
+    static bool copyFile(const char *src, const char *dest);
+
+    static bool getRoot(char *buf, int bufsize);
 
 public:
     UnitTestSuite();
     ~UnitTestSuite();
 
     virtual bool Setup() { return true; }
-    virtual bool TearDown(char* testName) { return true; }
+    virtual bool TearDown(const char* testName) { return true; }
 
     UnitTestSuite * NextTestSuite() { return pNextTestSuite; }
     void NextTestSuite(UnitTestSuite * pNew) { pNextTestSuite = pNew; }
 
     void RunTests();
 
-    static bool Assert(bool condition, char* FailStr, int Line, char * file);
+    static bool Assert(bool condition, const char* FailStr, int Line, const char * file);
 
     static bool BreakOnFailure() { return breakOnFailure; }
     static void BreakOnFailure(bool bNew) { breakOnFailure = bNew; }
@@ -60,12 +96,16 @@ private:
     static int testsPassed;
     static int testsFailed;
 	static std::string matchName;
+    static std::string srcDir;  // full path to source directory
 
 public:
     UnitTestFrameWork(void);
 
     static UnitTestSuite * pFirstTestSuite;
     static UnitTestSuite * pLastTestSuite;
+
+    static void SetSourceDirectory(const char *dir);  // where we find a.tar and u.tar
+    static bool getSrcDir(char *dir , int bufsize);
 
     static void RegisterTestSuite(UnitTestSuite * pSuite);
 
@@ -114,7 +154,7 @@ public:
 #define ASSERT_INT_TRUE(a) if (!UnitTestSuite::Assert((a != 0), "ASSERT_TRUE Failed", __LINE__, __FILE__)) return false;
 #define ASSERT_INT_FALSE(a) if (!UnitTestSuite::Assert((a == 0), "ASSERT_FALSE Failed", __LINE__, __FILE__)) return false;
 
-#define ASSERT_EQUAL(a, b) if (!UnitTestSuite::Assert((a == b), "ASSERT_EQUAL Failed", __LINE__, __FILE__)) return false;
+#define ASSERT_EQUAL(a, b) if (!UnitTestSuite::Assert((a) == (b), "ASSERT_EQUAL Failed", __LINE__, __FILE__)) return false;
 #define ASSERT_NOT_EQUAL(a, b) if (!UnitTestSuite::Assert((a != b), "ASSERT_NOT_EQUAL Failed", __LINE__, __FILE__)) return false;
 
 #define ASSERT_NULL(a) if (!UnitTestSuite::Assert((a == NULL), "ASSERT_NULL Failed", __LINE__, __FILE__)) return false;

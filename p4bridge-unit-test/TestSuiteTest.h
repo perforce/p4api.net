@@ -1,5 +1,5 @@
 #pragma once
-#include "unittestframework.h"
+#include "UnitTestFrameWork.h"
 class TestSuiteTest :
     public UnitTestSuite
 {

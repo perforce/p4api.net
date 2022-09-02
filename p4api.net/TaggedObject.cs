@@ -82,7 +82,7 @@ namespace Perforce.P4
 	//    }
 
 	//    /// <summary>
-	//    /// Cast to a String. Messages are separated by \r\n
+	//    /// Cast to a String. Messages are separated by NewLine
 	//    /// </summary>
 	//    /// <param name="l"></param>
 	//    /// <returns></returns>
@@ -92,7 +92,7 @@ namespace Perforce.P4
 	//        foreach (InfoLine i in l)
 	//        {
 	//            r.Append(i.ToString());
-	//            r.Append("/r/n");
+	//            r.Append($"{Environment.NewLine}");
 	//        }
 	//        return r.ToString();
 	//    }

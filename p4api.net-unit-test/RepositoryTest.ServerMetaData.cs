@@ -23,21 +23,24 @@ namespace p4api.net.unit.test
 		[TestMethod()]
 		public void GetServerMetaDataTest()
 		{
-			bool unicode = false;
-
-			string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
 			string user = "admin";
 			string pass = string.Empty;
 			string ws_client = "admin_space";
 
 			for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
 			{
-				Process p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
-                var serverRoot = Utilities.TestServerRoot(TestDir, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
 				try
 				{
-					Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    var serverRoot = Utilities.TestServerRoot(TestDir, cptype);
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
 					using (Connection con = rep.Connection)
 					{
@@ -56,7 +59,7 @@ namespace p4api.net.unit.test
 
 						Assert.IsNotNull(s);
 
-						if (unicode == true)
+                        if (cptype == Utilities.CheckpointType.U)
 						{
 							Assert.AreEqual(s.UnicodeEnabled, true);
 						}
@@ -73,8 +76,9 @@ namespace p4api.net.unit.test
 				finally
 				{
 					Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
 				}
-				unicode = !unicode;
 			}
 		}
 
@@ -84,7 +88,7 @@ namespace p4api.net.unit.test
 		[TestMethod()]
         public void GetServerMetaDataTestjob076750A()
         {
-            GetServerMetaDataTestjob076750(false);
+            GetServerMetaDataTestjob076750(Utilities.CheckpointType.A);
         }
 
         /// <summary>
@@ -93,24 +97,30 @@ namespace p4api.net.unit.test
 		[TestMethod()]
         public void GetServerMetaDataTestjob076750U()
         {
-            GetServerMetaDataTestjob076750(true);
+            GetServerMetaDataTestjob076750(Utilities.CheckpointType.U);
         }
+
         /// <summary>
         ///A test for GetServerMetaDatajob076750
         ///</summary>
-        public void GetServerMetaDataTestjob076750(bool unicode)
+        public void GetServerMetaDataTestjob076750(Utilities.CheckpointType cptype)
         {
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
-                var serverRoot = Utilities.TestServerRoot(TestDir, unicode);
-                Server server = new Server(new ServerAddress(uri));
+            Process p4d = null;
+            Repository rep = null;
+
                 try
                 {
-                    Repository rep = new Repository(server);
+                p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+                var serverRoot = Utilities.TestServerRoot(TestDir, cptype);
+                Server server = new Server(new ServerAddress(uri));
+                rep = new Repository(server);
 
                 using (Connection con = rep.Connection)
                 {
@@ -131,7 +141,7 @@ namespace p4api.net.unit.test
                     DateTime dt = new DateTime(1, 1, 1, 0, 0, 0); //(1 / 1 / 0001 12:00:00 AM)
                     Assert.AreNotEqual(s.Version.Date, dt);
 
-                    if (unicode == true)
+                    if (cptype == Utilities.CheckpointType.U)
                     {
                         Assert.AreEqual(s.UnicodeEnabled, true);
                     }
@@ -148,8 +158,10 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
                 }
         }
 
-    }
+	}
 }

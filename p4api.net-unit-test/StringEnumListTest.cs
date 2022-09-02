@@ -10,6 +10,10 @@ namespace p4api.net.unit.test
     ///to contain all StringEnumListTest Unit Tests
     ///</summary>
 	[TestClass()]
+#if NET462
+    [DeploymentItem("x64", "x64")]
+    [DeploymentItem("x86", "x86")]
+#endif
 	public class StringEnumListTest
 	{
         private static Logger logger = LogManager.GetCurrentClassLogger();

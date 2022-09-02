@@ -11,6 +11,10 @@ namespace p4api.net.unit.test
 	///to contain all StreamTest Unit Tests
 	///</summary>
 	[TestClass()]
+#if NET462
+    [DeploymentItem("x64", "x64")]
+    [DeploymentItem("x86", "x86")]
+#endif
 	public class StreamTest
 	{
         private static Logger logger = LogManager.GetCurrentClassLogger();
@@ -49,7 +53,7 @@ namespace p4api.net.unit.test
 		static ParentView parentView = ParentView.Inherit;
 		static MapEntry ig = new MapEntry(MapType.Include, new DepotPath("//projectX/extra"), null);
         static FormSpec spec = new FormSpec(new List<SpecField>(), new Dictionary<string, string>(), new List<string>(), new List<string>(), new Dictionary<string, string>(),
-			new Dictionary<string,string>(), "here are the comments");
+			new Dictionary<string,string>(), null, null, "here are the comments");
 		static Dictionary<string, object> customfields = new Dictionary<string, object>()
 		{
 			{"testField1", "test value1"},
@@ -131,42 +135,35 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void ParseTest()
         {
-			string streamForm = "Stream:\t{0}\r\n" +
-													"\r\n" +
-													"Update:\t{1}\r\n" +
-													"\r\n" +
-													"Access:\t{2}\r\n" +
-													"\r\n" +
-													"Owner:\t{3}\r\n" +
-													"\r\n" +
-													"Name:\t{4}\r\n" +
-													"\r\n" +
-													"Parent:\t{5}\r\n" +
-													"\r\n" +
-													"Type:\t{6}\r\n" +
-													"\r\n" +
-													"Description:\r\n\t{7}\r\n" +
-													"\r\n" +
-													"Options:\t{8}\r\n" +
-													"\r\n" +
-													"Paths:\r\n\t{9}\r\n" +
-													"\t{10}\r\n" +
-													"\r\n" +
-													"Remapped:\r\n\t{11}\r\n" +
-													"\r\n" +
-													"Ignored:\r\n\t{12}\r\n" +
-													"\r\n" +
-													"ParentView:\r\n\t{13}\r\n";
+			string streamForm = "Stream:\t{0}\r\n" + Environment.NewLine + Environment.NewLine
+				+ "Update:\t{1}" + Environment.NewLine + Environment.NewLine
+                + "Access:\t{2}" + Environment.NewLine + Environment.NewLine
+                + "Owner:\t{3}" + Environment.NewLine + Environment.NewLine
+                + "Name:\t{4}" + Environment.NewLine + Environment.NewLine
+                + "Parent:\t{5}" + Environment.NewLine + Environment.NewLine
+                + "Type:\t{6}" + Environment.NewLine + Environment.NewLine 
+                + "Description:" + Environment.NewLine 
+                + "\t{7}" + Environment.NewLine + Environment.NewLine
+                + "Options:\t{8}" + Environment.NewLine + Environment.NewLine
+                + "Paths:" + Environment.NewLine 
+                + "\t{9}" + Environment.NewLine 
+                + "\t{10}" + Environment.NewLine + Environment.NewLine
+                + "Remapped:" + Environment.NewLine 
+                + "\t{11}" + Environment.NewLine + Environment.NewLine
+                + "Ignored:" + Environment.NewLine 
+                + "\t{12}" + Environment.NewLine + Environment.NewLine
+                + "ParentView:" + Environment.NewLine 
+                + "\t{13}" + Environment.NewLine;
 
             String streamData = String.Format(streamForm, "//User/test",
 "", "", "user1", "test", "//User/user1_stream", "development",
-"created by user1.", "allsubmit unlocked toparent fromparent",
+"created by user1", "allsubmit unlocked toparent fromparent",
 "share ... ## In-line comment", "## This is new line comment", "share/... remapped/... #3rd part comment", "Rocket/GUI/core/gui/res/...", "noinherit");
 
 			ViewMap Paths = new ViewMap() { new MapEntry(MapType.Share, new ClientPath("..."), new ClientPath("")) };
             Stream stream = new Stream();
             stream.Parse(streamData);
-			Assert.AreEqual(stream.Description, "created by user1.");
+			Assert.AreEqual(stream.Description, "created by user1");
             Assert.AreEqual(stream.OwnerName, "user1");
 			Assert.AreEqual(stream.Paths[0].Left.ToString(), "...");
 			Assert.AreEqual(stream.Paths[0].Comment.ToString(), "## In-line comment");
@@ -350,7 +347,27 @@ namespace p4api.net.unit.test
 		[TestMethod()]
 		public void ToStringTest()
 		{
-			string expected = "Stream:\t//projectX/dev\r\n\r\nUpdate:\t2011/04/10 00:00:00\r\n\r\nAccess:\t2011/04/10 00:00:00\r\n\r\nOwner:\tJohn Smith\r\n\r\nName:\tProjectX development\r\n\r\nParent:\t//projectX/main\r\n\r\nType:\tdevelopment\r\n\r\nDescription:\r\n\tdevelopment stream for experimental work on projectX\r\n\r\nOptions:\townersubmit locked notoparent nofromparent mergedown\r\n\r\nParentView:\tinherit\r\n\r\nPaths:\r\n\tshare //projectX/main\r\n\r\nRemapped:\r\n\t//projectX/main\r\n\r\nIgnored:\r\n\t//projectX/extra\r\n\r\ntestField1:\ttest value1\r\n\r\ntestField2:\ttest value2\r\n\r\ntestField3:\ttest value3\r\n\r\ntestField4:\ttest value4\r\n\r\nlistField1:\r\n\tmultiline1\r\n\tmultiline2\r\n\tmultiline3\r\n\r\ntestField5:\ttest value5\r\n";
+			string expected = "Stream:\t//projectX/dev" + Environment.NewLine + Environment.NewLine 
+			                  + "Update:\t2011/04/10 00:00:00" + Environment.NewLine + Environment.NewLine 
+			                  + "Access:\t2011/04/10 00:00:00" + Environment.NewLine + Environment.NewLine 
+			                  + "Owner:\tJohn Smith"  + Environment.NewLine + Environment.NewLine
+			                  + "Name:\tProjectX development" + Environment.NewLine + Environment.NewLine 
+			                  + "Parent:\t//projectX/main" + Environment.NewLine + Environment.NewLine 
+			                  + "Type:\tdevelopment"  + Environment.NewLine + Environment.NewLine 
+			                  + "Description:" + Environment.NewLine + "\tdevelopment stream for experimental work on projectX"  + Environment.NewLine + Environment.NewLine
+			                  + "Options:\townersubmit locked notoparent nofromparent mergedown"  + Environment.NewLine + Environment.NewLine
+			                  + "ParentView:\tinherit"  + Environment.NewLine + Environment.NewLine 
+			                  + "Paths:" + Environment.NewLine + "\tshare //projectX/main"  + Environment.NewLine + Environment.NewLine 
+			                  + "Remapped:" + Environment.NewLine + "\t//projectX/main"  + Environment.NewLine + Environment.NewLine 
+			                  + "Ignored:" + Environment.NewLine + "\t//projectX/extra"  + Environment.NewLine + Environment.NewLine 
+			                  + "testField1:\ttest value1" + Environment.NewLine + Environment.NewLine
+			                  + "testField2:\ttest value2" + Environment.NewLine + Environment.NewLine 
+			                  + "testField3:\ttest value3" + Environment.NewLine + Environment.NewLine
+			                  + "testField4:\ttest value4" + Environment.NewLine + Environment.NewLine
+			                  + "listField1:" + Environment.NewLine + "\tmultiline1" + Environment.NewLine 
+			                                                        + "\tmultiline2" + Environment.NewLine 
+			                                                        + "\tmultiline3" + Environment.NewLine + Environment.NewLine 
+			                  + "testField5:\ttest value5" + Environment.NewLine ;
 			setTarget();
 			string actual = target.ToString();
 			Assert.AreEqual(expected, actual);

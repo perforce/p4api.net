@@ -432,23 +432,23 @@ namespace Perforce.P4
 		/// Format of a user specification used to save a user to the server
 		/// </summary>
 		private static String UserSpecFormat =
-													"User:\t{0}\r\n" +
-													"\r\n" +
-													"Email:\t{1}\r\n" +
-													"\r\n" +
-													"Update:\t{2}\r\n" +
-													"\r\n" +
-													"Access:\t{3}\r\n" +
-													"\r\n" +
-													"FullName:\t{4}\r\n" +
-													"\r\n" +
-													"JobView:\t{5}\r\n" +
-													"\r\n" +
-													"Reviews:\r\n{6}" +
-													"\r\n" +
-													"Password:\t{7}\r\n" +
-													"\r\n" +
-													"AuthMethod:\t{8}\r\n";
+													$"User:\t{{0}}{Environment.NewLine}" +
+													$"{Environment.NewLine}" +
+													$"Email:\t{{1}}{Environment.NewLine}" +
+													$"{Environment.NewLine}" +
+													$"Update:\t{{2}}{Environment.NewLine}" +
+													$"{Environment.NewLine}" +
+													$"Access:\t{{3}}{Environment.NewLine}" +
+													$"{Environment.NewLine}" +
+													$"FullName:\t{{4}}{Environment.NewLine}" +
+													$"{Environment.NewLine}" +
+													$"JobView:\t{{5}}{Environment.NewLine}" +
+													$"{Environment.NewLine}" +
+													$"Reviews:{Environment.NewLine}{{6}}" +
+													$"{Environment.NewLine}" +
+													$"Password:\t{{7}}{Environment.NewLine}" +
+													$"{Environment.NewLine}" +
+													$"AuthMethod:\t{{8}}{Environment.NewLine}";
 
 		/// <summary>
 		/// Convert to specification in server format
@@ -461,7 +461,7 @@ namespace Perforce.P4
 			{
 				for (int idx = 0; idx < Reviews.Count; idx++)
 				{
-					reviewsView += String.Format("\t{0}\r\n", Reviews[idx]);
+					reviewsView += String.Format($"\t{{0}}{Environment.NewLine}", Reviews[idx]);
 				}
 			}
 			String value = String.Format(UserSpecFormat, Id, EmailAddress,

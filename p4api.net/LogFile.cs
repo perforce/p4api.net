@@ -74,7 +74,7 @@ namespace Perforce.P4
         /// Set the logging function to use
         /// </summary>
         /// <param name="logFn">LogMessage function delegate</param>
-        public static void SetLoggingFunction( LogMessageDelgate logFn)
+        public static void SetLoggingFunction(LogMessageDelgate logFn)
         {
             ExternalLogFn = logFn;
         }
@@ -117,10 +117,7 @@ namespace Perforce.P4
         {
             try
             {
-                String msg = String.Format("{0}:{1}\r\n{2}",
-                    ex.GetType().ToString(),
-                    ex.Message,
-                    ex.StackTrace);
+                String msg = $"{ex.GetType().ToString()}:{ex.Message}{Environment.NewLine}{ex.StackTrace}";
                 LogMessage(0, category, msg);
 
 				if (ex.InnerException != null)

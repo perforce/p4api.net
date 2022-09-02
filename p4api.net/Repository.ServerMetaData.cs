@@ -93,7 +93,8 @@ namespace Perforce.P4
 		public ServerMetaData GetServerMetaData(Options options)
 		{
 			
-			P4Command cmd = new P4Command(this, "info", true);
+            using (P4Command cmd = new P4Command(this, "info", true))
+            {
 
 			P4CommandResult results = cmd.Run(options);
 			if (results.Success)
@@ -102,11 +103,13 @@ namespace Perforce.P4
 				{
 					return null;
 				}
+
 				ServerMetaData value = new ServerMetaData();
 				foreach (TaggedObject obj in results.TaggedOutput)
 				{
 					value.FromGetServerMetaDataCmdTaggedOutput(obj); 
 				}
+
 				this.Server.SetMetadata(value);
 
 				return value;
@@ -115,8 +118,10 @@ namespace Perforce.P4
 			{
 				P4Exception.Throw(results.ErrorList);
 			}
+
 			return null;
 		}
+        }
 
 	}
 }

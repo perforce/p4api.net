@@ -194,7 +194,7 @@ namespace Perforce.P4
 		}
 
 		/// <summary>
-		/// Constructer
+		/// Constructor
 		/// </summary>
 		/// <param name="connection">Connection to the target Repository</param>
 		/// <param name="command">Command String i.e 'submit'</param>
@@ -210,7 +210,7 @@ namespace Perforce.P4
 		}
 
 		/// <summary>
-		/// Constructer
+		/// Constructor
 		/// </summary>
 		/// <param name="repository">Target Repository</param>
 		/// <param name="command">Command String i.e 'submit'</param>
@@ -226,7 +226,7 @@ namespace Perforce.P4
 		}
 
         /// <summary>
-        /// Constructer
+        /// Constructor
         /// </summary>
         /// <param name="repository">Target Repository</param>
         /// <param name="command">Command String i.e 'submit'</param>
@@ -244,7 +244,7 @@ namespace Perforce.P4
 		}
 
 		/// <summary>
-		/// Constructer
+		/// Constructor
 		/// </summary>
 		/// <param name="server">Target P4Server</param>
 		/// <param name="command">Command String i.e 'submit'</param>
@@ -259,7 +259,7 @@ namespace Perforce.P4
 		}
 
         /// <summary>
-        /// Constructer
+        /// Constructor
         /// </summary>
         /// <param name="server">Target P4Server</param>
         /// <param name="command">Command String i.e 'submit'</param>
@@ -369,9 +369,7 @@ namespace Perforce.P4
 		{
 			lock (this)
 			{
-				P4CommandResult results = null;
-				results = new P4CommandResult(this, flags);
-				return results;
+				return new P4CommandResult(this, flags);
 			}
 		}
 

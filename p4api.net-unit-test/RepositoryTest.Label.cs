@@ -20,23 +20,23 @@ namespace p4api.net.unit.test
 		[TestMethod()]
 		public void CreateLabelTest()
 		{
-			bool unicode = false;
-
-			string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
 			string user = "admin";
 			string pass = string.Empty;
 			string ws_client = "admin_space";
 
 			for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
 			{
-				Process p4d = new Process();
-
-				p4d = Utilities.DeployP4TestServer(TestDir, 9, unicode);
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
+                try
+                {
+                    p4d = Utilities.DeployP4TestServer(TestDir, 9, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
 
 				Server server = new Server(new ServerAddress(uri));
-				try
-				{
-					Repository rep = new Repository(server);
+                    rep = new Repository(server);
 
 					using (Connection con = rep.Connection)
 					{
@@ -92,8 +92,9 @@ namespace p4api.net.unit.test
 				finally
 				{
 					Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
 				}
-				unicode = !unicode;
 			}
 		}
 
@@ -103,7 +104,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void UpdateLabelTestjob096467A()
         {
-            UpdateLabelTestjob096467(false);
+            UpdateLabelTestjob096467(Utilities.CheckpointType.A);
         }
 
         /// <summary>
@@ -112,24 +113,28 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void UpdateLabelTestjob096467U()
         {
-            UpdateLabelTestjob096467(true);
+            UpdateLabelTestjob096467(Utilities.CheckpointType.U);
         }
 
         /// <summary>
         ///A test for UpdateLabel
         ///</summary>
-        public void UpdateLabelTestjob096467(bool unicode)
+        public void UpdateLabelTestjob096467(Utilities.CheckpointType cptype)
         {
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
-            Server server = new Server(new ServerAddress(uri));
+            Process p4d = null;
+            Repository rep = null;
             try
             {
-                Repository rep = new Repository(server);
+                p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+                Server server = new Server(new ServerAddress(uri));
+                rep = new Repository(server);
 
                 using (Connection con = rep.Connection)
                 {
@@ -170,6 +175,8 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
             }
         }
 
@@ -179,20 +186,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
 		public void DeleteLabelTest()
 		{
-			bool unicode = false;
-
-			string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
 			string user = "admin";
 			string pass = string.Empty;
 			string ws_client = "admin_space";
 
 			for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
 			{
-				Process p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
-				Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
 				try
 				{
-					Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
 					using (Connection con = rep.Connection)
 					{
@@ -222,8 +232,9 @@ namespace p4api.net.unit.test
 				finally
 				{
 					Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
 				}
-				unicode = !unicode;
 			}
 		}
 
@@ -233,20 +244,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void LockLabelTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -274,8 +288,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -285,20 +300,23 @@ namespace p4api.net.unit.test
 		[TestMethod()]
 		public void GetLabelTest()
 		{
-			bool unicode = false;
-
-			string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
 			string user = "admin";
 			string pass = string.Empty;
 			string ws_client = "admin_space";
 
 			for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
 			{
-				Process p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
-				Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
 				try
 				{
-					Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
 					using (Connection con = rep.Connection)
 					{
@@ -328,8 +346,9 @@ namespace p4api.net.unit.test
 				finally
 				{
 					Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
 				}
-				unicode = !unicode;
 			}
 		}
 
@@ -339,20 +358,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetLabelWithRevisionTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -405,8 +427,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -416,20 +439,23 @@ namespace p4api.net.unit.test
 		[TestMethod()]
 		public void GetLabelsTest()
 		{
-			bool unicode = false;
-
-			string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
 			string user = "admin";
 			string pass = string.Empty;
 			string ws_client = "admin_space";
 
 			for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
 			{
-				Process p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
-				Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
 				try
 				{
-					Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
 					using (Connection con = rep.Connection)
 					{
@@ -449,7 +475,7 @@ namespace p4api.net.unit.test
 
 						Assert.IsNotNull(l);
 						Assert.AreEqual(1, l.Count);
-						Assert.AreEqual("Created by admin.\n", l[0].Description);
+                        Assert.AreEqual("Created by admin.", l[0].Description.Trim());
 
                         //now test for options set for a label that does not exist
                         ops = new Options();
@@ -474,7 +500,7 @@ namespace p4api.net.unit.test
 
                         Assert.IsNotNull(l2);
                         Assert.AreEqual(1, l2.Count);
-                        Assert.AreEqual("Created by admin.\n", l2[0].Description);
+                        Assert.AreEqual("Created by admin.", l2[0].Description.Trim());
 
 
 					}
@@ -482,8 +508,9 @@ namespace p4api.net.unit.test
 				finally
 				{
 					Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
 				}
-				unicode = !unicode;
 			}
 		}
 
@@ -493,20 +520,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetLabelsPreServerIDTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -543,8 +573,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -554,22 +585,25 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetLabelsWithOptionsTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
 
                 // TODO update test with Edge Server installation
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -585,7 +619,7 @@ namespace p4api.net.unit.test
                         LabelsCmdOptions opts = new LabelsCmdOptions(LabelsCmdFlags.None,
                            null, null,50,null,null);
                         IList<Label> labels = rep.GetLabels(opts);
-                        Assert.AreEqual("Created by admin.\n", labels[0].Description);
+                        Assert.AreEqual("Created by admin.", labels[0].Description.Trim());
 
                         opts = new LabelsCmdOptions(LabelsCmdFlags.Unloaded,
                            null, null, 50, null, null);
@@ -595,7 +629,7 @@ namespace p4api.net.unit.test
                         opts = new LabelsCmdOptions(LabelsCmdFlags.All,
                            null, null, 50, null, null);
                         labels = rep.GetLabels(opts);
-                        Assert.AreEqual("Created by admin.\n", labels[0].Description);
+                        Assert.AreEqual("Created by admin.", labels[0].Description.Trim());
 
                         opts = new LabelsCmdOptions(LabelsCmdFlags.None,
                            null, null, 50, null, "1666-master");
@@ -606,8 +640,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -617,21 +652,25 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetLabelWithGlobalOptionTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
+
                 // TODO update test with Edge Server installation
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 13, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 13, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -657,8 +696,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 	}

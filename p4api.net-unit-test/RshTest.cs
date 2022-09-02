@@ -11,13 +11,16 @@ namespace p4api.net.unit.test
     public class RshTest
     {
         private static Logger logger = LogManager.GetCurrentClassLogger();
-        String TestDir = @"c:\MyTestDir";
+        private UnitTestConfiguration configuration;
+        private string TestDir = "";
 
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
         public void SetupTest()
         {
+            configuration = UnitTestSettings.GetApplicationConfiguration();
+            TestDir = configuration.TestDirectory;
             Utilities.LogTestStart(TestContext);
         }
         [TestCleanup]
@@ -26,19 +29,24 @@ namespace p4api.net.unit.test
             Utilities.LogTestFinish(TestContext);
         }
 
-
         [TestMethod]
         public void RshConnectionTest()
         {
-            bool unicode = false;
+            var cptype = Utilities.CheckpointType.A;
 
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            var p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
-            Server server = new Server(new ServerAddress("localhost:6666"));
-            Repository rep = new Repository(server);
+            Process p4d = null;
+            Repository rep = null;
+            try
+            {
+                p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+                Server server = new Server(new ServerAddress(configuration.ServerPort));
+                rep = new Repository(server);
 
             using (Connection con = rep.Connection)
             {
@@ -54,12 +62,13 @@ namespace p4api.net.unit.test
                 logger.Debug("Stopped launched server");
             }
 
-            string uri = Utilities.TestRshServerPort(TestDir, unicode);
-            server = new Server(new ServerAddress(uri));
-            rep = new Repository(server);
+                string uri = Utilities.TestRshServerPort(TestDir, cptype);
+                Server server1 = new Server(new ServerAddress(uri));
+                rep = new Repository(server1);
             logger.Debug("Created new server");
-            try
-            {
+                
+                Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
+            
                 using (Connection con = rep.Connection)
                 {
                     con.UserName = user;
@@ -71,15 +80,18 @@ namespace p4api.net.unit.test
                     Assert.IsTrue(con.Connect(null));
                     Assert.AreEqual(con.Status, ConnectionStatus.Connected);
                     logger.Debug("Connected");
-                    Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
+
 
                     FileSpec fs = new FileSpec(new DepotPath("//depot/MyCode/ReadMe.txt"), null);
                     rep.Connection.Client.EditFiles(null, fs);
                     logger.Debug("File edited");
                 }
-            } finally
+            } 
+            finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
             }
         }
     }

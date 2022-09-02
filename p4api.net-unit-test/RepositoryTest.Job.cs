@@ -7,7 +7,6 @@ using System.Diagnostics;
 namespace p4api.net.unit.test
 {
 	
-	
 	/// <summary>
 	///This is a test class for RepositoryTest and is intended
 	///to contain RepositoryTest Unit Tests
@@ -20,9 +19,7 @@ namespace p4api.net.unit.test
 		[TestMethod()]
 		public void CreateJobTest()
 		{
-			bool unicode = false;
-
-			string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
 			string user = "admin";
 			string pass = string.Empty;
 			string ws_client = "admin_space";
@@ -31,11 +28,16 @@ namespace p4api.net.unit.test
 
 			for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
 			{
-				Process p4d = Utilities.DeployP4TestServer(TestDir, 7, unicode);
-				Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
 				try
 				{
-					Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 7, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
 					using (Connection con = rep.Connection)
 					{
@@ -108,8 +110,9 @@ namespace p4api.net.unit.test
 				finally
 				{
 					Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
 				}
-				unicode = !unicode;
 			}
 		}
 
@@ -120,20 +123,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void UpdateJobTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 7, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 7, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -160,8 +166,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -171,9 +178,7 @@ namespace p4api.net.unit.test
 		[TestMethod()]
 		public void DeleteJobTest()
 		{
-			bool unicode = false;
-
-			string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
 			string user = "admin";
 			string pass = string.Empty;
 			string ws_client = "admin_space";
@@ -182,11 +187,16 @@ namespace p4api.net.unit.test
 
 			for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
 			{
-				Process p4d = Utilities.DeployP4TestServer(TestDir, 11, unicode);
-				Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
 				try
 				{
-					Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 11, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
 					using (Connection con = rep.Connection)
 					{
@@ -223,8 +233,9 @@ namespace p4api.net.unit.test
 				finally
 				{
 					Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
 				}
-				unicode = !unicode;
 			}
 		}
 
@@ -234,9 +245,7 @@ namespace p4api.net.unit.test
 		[TestMethod()]
 		public void GetJobTest()
 		{
-			bool unicode = false;
-
-			string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
 			string user = "admin";
 			string pass = string.Empty;
 			string ws_client = "admin_space";
@@ -245,11 +254,16 @@ namespace p4api.net.unit.test
 
 			for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
 			{
-				Process p4d = Utilities.DeployP4TestServer(TestDir, 6, unicode);
-				Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
 				try
 				{
-					Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 6, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
 					using (Connection con = rep.Connection)
 					{
@@ -275,8 +289,9 @@ namespace p4api.net.unit.test
 				finally
 				{
 					Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
 				}
-				unicode = !unicode;
 			}
 		}
 
@@ -286,7 +301,7 @@ namespace p4api.net.unit.test
 		[TestMethod()]
         public void GetJobTestjob079425A()
         {
-            GetJobTestjob079425(false);
+            GetJobTestjob079425(Utilities.CheckpointType.A);
         }
         /// <summary>
         ///A test for GetJobjob079425U
@@ -294,25 +309,30 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetJobTestjob079425U()
         {
-            GetJobTestjob079425(true);
+            GetJobTestjob079425(Utilities.CheckpointType.U);
         }
         /// <summary>
 		///A test for GetJob
 		///</summary>
-        public void GetJobTestjob079425(bool unicode)
+        public void GetJobTestjob079425(Utilities.CheckpointType cptype)
         {
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
             string targetJob = "job100001";
 
-            Process p4d = Utilities.DeployP4TestServer(TestDir, 6, unicode);
-            Server server = new Server(new ServerAddress(uri));
+            Process p4d = null;
+            Repository rep = null;
+
             try
             {
-                Repository rep = new Repository(server);
+                p4d = Utilities.DeployP4TestServer(TestDir, 6, cptype);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+                Server server = new Server(new ServerAddress(uri));
+                rep = new Repository(server);
 
                 using (Connection con = rep.Connection)
                 {
@@ -333,6 +353,8 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
             }
         }
 
@@ -342,20 +364,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
 		public void GetJobsTest()
 		{
-			bool unicode = false;
-
-			string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
 			string user = "admin";
 			string pass = string.Empty;
 			string ws_client = "admin_space";
 
 			for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
 			{
-				Process p4d = Utilities.DeployP4TestServer(TestDir, 6, unicode);
-				Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
 				try
 				{
-					Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 6, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
 					using (Connection con = rep.Connection)
 					{
@@ -399,8 +424,9 @@ namespace p4api.net.unit.test
 				finally
 				{
 					Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
 				}
-				unicode = !unicode;
 			}
 		}
 
@@ -411,9 +437,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void InvalidJobNameTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -422,11 +446,16 @@ namespace p4api.net.unit.test
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 11, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 11, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -454,8 +483,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -465,9 +495,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void IncompleteJobSpecTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -476,11 +504,16 @@ namespace p4api.net.unit.test
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 11, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 11, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -536,8 +569,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -547,9 +581,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void DeleteNonexistentJobTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -558,11 +590,16 @@ namespace p4api.net.unit.test
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 11, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 11, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -595,8 +632,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -607,9 +645,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void DeleteJobWithInvalidOptionsTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -618,11 +654,16 @@ namespace p4api.net.unit.test
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 11, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 11, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -655,8 +696,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -666,9 +708,7 @@ namespace p4api.net.unit.test
         /*     [TestMethod()]
              public void DeleteJobWithFixesTest()
              {
-                 bool unicode = false;
-
-                 string uri = "localhost:6666";
+                 string uri = configuration.ServerPort;
                  string user = "admin";
                  string pass = string.Empty;
                  string ws_client = "admin_space";
@@ -677,11 +717,16 @@ namespace p4api.net.unit.test
 
                  for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
                  {
-                     Process p4d = Utilities.DeployP4TestServer(TestDir, 11, unicode);
-                     Server server = new Server(new ServerAddress(uri));
+                     var cptype = (Utilities.CheckpointType)i;
+					 Process p4d = null;
+					 Repository rep = null;
                      try
                      {
-                         Repository rep = new Repository(server);
+                        p4d = Utilities.DeployP4TestServer(TestDir, 11, cptype);
+						Assert.IsNotNull(p4d, "Setup Failure");
+
+						 Server server = new Server(new ServerAddress(uri));
+                         rep = new Repository(server);
 
                          using (Connection con = rep.Connection)
                          {
@@ -715,8 +760,9 @@ namespace p4api.net.unit.test
                      finally
                      {
                          Utilities.RemoveTestServer(p4d, TestDir);
+                         p4d?.Dispose();
+                         rep?.Dispose();
                      }
-                     unicode = !unicode;
                  }
              }
              */

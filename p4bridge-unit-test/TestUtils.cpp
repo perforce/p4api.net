@@ -1,10 +1,10 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "UnitTestFrameWork.h"
 #include <string.h>
 
 #include "TestUtils.h"
 
-#include "..\p4bridge\utils.h"
+#include "../p4bridge/utils.h"
 
 CREATE_TEST_SUITE(TestUtils)
 
@@ -22,7 +22,7 @@ bool TestUtils::Setup()
     return true;
 }
 
-bool TestUtils::TearDown(char* testName)
+bool TestUtils::TearDown(const char* testName)
 {
     return true;
 }

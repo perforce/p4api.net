@@ -149,9 +149,10 @@ namespace Perforce.P4
 			if (user == null)
 			{
 				throw new ArgumentNullException("user");
+            }
 
-			}
-			P4Command cmd = new P4Command(this, "user", true);
+            using (P4Command cmd = new P4Command(this, "user", true))
+            {
 
 			cmd.DataSet = user.ToString();
 
@@ -159,6 +160,7 @@ namespace Perforce.P4
 			{
 				options = new Options();
 			}
+
 			options["-i"] = null;
 
 			P4CommandResult results = cmd.Run(options);
@@ -170,8 +172,10 @@ namespace Perforce.P4
 			{
 				P4Exception.Throw(results.ErrorList);
 			}
+
 			return null;
 		}
+        }
 
 		/// <summary>
 		/// Create a new user in the repository.
@@ -544,11 +548,11 @@ namespace Perforce.P4
 			if (user == null)
 			{
 				throw new ArgumentNullException("user");
-
 			}
             // first make sure the user exists, otherwise depending on the way it is
             //  configured, the server might create a new user
-            P4Command cmd = new P4Command(this, "users", true, user);
+            using (P4Command cmd = new P4Command(this, "users", true, user))
+            {
 
             Options usersOptions = new Options();
             usersOptions["-a"] = null;
@@ -570,39 +574,44 @@ namespace Perforce.P4
                         break;
                     }
                 }
+
                 if (!found)
                 {
                     return null;
                 }
             }
+            }
 
-            cmd = new P4Command(this, "user", true, user);
+            using (P4Command cmd1 = new P4Command(this, "user", true, user))
+            {
 
 			if (options == null)
 			{
 				options = new Options();
 			}
+
 			options["-o"] = null;
 
-			results = cmd.Run(options);
+                P4CommandResult results = cmd1.Run(options);
 			if (results.Success)
 			{
 				if ((results.TaggedOutput == null) || (results.TaggedOutput.Count <= 0))
 				{
 					return null;
 				}
+
 				User value = new User();
 
-                bool dst_mismatch = false;
+                    bool dstMismatch = false;
                 string offset = string.Empty;
 
                 if (Server != null && Server.Metadata != null)
                 {
                     offset = Server.Metadata.DateTimeOffset;
-                    dst_mismatch = FormBase.DSTMismatch(Server.Metadata);
+                        dstMismatch = FormBase.DSTMismatch(Server.Metadata);
                 }
 
-				value.FromUserCmdTaggedOutput((results.TaggedOutput[0]),offset,dst_mismatch);
+                    value.FromUserCmdTaggedOutput((results.TaggedOutput[0]), offset, dstMismatch);
 
 				return value;
 			}
@@ -610,8 +619,10 @@ namespace Perforce.P4
 			{
 				P4Exception.Throw(results.ErrorList);
 			}
+
 			return null;
 		}
+        }
 
         /// <summary>
         /// Get the record for an existing user from the repository.
@@ -752,15 +763,10 @@ namespace Perforce.P4
 		/// <seealso cref="UsersCmdFlags"/>
 		public IList<User> GetUsers(Options options, params string[] user)
 		{
-			P4Command cmd = null;
-			if ((user != null) && (user.Length > 0))
+            using (P4Command cmd = (user?.Length ?? 0) > 0
+                ? new P4Command(this, "users", true, user)
+                : new P4Command(this, "users", true))
 			{
-				cmd = new P4Command(this, "users", true, user);
-			}
-			else
-			{
-				cmd = new P4Command(this, "users", true);
-			}
 
 			P4CommandResult results = cmd.Run(options);
 			if (results.Success)
@@ -769,30 +775,34 @@ namespace Perforce.P4
 				{
 					return null;
 				}
+
 				List<User> value = new List<User>();
 				foreach (TaggedObject obj in results.TaggedOutput)
 				{
-                    bool dst_mismatch = false;
+                        bool dstMismatch = false;
                     string offset = string.Empty;
 
                     if (Server != null && Server.Metadata != null)
                     {
                         offset = Server.Metadata.DateTimeOffset;
-                        dst_mismatch = FormBase.DSTMismatch(Server.Metadata);
+                            dstMismatch = FormBase.DSTMismatch(Server.Metadata);
+                        }
 
-                    }
 					User u = new User();
-					u.FromUserCmdTaggedOutput(obj,offset,dst_mismatch);
+                        u.FromUserCmdTaggedOutput(obj, offset, dstMismatch);
 					value.Add(u);
 				}
+
 				return value;
 			}
 			else
 			{
 				P4Exception.Throw(results.ErrorList);
 			}
+
 			return null;
 		}
+        }
 
         /// <summary>
         /// Get a list of users from the repository
@@ -961,14 +971,16 @@ namespace Perforce.P4
 			if (user == null)
 			{
 				throw new ArgumentNullException("user");
+            }
 
-			}
-			P4Command cmd = new P4Command(this, "user", true, user.Id);
+            using (P4Command cmd = new P4Command(this, "user", true, user.Id))
+            {
 
 			if (options == null)
 			{
 				options = new Options();
 			}
+
 			options["-d"] = null;
 
 			P4CommandResult results = cmd.Run(options);
@@ -978,4 +990,5 @@ namespace Perforce.P4
 			}
 		}
 	}
+}
 }

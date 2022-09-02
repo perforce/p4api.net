@@ -1,0 +1,20 @@
+{
+	"folders": [
+		{
+			"name": "P4Bridge",
+			"path": "p4bridge"
+		},
+		{
+			"name": "P4Bridge Unit Test",
+			"path": "p4bridge-unit-test"
+		},
+		{
+			"name": "P4Bridge Stress Test",
+			"path": "p4bridgeStressTest"
+		}
+	],
+	"settings": {
+		"perforce.activationMode": "always",
+		"perforce.addOnFileCreate": true
+	}
+}

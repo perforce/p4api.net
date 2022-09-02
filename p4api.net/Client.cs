@@ -37,6 +37,9 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("p4api.net-unit-test, PublicKey=00240000048000009400000006020000002400005253413100040000010001005bd58b86ff0b4ac3872932400b9b4da1d7d72faad9c7a37cc1c9c3d9a89d7de24f260d07fe676146196ef8f1e5b5dc49d2eaa0347780454b82afb9502d15730858f0acc35cfd20285d4aa924b2edb55cb56846a2c3cbe2d65303b45c9dd737e6f81fec00d5c5f3c66e1335bc36d1ad13bea44851d35d65d08bee5aacf9e409b2")]
 
 namespace Perforce.P4
 {
@@ -371,8 +374,9 @@ namespace Perforce.P4
 				// not connected to the server yet
 				return;
 			}
-			P4Command cmd = new P4Command(connection, "client", true, "-o", Name);
 
+            using (P4Command cmd = new P4Command(connection, "client", true, "-o", Name))
+            {
 			P4CommandResult results = cmd.Run();
 			if ((results.Success) && (results.TaggedOutput != null) && (results.TaggedOutput.Count > 0))
 			{
@@ -384,6 +388,7 @@ namespace Perforce.P4
 				P4Exception.Throw(results.ErrorList);
 			}
 		}
+        }
 		internal Connection Connection { get; private set; }
 		internal FormBase _baseForm;
 
@@ -425,7 +430,7 @@ namespace Perforce.P4
 		public IList<string> ChangeView { get; set; }
 
 		private ClientOptionEnum _options = ClientOption.None;
-        
+
         /// <summary>
         /// Options for the Client command
         /// </summary>
@@ -437,7 +442,7 @@ namespace Perforce.P4
 
 		private StringEnum<ClientType> _clientType = ClientType.writeable;
 
-		/// <summary>
+        /// <summary>
 		/// Type for the Client command
 		/// </summary>
 		public ClientType ClientType
@@ -447,8 +452,8 @@ namespace Perforce.P4
 		}
 
 		/// <summary>
-		/// Options for the Client about submit behavior
-		/// </summary>
+        /// Options for the Client about submit behavior
+        /// </summary>
 		public ClientSubmitOptions SubmitOptions = new ClientSubmitOptions(false, SubmitType.SubmitUnchanged);
 
         private StringEnum<LineEnd> _lineEnd = LineEnd.Local;
@@ -477,9 +482,9 @@ namespace Perforce.P4
         /// </summary>
 		public string ServerID { get; set; }
 
-		/// <summary>
-		/// View Mapping
-		/// </summary>
+        /// <summary>
+        /// View Mapping
+        /// </summary>
 		public ViewMap ViewMap { get; set; }
 
         /// <summary>
@@ -614,7 +619,7 @@ namespace Perforce.P4
 					idx++;
 					key = String.Format("ChangeView{0}", idx);
 				}
-			}
+		}
 		}
 
 
@@ -735,7 +740,7 @@ namespace Perforce.P4
 					idx++;
 					key = String.Format("ChangeView{0}", idx);
 				}
-			}
+		}
 		}
 		#endregion
 		#region client spec support
@@ -775,7 +780,7 @@ namespace Perforce.P4
                     {
                         if (idx > 0)
                         {
-                            Description += "\r\n";
+                            Description += $"{Environment.NewLine}";
                         }
                         Description += strList[idx];
                     }
@@ -790,7 +795,7 @@ namespace Perforce.P4
                     {
                         if (addCRLF)
                         {
-                            Description += "\r\n";
+                            Description += $"{Environment.NewLine}";
                         }
                         else
                         {
@@ -927,7 +932,7 @@ namespace Perforce.P4
 				{
 					for (int idx = 0; idx < AltRoots.Count; idx++)
 					{
-						value += AltRoots[idx] + "\r\n";
+                        value += AltRoots[idx] + $"{Environment.NewLine}";
 					}
 				}
 				return value;
@@ -942,7 +947,7 @@ namespace Perforce.P4
 				{
 					for (int idx = 0; idx < ChangeView.Count; idx++)
 					{
-						value += ChangeView[idx] + "\r\n";
+                        value += ChangeView[idx] + $"{Environment.NewLine}";
 					}
 				}
 				return value;
@@ -955,7 +960,7 @@ namespace Perforce.P4
 		/// <returns>formatted date string</returns>
 		public static String FormatDateTime(DateTime dt)
 		{
-			if ((dt != null) && (DateTime.MinValue != dt))
+            if (DateTime.MinValue != dt)
 				return dt.ToString("yyyy/MM/dd HH:mm:ss", CultureInfo.InvariantCulture);
 			return string.Empty;
 		}
@@ -1022,10 +1027,12 @@ namespace Perforce.P4
 		{
 			return runFileListCmd(cmdName, options, null, files);
 		}
-		internal List<FileSpec> runFileListCmd(string cmdName, Options options, string commandData, params FileSpec[] files)
+
+        internal List<FileSpec> runFileListCmd(string cmdName, Options options, string commandData,
+            params FileSpec[] files)
 		{
 			string[] paths = null;
-			P4Command cmd = null;
+
 			if (files != null)
 			{
 				if (cmdName == "add")
@@ -1036,17 +1043,17 @@ namespace Perforce.P4
 				{
 					paths = FileSpec.ToEscapedStrings(files);
 				}
+            }
 
-				cmd = new P4Command(Connection, cmdName, true, paths);
-			}
-			else
+            using (P4Command cmd = (paths != null)
+                ? new P4Command(Connection, cmdName, true, paths)
+                : new P4Command(Connection, cmdName, true))
 			{
-				cmd = new P4Command(Connection, cmdName, true);
-			}
-			if (String.IsNullOrEmpty(commandData) == false)
+                if (string.IsNullOrEmpty(commandData) == false)
 			{
 				cmd.DataSet = commandData;
 			}
+
 			P4CommandResult results = cmd.Run(options);
 			if (results.Success)
 			{
@@ -1054,6 +1061,7 @@ namespace Perforce.P4
 				{
 					return null;
 				}
+
 				List<FileSpec> newDepotFiles = new List<FileSpec>();
 				foreach (TaggedObject obj in results.TaggedOutput)
 				{
@@ -1066,11 +1074,11 @@ namespace Perforce.P4
 					ClientPath cp = null;
 					LocalPath lp = null;
 
-                    if (obj.ContainsKey("workRev"))
-                    {
-                        int.TryParse(obj["workRev"], out rev);
-                    }
-                    else if (obj.ContainsKey("haveRev"))
+					if (obj.ContainsKey("workRev"))
+					{
+						int.TryParse(obj["workRev"], out rev);
+					}
+					else if (obj.ContainsKey("haveRev"))
 					{
 						int.TryParse(obj["haveRev"], out rev);
 					}
@@ -1078,6 +1086,7 @@ namespace Perforce.P4
 					{
 						int.TryParse(obj["rev"], out rev);
 					}
+
                     if (obj.ContainsKey("action"))
                     {
                         action = obj["action"];
@@ -1094,11 +1103,13 @@ namespace Perforce.P4
                             rev = -1;
                         }
                     }
-                    if (obj.ContainsKey("depotFile"))
+
+					if (obj.ContainsKey("depotFile"))
 					{
 						p = obj["depotFile"];
 						dp = new DepotPath(PathSpec.UnescapePath(p));
 					}
+
 					if (obj.ContainsKey("clientFile"))
 					{
 						p = obj["clientFile"];
@@ -1112,10 +1123,12 @@ namespace Perforce.P4
 							lp = new LocalPath(PathSpec.UnescapePath(p));
 						}
 					}
+
 					if (obj.ContainsKey("path"))
 					{
 						lp = new LocalPath(obj["path"]);
 					}
+
                     spec = new FileSpec();// (dp, cp, lp, new Revision(rev));
                     spec.ClientPath= cp;
                     spec.DepotPath = dp;
@@ -1125,8 +1138,9 @@ namespace Perforce.P4
                         spec.Version = new Revision(rev);
                     }
 
-                    newDepotFiles.Add(spec);
+					newDepotFiles.Add(spec);
 				}
+
 				return newDepotFiles;
 			}
 			else
@@ -1136,6 +1150,7 @@ namespace Perforce.P4
 
 			return null;
 		}
+        }
 
 		/// <summary>
 		/// 
@@ -2668,8 +2683,8 @@ namespace Perforce.P4
 
 				foreach (string path in paths)
 				{
-					P4Command cmd = new P4Command(Connection, "resolve", true, path);
-
+                    using (P4Command cmd = new P4Command(Connection, "resolve", true, path))
+                    {
 					cmd.CmdResolveHandler = new P4Server.ResolveHandlerDelegate(HandleResolveFile);
 					cmd.CmdResolveAHandler = new P4Server.ResolveAHandlerDelegate(HandleResolveAFile);
 
@@ -2690,6 +2705,7 @@ namespace Perforce.P4
                             {
 								continue;
 							}
+
 							// not in interactive mode
 							FileResolveRecord  record = null;
 
@@ -2711,6 +2727,8 @@ namespace Perforce.P4
 						P4Exception.Throw(results.ErrorList);
 					}
 				}
+                }
+
 				if (CurrentResolveRecords.Count > 0)
 				{
 					return CurrentResolveRecords;
@@ -2734,7 +2752,8 @@ namespace Perforce.P4
 															params FileSpec[] files)
 		{
 			string[] paths = FileSpec.ToEscapedPaths(files);
-			P4Command cmd = new P4Command(Connection, "resolve", true, paths);
+            using (P4Command cmd = new P4Command(Connection, "resolve", true, paths))
+            {
 
 			if (resolveHandler != null)
 			{
@@ -2766,6 +2785,7 @@ namespace Perforce.P4
 						}
 					}
 				}
+
 				if ((results.InfoOutput != null) && (results.InfoOutput.Count > 0))
 				{
 					string l1 = null;
@@ -2782,11 +2802,13 @@ namespace Perforce.P4
 							l2 = results.InfoOutput[idx + 1].Message;
 							l3 = results.InfoOutput[idx + 2].Message;
 						}
+
 						if (RecordsPerItem == 2)
 						{
 							l2 = null;
 							l3 = results.InfoOutput[idx + 1].Message;
 						}
+
 						record2 = FileResolveRecord.FromMergeInfo(l1, l2, l3);
 						if ((record2 != null) && (recordMap.ContainsKey(record2.LocalFilePath.Path.ToLower())))
 						{
@@ -2799,12 +2821,14 @@ namespace Perforce.P4
 						}
 					}
 				}
+
 				return records;
 			}
 			else
 			{
 				P4Exception.Throw(results.ErrorList);
 			}
+            }
 
 			return null;
 		}
@@ -2936,15 +2960,10 @@ namespace Perforce.P4
 		/// </remarks>
 		public SubmitResults SubmitFiles(Options options, FileSpec file)
 		{
-			P4Command cmd = null;
-			if (file != null)
+            using (P4Command cmd = (file != null)
+                ? new P4Command(Connection, "submit", true, file.ToEscapedString())
+                : new P4Command(Connection, "submit", true))
 			{
-				cmd = new P4Command(Connection, "submit", true, file.ToEscapedString());
-			}
-			else
-			{
-				cmd = new P4Command(Connection, "submit", true);
-			}
 			if (options != null&&!options.ContainsKey("-e"))
 			{
 				//the new Changelist Spec is passed using the command dataset
@@ -2962,6 +2981,7 @@ namespace Perforce.P4
 				{
 					return null;
 				}
+
 				SubmitResults returnVal = new SubmitResults();
 				foreach (TaggedObject obj in results.TaggedOutput)
 				{
@@ -2994,6 +3014,7 @@ namespace Perforce.P4
 						{
 							action = obj["action"];
 						}
+
 						int rev = -1;
 						string p;
 
@@ -3005,11 +3026,13 @@ namespace Perforce.P4
 						{
 							int.TryParse(obj["rev"], out rev);
 						}
+
 						if (obj.ContainsKey("depotFile"))
 						{
 							p = obj["depotFile"];
 							dp = new DepotPath(p);
 						}
+
 						if (obj.ContainsKey("clientFile"))
 						{
 							p = obj["clientFile"];
@@ -3023,20 +3046,24 @@ namespace Perforce.P4
 								lp = new LocalPath(p);
 							}
 						}
+
 						if (obj.ContainsKey("path"))
 						{
 							lp = new LocalPath(obj["path"]);
 						}
+
 						FileSpec fs = new FileSpec(dp, cp, lp, new Revision(rev));
 						returnVal.Files.Add(new FileSubmitRecord(action, fs));
 					}
 				}
+
 				return returnVal;
 			}
 			else
 			{
 				P4Exception.Throw(results.ErrorList);
 			}
+            }
 
 			return null;
 		}
@@ -3070,8 +3097,8 @@ namespace Perforce.P4
 		/// </remarks>
 		public IList<FileResolveRecord> GetResolvedFiles(Options options, params FileSpec[] files)
 		{
-			P4Command cmd = new P4Command(Connection, "resolved", true, FileSpec.ToStrings(files));
-
+            using (P4Command cmd = new P4Command(Connection, "resolved", true, FileSpec.ToStrings(files)))
+            {
 			P4CommandResult results = cmd.Run(options);
 			if (results.Success)
 			{
@@ -3079,20 +3106,20 @@ namespace Perforce.P4
 				{
 					return null;
 				}
+
 				List<FileResolveRecord> fileList = new List<FileResolveRecord>();
 				foreach (TaggedObject obj in results.TaggedOutput)
 				{
 					fileList.Add(FileResolveRecord.FromResolvedCmdTaggedOutput(obj));
 				}
+
 				return fileList;
 			}
-			else
-			{
+
 				P4Exception.Throw(results.ErrorList);
 			}
 
 			return null;
-
 		}
 		/// <summary>
 		/// 
@@ -3104,9 +3131,9 @@ namespace Perforce.P4
 		{
 			return GetResolvedFiles(options, Files.ToArray());
 		}
-        /// <summary>
-        /// 
-        /// </summary>
+		/// <summary>
+		/// 
+		/// </summary>
         /// <param name="options"><cref>ReconcileFilesOptions</cref></param>
         /// <param name="files"></param>
         /// <returns></returns>
@@ -3492,45 +3519,45 @@ namespace Perforce.P4
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="options"><cref>RevertFilesOptions</cref></param>
-        /// <param name="files"></param>
-        /// <returns></returns>
-        /// <remarks>
-        /// <br/><b>p4 help revert</b>
-        /// <br/> 
-        /// <br/>     revert -- Discard changes from an opened file
-        /// <br/> 
-        /// <br/>     p4 revert [-a -n -k -w -c changelist# -C client] file ...
-        /// <br/> 
-        /// <br/> 	Revert an open file to the revision that was synced from the depot,
-        /// <br/> 	discarding any edits or integrations that have been made.  You must
-        /// <br/> 	explicitly specify the files to be reverted.  Files are removed from
-        /// <br/> 	the changelist in which they are open.  Locked files are unlocked.
-        /// <br/> 
-        /// <br/> 	The -a flag reverts only files that are open for edit, add, or
-        /// <br/> 	integrate and are unchanged or missing. Files with pending
-        /// <br/> 	integration records are left open. The file arguments are optional
-        /// <br/> 	when -a is specified.
-        /// <br/> 
-        /// <br/> 	The -n flag displays a preview of the operation.
-        /// <br/> 
-        /// <br/> 	The -k flag marks the file as reverted in server metadata without
-        /// <br/> 	altering files in the client workspace.
-        /// <br/> 
-        /// <br/> 	The -w flag causes files that are open for add to be deleted from the
-        /// <br/> 	workspace when they are reverted.
-        /// <br/> 
-        /// <br/> 	The -c flag reverts files that are open in the specified changelist.
-        /// <br/> 
-        /// <br/> 	The -C flag allows a user to specify the workspace that has the file
-        /// <br/> 	opened rather than defaulting to the current client workspace. When
-        /// <br/> 	this option is used, the '-k' flag is also enabled and the check for
-        /// <br/> 	matching user is disabled. The -C flag requires 'admin' access, which
-        /// <br/> 	is granted by 'p4 protect'.
-        /// <br/> 
-        /// <br/> 
-        /// </remarks>
-        public IList<FileSpec> RevertFiles(Options options, params FileSpec[] files)
+		/// <param name="options"><cref>RevertFilesOptions</cref></param>
+		/// <param name="files"></param>
+		/// <returns></returns>
+		/// <remarks>
+		/// <br/><b>p4 help revert</b>
+		/// <br/> 
+		/// <br/>     revert -- Discard changes from an opened file
+		/// <br/> 
+		/// <br/>     p4 revert [-a -n -k -w -c changelist# -C client] file ...
+		/// <br/> 
+		/// <br/> 	Revert an open file to the revision that was synced from the depot,
+		/// <br/> 	discarding any edits or integrations that have been made.  You must
+		/// <br/> 	explicitly specify the files to be reverted.  Files are removed from
+		/// <br/> 	the changelist in which they are open.  Locked files are unlocked.
+		/// <br/> 
+		/// <br/> 	The -a flag reverts only files that are open for edit, add, or
+		/// <br/> 	integrate and are unchanged or missing. Files with pending
+		/// <br/> 	integration records are left open. The file arguments are optional
+		/// <br/> 	when -a is specified.
+		/// <br/> 
+		/// <br/> 	The -n flag displays a preview of the operation.
+		/// <br/> 
+		/// <br/> 	The -k flag marks the file as reverted in server metadata without
+		/// <br/> 	altering files in the client workspace.
+		/// <br/> 
+		/// <br/> 	The -w flag causes files that are open for add to be deleted from the
+		/// <br/> 	workspace when they are reverted.
+		/// <br/> 
+		/// <br/> 	The -c flag reverts files that are open in the specified changelist.
+		/// <br/> 
+		/// <br/> 	The -C flag allows a user to specify the workspace that has the file
+		/// <br/> 	opened rather than defaulting to the current client workspace. When
+		/// <br/> 	this option is used, the '-k' flag is also enabled and the check for
+		/// <br/> 	matching user is disabled. The -C flag requires 'admin' access, which
+		/// <br/> 	is granted by 'p4 protect'.
+		/// <br/> 
+		/// <br/> 
+		/// </remarks>
+		public IList<FileSpec> RevertFiles(Options options, params FileSpec[] files)
 		{
 			return runFileListCmd("revert", options, files);
 		}

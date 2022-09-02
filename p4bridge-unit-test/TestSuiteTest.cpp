@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "TestSuiteTest.h"
 
 CREATE_TEST_SUITE(TestSuiteTest)

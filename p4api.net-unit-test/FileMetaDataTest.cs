@@ -763,8 +763,11 @@ namespace p4api.net.unit.test
 			FileMetaData target = new FileMetaData();
 
 			TaggedObject obj = new TaggedObject();
-
+#if _WINDOWS
 			obj["clientFile"] = "c:\\source\\of\\the\\nile.loc";
+#else
+			obj["clientFile"] = "/source/of/the/nile.loc";
+#endif
 			obj["depotFile"] = "//depot/of/the/nile.loc";
 			obj["movedFile"] = "//depot/of/the/blue_nile.loc";
 			obj["isMapped"] = "1";
@@ -800,8 +803,11 @@ namespace p4api.net.unit.test
 			obj["otherLock1"] = "Paul@apple2_records";
 
 			target.FromFstatCmdTaggedData(obj);
-			
+#if _WINDOWS
 			Assert.AreEqual("c:\\source\\of\\the\\nile.loc", target.LocalPath.Path);
+#else
+			Assert.AreEqual("/source/of/the/nile.loc", target.LocalPath.Path);
+#endif
 			Assert.AreEqual("//depot/of/the/nile.loc", target.DepotPath.Path);
 			Assert.AreEqual("//depot/of/the/blue_nile.loc", target.MovedFile.Path);
 			Assert.IsTrue(target.IsMapped);

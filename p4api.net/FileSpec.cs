@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace Perforce.P4
 {
@@ -111,8 +110,16 @@ namespace Perforce.P4
         /// <returns>FileSpec</returns>
         public static FileSpec DepotSpec(String path)
 		{
+            // check for a revision spec on the end of the string
+            if (SplitDepotPath(path, out string dpath, out string vspec))
+            {
+                return new FileSpec(new DepotPath(dpath), VersionSpec.CreateVersionInstance(vspec));
+            }
+            else
+            {
 			return new FileSpec(new DepotPath(path), null);
 		}
+        }
 
         /// <summary>
         /// Create a FileSpec given a depot path and revision 
@@ -239,6 +246,29 @@ namespace Perforce.P4
 			fs.Version = null;
 			return fs;
 		}
+
+        // split a depotpath into path and revspec, returns true if revspec exists
+        public static bool SplitDepotPath(string depotpath, out string path, out string versionspec)
+        {
+            bool hasat = depotpath.Contains('@');
+            bool hasnum = depotpath.Contains('#');
+
+            // No versionspec provided
+            if (!(hasat || hasnum))
+            {
+                path = depotpath;
+                versionspec = "";
+                return false;
+            }
+            string delimiter = hasat ? "@" : "#";
+
+            string[] parts = depotpath.Split(new char[] { '@', '#' }, StringSplitOptions.RemoveEmptyEntries);
+
+            versionspec = (parts[1].Length > 0) ? delimiter + parts[1] : "";
+            path = parts[0];
+            return true;
+        }
+
 		/// <summary>
 		/// Copies a list of FileSpec objects without vesions
 		/// </summary>
@@ -742,7 +772,8 @@ namespace Perforce.P4
         /// Get the hashcode for this FileSpec
         /// </summary>
         /// <returns>hash code</returns>
-        public override int GetHashCode() {
+        public override int GetHashCode()
+        {
             if (this.DepotPath != null)
                 return this.DepotPath.GetHashCode();
             if (this.LocalPath != null)

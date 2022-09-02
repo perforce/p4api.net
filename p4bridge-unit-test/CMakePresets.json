@@ -1,0 +1,136 @@
+﻿{
+  "version": 2,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 19,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "x64-Debug",
+      "displayName": "Windows x64 debug",
+      "description": "Windows x64 debug using VS2019",
+      "generator": "Visual Studio 16 2019",
+      "binaryDir": "${sourceDir}/out/x64/debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "MSVC_CXX_ARCHITECTURE_ID": "X64",
+        "MSVC_C_ARCHITECTURE_ID": "X64",
+        "CMAKE_SYSTEM_NAME": "Windows",
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG": "${sourceDir}/out/x64/debug/bin",
+        "CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG": "${sourceDir}/out/x64/debug/bin",
+        "CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG": "${sourceDir}/out/x64/debug/bin"
+      }
+    },
+    {
+      "name": "x64-Release",
+      "displayName": "Windows x64 release",
+      "description": "Windows x64 release using VS2019",
+      "generator": "Visual Studio 16 2019",
+      "binaryDir": "${sourceDir}/out/x64/release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "MSVC_CXX_ARCHITECTURE_ID": "X64",
+        "MSVC_C_ARCHITECTURE_ID": "X64",
+        "CMAKE_SYSTEM_NAME": "Windows",
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE": "${sourceDir}/out/x64/release/bin",
+        "CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE": "${sourceDir}/out/x64/release/bin",
+        "CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE": "${sourceDir}/out/x64/release/bin"
+      }
+    },
+    {
+      "name": "x86-Debug",
+      "displayName": "Windows x86 debug",
+      "description": "Windows x86 debug using VS2019",
+      "generator": "Visual Studio 16 2019",
+      "binaryDir": "${sourceDir}/out/x86/debug",
+      "architecture": "win32",
+      "toolset": "host=x64",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "MSVC_CXX_ARCHITECTURE_ID": "X86",
+        "MSVC_C_ARCHITECTURE_ID": "X86",
+        "CMAKE_SYSTEM_NAME": "Windows",
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG": "${sourceDir}/out/x86/debug/bin",
+        "CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG": "${sourceDir}/out/x86/debug/bin",
+        "CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG": "${sourceDir}/out/x86/debug/bin"
+      }
+    },
+    {
+      "name": "x86-Release",
+      "displayName": "Windows x86 release",
+      "description": "Windows x86 release using VS2019",
+      "generator": "Visual Studio 16 2019",
+      "binaryDir": "${sourceDir}/out/x86/release",
+      "architecture": "win32",
+      "toolset": "host=x64",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "MSVC_CXX_ARCHITECTURE_ID": "X86",
+        "MSVC_C_ARCHITECTURE_ID": "X86",
+        "CMAKE_SYSTEM_NAME": "Windows",
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE": "${sourceDir}/out/x86/release/bin",
+        "CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE": "${sourceDir}/out/x86/release/bin",
+        "CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE": "${sourceDir}/out/x86/release/bin"
+      }
+    },
+    {
+      "name": "linux-Debug",
+      "displayName": "Linux Debug",
+      "description": "Linux debug using gcc",
+      "generator": "CodeBlocks - Unix Makefiles",
+      "binaryDir": "${sourceDir}/out/${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "linux-Release",
+      "displayName": "Linux Release",
+      "description": "Linux release using gcc",
+      "generator": "CodeBlocks - Unix Makefiles",
+      "binaryDir": "${sourceDir}/out/${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "osx-Debug",
+      "displayName": "OSX Debug",
+      "description": "OSX  debug using gcc",
+      "generator": "CodeBlocks - Unix Makefiles",
+      "binaryDir": "${sourceDir}/out/${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "osx-Release",
+      "displayName": "OSX Release",
+      "description": "OSX release using gcc",
+      "generator": "CodeBlocks - Unix Makefiles",
+      "binaryDir": "${sourceDir}/out/${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "linux-Debug",
+      "configurePreset": "linux-Debug"
+    },
+    {
+      "name": "linux-Release",
+      "configurePreset": "linux-Release"
+    },
+    {
+      "name": "osx-Debug",
+      "configurePreset": "osx-Debug"
+    },
+    {
+      "name": "osx-Release",
+      "configurePreset": "osx-Release"
+    }
+  ]
+}

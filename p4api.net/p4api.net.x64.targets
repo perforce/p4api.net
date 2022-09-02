@@ -1,8 +1,26 @@
 <Project>
-  <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)p4bridge.dll">
-      <Link>p4bridge.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
+    <ItemGroup Condition=" $([MSBuild]::IsOSPlatform('Windows')) And '$(Platform)' == 'x64' ">
+        <None Include="$(MSBuildThisFileDirectory)..\runtimes\win-x64\native\p4bridge.dll">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Link>p4bridge.dll</Link>
+        </None>
+    </ItemGroup>
+    <ItemGroup Condition=" $([MSBuild]::IsOSPlatform('Windows')) And ('$(Platform)' == 'x86' OR '$(Platform)' == 'AnyCPU') ">
+        <None Include="$(MSBuildThisFileDirectory)..\runtimes\win-x86\native\p4bridge.dll">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Link>p4bridge.dll</Link>
+        </None>
+    </ItemGroup>
+    <ItemGroup Condition=" $([MSBuild]::IsOSPlatform('Linux')) ">
+        <None Include="$(MSBuildThisFileDirectory)..\runtimes\linux-x64\native\libp4bridge.so">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Link>libp4bridge.so</Link>
+        </None>
+    </ItemGroup>
+    <ItemGroup Condition=" $([MSBuild]::IsOSPlatform('OSX')) ">
+        <None Include="$(MSBuildThisFileDirectory)..\runtimes\osx-x64\native\libp4bridge.dylib">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Link>libp4bridge.dylib</Link>
+        </None>
+    </ItemGroup>
 </Project>

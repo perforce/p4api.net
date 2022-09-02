@@ -1,6 +1,6 @@
 #pragma once
 
-#include "unittestframework.h"
+#include "UnitTestFrameWork.h"
 #include "../p4bridge/P4BridgeServer.h"
 
 class TestP4BridgeServer :
@@ -14,9 +14,12 @@ public:
 
     bool Setup();
 
-    bool TearDown(char* testName);
+    bool TearDown(const char* testName);
+
+    static bool CheckConnection(P4BridgeServer *ps, P4ClientError *connectionError );
 
     static bool ServerConnectionTest();
+    static bool CreateClient(const char* name, const char* workspace_root);
     static bool TestUnicodeClientToNonUnicodeServer();
     static bool TestUnicodeUserName();
     static bool TestUntaggedCommand();
@@ -28,6 +31,7 @@ public:
 	static bool TestEnviro();
 	static bool TestConnectSetClient();
 	static bool TestGetConfig();
+    static bool TestSetCwd();
     static bool TestIsIgnored();
     static bool TestConnectionManager();
 	static bool TestSetVars();
@@ -38,6 +42,6 @@ public:
 	static bool TestSetProtocol();
 	static bool TestSetTicketFile();
 
-	static int _stdcall LogCallback(int level, const char *file, int line, const char *msg);
+	static int STDCALL LogCallback(int level, const char *file, int line, const char *msg);
 };
 

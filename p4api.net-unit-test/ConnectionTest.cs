@@ -5,66 +5,71 @@ using System.IO;
 using NLog;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace p4api.net.unit.test
 {
-	
-	/// <summary>
-	///This is a test class for ConnectionTest and is intended
-	///to contain all ConnectionTest Unit Tests
-	///</summary>
-	[TestClass()]
-	public class ConnectionTest
-	{
-        private static Logger logger = LogManager.GetCurrentClassLogger();
-        String TestDir = @"c:\MyTestDir";
 
-		/// <summary>
-		///Gets or sets the test context which provides
-		///information about and functionality for the current test run.
-		///</summary>
+    /// <summary>
+    ///This is a test class for ConnectionTest and is intended
+    ///to contain all ConnectionTest Unit Tests
+    ///</summary>
+    [TestClass()]
+    public class ConnectionTest
+    {
+        private static Logger logger = LogManager.GetCurrentClassLogger();
+        private UnitTestConfiguration configuration;
+        private String TestDir = "";
+
+        /// <summary>
+        ///Gets or sets the test context which provides
+        ///information about and functionality for the current test run.
+        ///</summary>
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
         public void SetupTest()
-			{
+        {
+            configuration = UnitTestSettings.GetApplicationConfiguration();
+            TestDir = configuration.TestDirectory;
             Utilities.LogTestStart(TestContext);
-			}
+        }
+
         [TestCleanup]
         public void CleanupTest()
-			{
+        {
             Utilities.LogTestFinish(TestContext);
-		}
+        }
 
-		#region Additional test attributes
-		// 
-		//You can use the following additional attributes as you write your tests:
-		//
-		//Use ClassInitialize to run code before running the first test in the class
-		//[ClassInitialize()]
-		//public static void MyClassInitialize(TestContext testContext)
-		//{
-		//}
-		//
-		//Use ClassCleanup to run code after all tests in a class have run
-		//[ClassCleanup()]
-		//public static void MyClassCleanup()
-		//{
-		//}
-		//
-		//Use TestInitialize to run code before running each test
-		//[TestInitialize()]
-		//public void MyTestInitialize()
-		//{
-		//}
-		//
-		//Use TestCleanup to run code after each test has run
-		//[TestCleanup()]
-		//public void MyTestCleanup()
-		//{
-		//}
-		//
-		#endregion
+        #region Additional test attributes
+        //
+        //You can use the following additional attributes as you write your tests:
+        //
+        //Use ClassInitialize to run code before running the first test in the class
+        //[ClassInitialize()]
+        //public static void MyClassInitialize(TestContext testContext)
+        //{
+        //}
+        //
+        //Use ClassCleanup to run code after all tests in a class have run
+        //[ClassCleanup()]
+        //public static void MyClassCleanup()
+        //{
+        //}
+        //
+        //Use TestInitialize to run code before running each test
+        //[TestInitialize()]
+        //public void MyTestInitialize()
+        //{
+        //}
+        //
+        //Use TestCleanup to run code after each test has run
+        //[TestCleanup()]
+        //public void MyTestCleanup()
+        //{
+        //}
+        //
+        #endregion
 
         /// <summary>
         ///A test for Connect
@@ -72,22 +77,24 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void ConnectTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
-                Server server = new Server(new ServerAddress(uri));
+                Process p4d = null;
+                Utilities.CheckpointType cptype = (Utilities.CheckpointType)i;
+
                 try
                 {
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
                     using (Connection target = new Connection(server))
                     {
-
                         target.UserName = user;
                         target.Client = new Client();
                         target.Client.Name = ws_client;
@@ -102,8 +109,8 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -116,19 +123,22 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void ConnectTestjob084160()
         {
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = Utilities.DeployP4TestServer(TestDir, false, TestContext.TestName);
-            Server server = new Server(new ServerAddress(uri));
+            Process p4d = null;
 
             try
             {
+                p4d = Utilities.DeployP4TestServer(TestDir, Utilities.CheckpointType.A, TestContext.TestName);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+                Server server = new Server(new ServerAddress(uri));
+
                 using (Connection target = new Connection(server))
                 {
-
                     target.UserName = user;
                     target.Client = new Client();
                     target.Client.Name = ws_client;
@@ -137,11 +147,11 @@ namespace p4api.net.unit.test
                     Assert.IsTrue(target.Connect(null));
 
                     // Tell the server to disallow auto user creation
-                    string[] args = { "set", "dm.user.noautocreate=2" };
-                    var cmd = new P4Command(target, "configure", false, args);
+                    //string[] args = { "set", "dm.user.noautocreate=2" };
+                    //using var cmd = new P4Command(target, "configure", false, args);
 
-                    // Reconnect with non exitent user
-                    // with default settings this would 
+                    // Reconnect with non existent user
+                    // with default settings this would
                     // create a user. Catch the error.
                     target.Disconnect();
                     target.UserName = "notinprotects";
@@ -158,6 +168,7 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
             }
         }
         /// <summary>
@@ -166,19 +177,21 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void ConnectBadCredTest()
         {
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
+            Process p4d = null;
 
-            Process p4d = Utilities.DeployP4TestServer(TestDir, false, TestContext.TestName);
-            Server server = new Server(new ServerAddress(uri));
             try
             {
+                p4d = Utilities.DeployP4TestServer(TestDir, Utilities.CheckpointType.A, TestContext.TestName);
+                Assert.IsNotNull(p4d, "Setup Failure");
+                Server server = new Server(new ServerAddress(uri));
+
                 using (Connection target = new Connection(server))
                 {
-
                     target.UserName = user;
                     target.Client = new Client();
                     target.Client.Name = ws_client;
@@ -189,13 +202,17 @@ namespace p4api.net.unit.test
 
                     Assert.AreEqual(target.Status, ConnectionStatus.Connected);
 
-                    // now add a null crededntial
+                    // logout to clear up any existing tickets
+                    Options opts = new Options();
+                    target.getP4Server().Logout(opts);
+
+                    // now add a null credential
                     bool failed = false;
                     try
                     {
                         target.Credential = null;
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         failed = true;
                     }
@@ -208,160 +225,183 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
             }
-
         }
 
         /// <summary>
         ///A test for Connect
         ///</summary>
         [TestMethod()]
-		public void ConnectUsingP4ConfigTest()
-		{
-			bool unicode = false;
-		    Process p4d = null;
+        public void ConnectUsingP4AEnviroTest()
+        {
+            // Trying out test Name modified to contain a letter "A". So that it runs before ConnectUsingP4Config test, which is causing failure.
 
-			string oldConfig = P4Server.Get("P4CONFIG");
-			for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
-			{
-			    try
-			    {
-			        p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
-			        var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
+            //string uri = configuration.ServerPort;
+            //string user = "admin";
+            //string pass = string.Empty;
+            //string ws_client = "admin_space";
 
-			        // write a config file in the workspace root 
-			        string expected = Path.Combine(clientRoot, "admin_space", "myP4Config.txt");
-			        Directory.CreateDirectory(Path.Combine(clientRoot, "admin_space"));
-			        P4Server.Set("P4CONFIG", "myP4Config.txt");
-			   
-			        try
-				    {
-					    if (System.IO.File.Exists(expected))
-					    {
-						    System.IO.File.Delete(expected);
-					    }
-					    using (System.IO.StreamWriter sw = new System.IO.StreamWriter(expected))
-					    {
-						    sw.WriteLine("P4PORT=localhost:6666");
-						    sw.WriteLine("P4USER=admin");
-						    sw.WriteLine("P4CLIENT=admin_space");
-					    }
-					    string actual = P4Server.GetConfig(Path.Combine(clientRoot, "admin_space", "MyCode"));
-					    Assert.AreEqual(actual, expected);
-				    }
-				    catch (Exception ex) {
-                        logger.Error("Failed to write config file: {0}", ex.Message);
-                        Assert.Fail("Could not write config file");
-                    }
+            // clear out existing environment var
+            string p4config = Environment.GetEnvironmentVariable("P4CONFIG");
+            Environment.SetEnvironmentVariable("P4CONFIG", null);
 
-				    Server server = new Server(null);
-				
-					using (Connection target = new Connection(null))
-					{
-						Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
+            string oldConfig = P4Server.Get("P4CONFIG");
 
-						Options opts = new Perforce.P4.Options();
-						opts["cwd"] = Path.Combine(clientRoot, "admin_space", "MyCode");
-						Assert.IsTrue(target.Connect(opts));
-
-						Assert.AreEqual(ConnectionStatus.Connected, target.Status);
-
-                        P4Server p4server = target.getP4Server();
-						if (unicode)
-							Assert.IsTrue(p4server.UseUnicode, "Unicode server detected as not supporting Unicode");
-						else
-							Assert.IsFalse(p4server.UseUnicode, "Non Unicode server detected as supporting Unicode");
-
-						string actual = p4server.Config;
-						Assert.AreEqual(expected, actual, true); // ignore case
-
-						Assert.AreEqual("admin", p4server.User);
-						Assert.AreEqual("admin_space", p4server.Client);
-						Assert.AreEqual("localhost:6666", p4server.Port);
-					}
-				}
-				finally
-				{
-					Utilities.RemoveTestServer(p4d, TestDir);
-					P4Server.Set("P4CONFIG", oldConfig);
-				}
-				unicode = !unicode;
-			}
-		}
-
-		/// <summary>
-		///A test for Connect
-		///</summary>
-		[TestMethod()]
-		public void ConnectUsingP4EnviroTest()
-		{
-			bool unicode = false;
-
-			//string uri = "localhost:6666";
-			//string user = "admin";
-			//string pass = string.Empty;
-			//string ws_client = "admin_space";
-
-			string oldConfig = P4Server.Get("P4CONFIG");
 
             // No local overrides
-			P4Server.Update("P4CONFIG", null);
+            P4Server.Update("P4CONFIG", null); // Setting this to null is causing p4server.Config to pick up stale value myP4Config.txt from earlier Test ConnectUsingP4ConfigTest
+            // Clear any existing value
+            P4Server.Set("P4CONFIG", null);
 
-		    Process p4d = null;
+            Process p4d = null;
 
-			for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
-			{
-			    try
-			    {
-				    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
-                    var serverRoot = Utilities.TestServerRoot(TestDir, unicode);
+            for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
+            {
+                Utilities.CheckpointType cptype = (Utilities.CheckpointType)i;
+                try
+                {
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
 
-				    // set environment variables for this server configuration 
-				    try
-				    {
-					    Environment.SetEnvironmentVariable("P4PORT", "localhost:6666");
-					    Environment.SetEnvironmentVariable("P4USER", "admin");
-					    Environment.SetEnvironmentVariable("P4CLIENT", "admin_space");
-				    }
-				    catch { Assert.Fail("Could not set P4 Environment"); }
+                    var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
 
-				    Server server = new Server(null);
-			
-					using (Connection target = new Connection(null))
-					{
-						Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
+                    // set environment variables for this server configuration
+                    try
+                    {
+                        Environment.SetEnvironmentVariable("P4CONFIG", null);
+                        Environment.SetEnvironmentVariable("P4PORT", configuration.ServerPort);
+                        Environment.SetEnvironmentVariable("P4USER", "admin");
+                        Environment.SetEnvironmentVariable("P4CLIENT", "admin_space");
+                    }
+                    catch { Assert.Fail("Could not set P4 Environment"); }
 
-                        target.CharacterSetName = unicode ? "utf8" : "none";
+                    //Server server = new Server(null);
 
-						Options opts = new Perforce.P4.Options();
-						opts["cwd"] = Path.Combine(serverRoot, "admin_space", "MyCode");
+                    using (Connection target = new Connection(null))
+                    {
+                        Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
+
+                        target.CharacterSetName = (cptype == Utilities.CheckpointType.U) ? "utf8" : "none";
+
+                        Options opts = new Perforce.P4.Options();
+                        opts["cwd"] = "";
                         Assert.IsTrue(target.Connect(opts));
 
                         Assert.AreEqual(target.Status, ConnectionStatus.Connected);
 
                         P4Server p4server = target.getP4Server();
 
-                        if (unicode)
-							Assert.IsTrue(p4server.UseUnicode, "Unicode server detected as not supporting Unicode");
-						else
-							Assert.IsFalse(p4server.UseUnicode, "Non Unicode server detected as supporting Unicode");
+                        if (cptype == Utilities.CheckpointType.U)
+                            Assert.IsTrue(p4server.UseUnicode,
+                                "Unicode server detected as not supporting Unicode");
+                        else
+                            Assert.IsFalse(p4server.UseUnicode,
+                                "Non Unicode server detected as supporting Unicode");
 
-						Assert.AreEqual(p4server.User, "admin");
-						Assert.AreEqual(p4server.Client, "admin_space");
-						Assert.AreEqual(p4server.Port, "localhost:6666");
+                        Assert.AreEqual(p4server.User, "admin");
+                        Assert.AreEqual(p4server.Client, "admin_space");
+                        Assert.AreEqual(p4server.Port, configuration.ServerPort);
 
-						string actual = p4server.Config;
-						Assert.AreEqual(actual, "noconfig");
-					}
-				}
-				finally
-				{
-					Utilities.RemoveTestServer(p4d, TestDir);
-                    P4Server.Update("P4CONFIG", oldConfig);
+                        // a short sleep seems to make the results more consistent
+                        Thread.Sleep(1000); // milliseconds
+
+                        string actual = p4server.Config;
+                        Assert.AreEqual("noconfig", actual);
+                    }
                 }
-				unicode = !unicode;
-			}
-		}
+                finally
+                {
+                    Utilities.RemoveTestServer(p4d, TestDir);
+                    P4Server.Update("P4CONFIG", oldConfig);
+                    p4d?.Dispose();
+                }
+            }
+
+            Environment.SetEnvironmentVariable("P4CONFIG", p4config);
+        }
+
+        /// <summary>
+        ///A test for Connect
+        ///</summary>
+        [TestMethod()]
+        public void ConnectUsingP4ConfigTest()
+        {
+            Process p4d = null;
+
+            string oldConfig = P4Server.Get("P4CONFIG");
+            for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
+            {
+                Utilities.CheckpointType cptype = (Utilities.CheckpointType)i;
+                try
+                {
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
+
+                    // write a config file in the workspace root
+                    string expected = Path.Combine(clientRoot, "admin_space", "myP4Config.txt");
+                    Directory.CreateDirectory(Path.Combine(clientRoot, "admin_space"));
+                    P4Server.Update("P4CONFIG", "myP4Config.txt");
+
+                    try
+                    {
+                        if (System.IO.File.Exists(expected))
+                        {
+                            System.IO.File.Delete(expected);
+                        }
+                        using (StreamWriter sw = new StreamWriter(expected))
+                        {
+                            sw.WriteLine("P4PORT=" + configuration.ServerPort);
+                            sw.WriteLine("P4USER=admin");
+                            sw.WriteLine("P4CLIENT=admin_space");
+                        }
+                        string actual = P4Server.GetConfig(Path.Combine(clientRoot, "admin_space", "MyCode"));
+                        Assert.AreEqual(actual, expected);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.Error("Failed to write config file: {0}", ex.Message);
+                        Assert.Fail("Could not write config file");
+                    }
+
+                    Server server = new Server(null);
+
+                    using (Connection target = new Connection(null))
+                    {
+                        Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
+
+                        Options opts = new Perforce.P4.Options();
+                        opts["cwd"] = Path.Combine(clientRoot, "admin_space", "MyCode");
+                        Assert.IsTrue(target.Connect(opts));
+
+                        Assert.AreEqual(ConnectionStatus.Connected, target.Status);
+
+                        P4Server p4server = target.getP4Server();
+
+                        if (cptype == Utilities.CheckpointType.U)
+                            Assert.IsTrue(p4server.UseUnicode, "Unicode server detected as not supporting Unicode");
+                        else
+                            Assert.IsFalse(p4server.UseUnicode,
+                                "Non Unicode server detected as supporting Unicode");
+
+                        string actual = p4server.Config;
+                        Assert.AreEqual(expected, actual, true); // ignore case
+
+                        Assert.AreEqual("admin", p4server.User);
+                        Assert.AreEqual("admin_space", p4server.Client);
+                        Assert.AreEqual(configuration.ServerPort, p4server.Port);
+                    }
+                }
+                finally
+                {
+                    Utilities.RemoveTestServer(p4d, TestDir);
+                    P4Server.Set("P4CONFIG", oldConfig);
+                    p4d?.Dispose();
+                }
+            }
+        }
 
         /// <summary>
         ///A test for Connecting with env vars
@@ -370,25 +410,29 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void ConnectUsingP4TestHostEnviroTest()
         {
-            bool unicode = false;
-
             // Environment settings on the test host need to be
             // set as follows:
             // P4USER=admin
             // P4CLIENT=admin_space
-            // P4PORT=localhost:6666
+            // P4PORT=configuration.ServerPort
             P4Server.Set("P4USER", "admin");
             P4Server.Set("P4CLIENT", "admin_space");
-            P4Server.Set("P4PORT", "localhost:6666");
+            P4Server.Set("P4PORT", configuration.ServerPort);
+
+            // Make sure that P4CONFIG is NOT set.
+            P4Server.Update("P4CONFIG", "");
 
             Process p4d = null;
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                Utilities.CheckpointType cptype = (Utilities.CheckpointType)i;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
-                    var serverRoot = Utilities.TestServerRoot(TestDir, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    var serverRoot = Utilities.TestServerRoot(TestDir, cptype);
 
                     Server server = new Server(null);
 
@@ -396,7 +440,7 @@ namespace p4api.net.unit.test
                     {
                         Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
 
-                        target.CharacterSetName = unicode ? "utf8" : "none";
+                        target.CharacterSetName = (cptype == Utilities.CheckpointType.U) ? "utf8" : "none";
 
                         Options opts = new Perforce.P4.Options();
                         opts["cwd"] = Path.Combine(serverRoot, "admin_space", "MyCode");
@@ -405,9 +449,9 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(target.Status, ConnectionStatus.Connected);
 
                         P4Server p4server = target.getP4Server();
-                        Assert.AreEqual(p4server.User, "admin");
-                        Assert.AreEqual(p4server.Client, "admin_space");
-                        Assert.AreEqual(p4server.Port, "localhost:6666");
+                        Assert.AreEqual("admin", p4server.User);
+                        Assert.AreEqual("admin_space", p4server.Client);
+                        Assert.AreEqual(configuration.ServerPort, p4server.Port);
 
                         string p4client = target.GetP4EnvironmentVar("P4CLIENT");
                         // make sure P4CLIENT has not changed
@@ -417,8 +461,8 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -429,13 +473,11 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void ConnectUsingPUCTest()
         {
-            bool unicode = false;
-
             // Environment settings on the test host need to be
             // set as follows:
             P4Server.Set("P4USER", "admin");
             P4Server.Set("P4CLIENT", "admin_space");
-            P4Server.Set("P4PORT", "localhost:6666");
+            P4Server.Set("P4PORT", configuration.ServerPort);
 
             // if they are set in the test as they are in
             // ConnectUsingP4EnviroTest, the checks for server
@@ -447,12 +489,15 @@ namespace p4api.net.unit.test
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                Utilities.CheckpointType cptype = (Utilities.CheckpointType)i;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
-                    var serverRoot = Utilities.TestServerRoot(TestDir, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
 
-                    string uri = "localhost:6666";
+                    var serverRoot = Utilities.TestServerRoot(TestDir, cptype);
+
+                    string uri = configuration.ServerPort;
                     string user = "admin";
                     string pass = string.Empty;
                     // connecting with a different workspace than
@@ -471,7 +516,7 @@ namespace p4api.net.unit.test
                         target.UserName = user;
                         Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
 
-                        target.CharacterSetName = unicode ? "utf8" : "none";
+                        target.CharacterSetName = (cptype == Utilities.CheckpointType.U) ? "utf8" : "none";
 
                         Options opts = new Perforce.P4.Options();
                         Assert.IsTrue(target.Connect(opts));
@@ -481,9 +526,9 @@ namespace p4api.net.unit.test
                         P4Server p4server = target.getP4Server();
                         Assert.AreEqual(p4server.User, "admin");
                         Assert.AreEqual(target.Client.Name, "admin_space2");
-                        Assert.AreEqual(p4server.Port, "localhost:6666");
-                        
-                        string p4client = target.GetP4EnvironmentVar("P4CLIENT");   
+                        Assert.AreEqual(p4server.Port, configuration.ServerPort);
+
+                        string p4client = target.GetP4EnvironmentVar("P4CLIENT");
                         // make sure P4CLIENT has not changed
                         Assert.AreEqual(p4client, "admin_space");
                     }
@@ -491,8 +536,8 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -510,10 +555,11 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void ConnectUsingPathTest()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
+
             // create two p4config files, put them in a path, make sure that ConnectionFromPath returns
             // a server connection with the correct settings
-            var config1Root = Path.Combine(Utilities.TestClientRoot(TestDir, unicode), "config1");
+            var config1Root = Path.Combine(Utilities.TestClientRoot(TestDir, cptype), "config1");
             var config2Root = Path.Combine(config1Root, "config2");
 
             Directory.CreateDirectory(config1Root);
@@ -534,7 +580,8 @@ namespace p4api.net.unit.test
             }
 
             // set the P4CONFIG to .testconfig
-            P4Server.Set("P4CONFIG", ".testconfig");
+            P4Server.Update("P4CONFIG", ".testconfig");
+
 
             // attempt to grab some servers based on the path
             IntPtr bridge1 = P4Bridge.ConnectionFromPath(config1Root);
@@ -587,8 +634,6 @@ namespace p4api.net.unit.test
         //[TestMethod()]
         //public void ConnectIPv6Test()
         //{
-        //    bool unicode = false;
-
         //    string tcp = "tcp6";
         //    string uri = tcp + ":::1:6666";
         //    string user = "admin";
@@ -597,10 +642,12 @@ namespace p4api.net.unit.test
 
         //    for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
         //    {
-        //        Process p4d = Utilities.DeployIPv6P4TestServer(TestDir, tcp, unicode);
-        //        Server server = new Server(new ServerAddress(uri));
+        //		  Utilities.CheckpointType cptype = (Utilities.CheckpointType) i;
+        //        Process p4d = null;
         //        try
         //        {
+        //            p4d = Utilities.DeployIPv6P4TestServer(TestDir, tcp, cptype);
+        //            Server server = new Server(new ServerAddress(uri));
         //            using (Connection target = new Connection(server))
         //            {
         //                target.UserName = user;
@@ -615,8 +662,8 @@ namespace p4api.net.unit.test
         //        finally
         //        {
         //            Utilities.RemoveTestServer(p4d, TestDir);
+        //            p4d?.Dispose();
         //        }
-        //        unicode = !unicode;
         //    }
         //}
 
@@ -626,8 +673,6 @@ namespace p4api.net.unit.test
         //[TestMethod()]
         //public void ConnectIPv6or4Test()
         //{
-        //    bool unicode = false;
-
         //    string tcp = "tcp64";
         //    string uri = tcp + ":::1:6666";
         //    string user = "admin";
@@ -636,10 +681,12 @@ namespace p4api.net.unit.test
 
         //    for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
         //    {
-        //        Process p4d = Utilities.DeployIPv6P4TestServer(TestDir, tcp, unicode);
-        //        Server server = new Server(new ServerAddress(uri));
+        //        Utilities.CheckpointType cptype = (Utilities.CheckpointType) i;
+        //        Process p4d = null;
         //        try
         //        {
+        //            p4d = Utilities.DeployIPv6P4TestServer(TestDir, tcp, cptype);
+        //            Server server = new Server(new ServerAddress(uri));
         //            using (Connection target = new Connection(server))
         //            {
         //                target.UserName = user;
@@ -654,8 +701,8 @@ namespace p4api.net.unit.test
         //        finally
         //        {
         //            Utilities.RemoveTestServer(p4d, TestDir);
+        //            p4d?.Dispose();
         //        }
-        //        unicode = !unicode;
         //    }
         //}
 
@@ -665,8 +712,6 @@ namespace p4api.net.unit.test
         //[TestMethod()]
         //public void ConnectIPv4or6Test()
         //{
-        //    bool unicode = false;
-
         //    string tcp = "tcp46";
         //    string uri = tcp + ":::1:6666";
         //    string user = "admin";
@@ -675,10 +720,12 @@ namespace p4api.net.unit.test
 
         //    for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
         //    {
-        //        Process p4d = Utilities.DeployIPv6P4TestServer(TestDir, tcp, unicode);
-        //        Server server = new Server(new ServerAddress(uri));
+        //        Utilities.CheckpointType cptype = (Utilities.CheckpointType) i;
+        //        Process p4d = null;
         //        try
         //        {
+        //            p4d = Utilities.DeployIPv6P4TestServer(TestDir, tcp, cptype);
+        //            Server server = new Server(new ServerAddress(uri));
         //            using (Connection target = new Connection(server))
         //            {
         //                target.UserName = user;
@@ -693,14 +740,14 @@ namespace p4api.net.unit.test
         //        finally
         //        {
         //            Utilities.RemoveTestServer(p4d, TestDir);
+        //            p4d?.Dispose();
         //        }
-        //        unicode = !unicode;
         //    }
         //}
 
         bool IsFingerprint(String msg)
         {
-            // must be like this: 
+            // must be like this:
             // FB:4A:4C:06:FB:53:3F:EE:39:75:E9:5E:07:1A:11:FE:46:91:68:11
             // 20 bytes separated by colons
             if (msg.Length != 20 * 2 + 19)
@@ -729,22 +776,24 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void ConnectSSLTestMinusY()
         {
-            bool unicode = false;
-
-            string uri = "ssl:localhost:6666";
+            string uri = "ssl:" + configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeploySSLP4TestServer(TestDir, unicode);
-                // export a P4TRUST variable to our TestDir for easy cleanup
-                P4Server.Set("P4TRUST", Path.Combine(TestDir, String.Format("ConnectSSLTest.{0}.txt", i)));
-
-                Server server = new Server(new ServerAddress(uri));
+                Utilities.CheckpointType cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
                 try
                 {
+                    p4d = Utilities.DeploySSLP4TestServer(TestDir, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    // export a P4TRUST variable to our TestDir for easy cleanup
+                    P4Server.Set("P4TRUST", Path.Combine(TestDir, String.Format("ConnectSSLTest.{0}.txt", i)));
+
+                    Server server = new Server(new ServerAddress(uri));
                     using (Connection target = new Connection(server))
                     {
                         string trustFlag = "-y";
@@ -763,8 +812,8 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -774,24 +823,27 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void ConnectSSLTest()
         {
-            bool unicode = false;
-
-            string uri = "ssl:localhost:6666";
+            string uri = "ssl:" + configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeploySSLP4TestServer(TestDir, unicode);
-                // export a P4TRUST variable to our TestDir for easy cleanup
-                // create random name
-                string random = Path.GetRandomFileName();
-                P4Server.Set("P4TRUST", Path.Combine(TestDir, String.Format("ConnectSSLTest.{0}.txt", random)));
-
-                Server server = new Server(new ServerAddress(uri));
+                Utilities.CheckpointType cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
                 try
                 {
+                    p4d = Utilities.DeploySSLP4TestServer(TestDir, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    // export a P4TRUST variable to our TestDir for easy cleanup
+                    // create random name
+                    string random = Path.GetRandomFileName();
+                    P4Server.Set("P4TRUST", Path.Combine(TestDir, String.Format("ConnectSSLTest.{0}.txt", random)));
+
+                    Server server = new Server(new ServerAddress(uri));
+
                     using (Connection target = new Connection(server))
                     {
                         string trustFlag = "-i";
@@ -829,8 +881,64 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
                 }
-                unicode = !unicode;
+            }
+        }
+
+        /// <summary>
+        ///A test for attempting to connect using SSL to a non SSL server
+        ///</summary>
+        [TestMethod()]
+        public void ConnectNoSSLTest()
+        {
+            // bridge crashes reported when they try to connect using SSL to a non-ssl server
+            // case 00844984
+
+            string uri = "ssl:" + configuration.ServerPort;
+            string user = "admin";
+            string pass = string.Empty;
+            string ws_client = "admin_space";
+
+            for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
+            {
+                Utilities.CheckpointType cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                try
+                {
+                    // No SSL
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+
+                    var repo = new Repository(server);
+
+                    using (Connection target = new Connection(server))
+                    {
+                        string fingerprint = string.Empty;
+                        target.UserName = user;
+                        target.Client = new Client();
+                        target.Client.Name = ws_client;
+
+                        Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
+
+                        try
+                        {
+                            bool status = target.TrustAndConnect(null, "-y", null); // crash was happening here
+                            Assert.IsFalse(status, "Connection to non SSL server did not fail as expected.");
+                        }
+                        catch
+                        {
+                            // something bad happened, but that is expected
+                        }
+                    }
+                }
+                finally
+                {
+                    Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                }
             }
         }
 
@@ -840,20 +948,21 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void ConnectTestCheckServerVersion()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string pass = string.Empty;
 
             Process p4d = null;
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                Utilities.CheckpointType cptype = (Utilities.CheckpointType)i;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     Server server = new Server(new ServerAddress(uri));
-              
+
                     using (Connection target = new Connection(server))
                     {
                         target.Connect(null);
@@ -919,122 +1028,126 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
-		/// <summary>
-		///A test for Connect
-		///</summary>
-		[TestMethod()]
-		public void ContinualConnectTest()
-		{
-            bool unicode = false;
+        /// <summary>
+        ///A test for Connect
+        ///</summary>
+        [TestMethod()]
+        public void ContinualConnectTest()
+        {
+            string uri = configuration.ServerPort;
+            string user = "admin";
+            string pass = string.Empty;
+            string ws_client = "admin_space";
 
-			string uri = "localhost:6666";
-			string user = "admin";
-			string pass = string.Empty;
-			string ws_client = "admin_space";
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
+            Random rdm = new Random();
 
-			Random rdm = new Random();
+            int cointoss = rdm.Next(0, 1);
+            if (cointoss != 0)
+            {
+                cptype = Utilities.CheckpointType.U;
+            }
+            for (int i = 0; i < 1; i++) // run only once for ascii or unicode (randomly), it's a long test
+            {
+                Process p4d = null;
+                try
+                {
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
 
-			int cointoss = rdm.Next(0, 1);
-			if (cointoss != 0)
-			{
-				unicode = true;
-			}
-			for (int i = 0; i < 1; i++) // run only once for ascii or unicode (randomly), it's a long test
-			{
-				Process p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
-				Server server = new Server(new ServerAddress(uri));
-				try
-				{
-					DateTime start = DateTime.Now;
-					while (true)
-					{
-						using (Connection target = new Connection(server))
-						{
-							string[] args = new string[] { "-m", "1", "//depot/*." };
+                    Server server = new Server(new ServerAddress(uri));
+                    DateTime start = DateTime.Now;
+                    while (true)
+                    {
+                        using (Connection target = new Connection(server))
+                        {
+                            string[] args = new string[] { "-m", "1", "//depot/*." };
 
-							uint cmdID = 7;
-							using (P4Server _P4Server = new P4Server("localhost:6666", null, null, null))
-							{
-								string val = P4Server.Get("P4IGNORE");
-								int _p4IgnoreSet = string.IsNullOrEmpty(val) ? 0 : 1;
+                            uint cmdID = 7;
+                            using (P4Server _P4Server = new P4Server(configuration.ServerPort, null, null, null))
+                            {
+                                string val = P4Server.Get("P4IGNORE");
+                                int _p4IgnoreSet = string.IsNullOrEmpty(val) ? 0 : 1;
 
-								target.UserName = user;
-								target.Client = new Client();
-								target.Client.Name = ws_client;
-								Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
-								Assert.IsTrue(target.Connect(null));
-								Assert.AreEqual(target.Status, ConnectionStatus.Connected);
-								Assert.IsTrue(target.getP4Server().RunCommand("fstat", cmdID, false, args, args.Length));
-							}
+                                target.UserName = user;
+                                target.Client = new Client();
+                                target.Client.Name = ws_client;
+                                Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
+                                Assert.IsTrue(target.Connect(null));
+                                Assert.AreEqual(target.Status, ConnectionStatus.Connected);
+                                Assert.IsTrue(target.getP4Server().RunCommand("fstat", cmdID, false, args, args.Length));
+                            }
 
-							Assert.IsTrue(target.getP4Server().RunCommand("fstat", ++cmdID, false, args, args.Length));
-							Assert.IsTrue(target.ApiLevel > 0);
-							int delay = rdm.Next(0, 11);
-							if (delay > 0)
-							{
-								System.Threading.Thread.Sleep(TimeSpan.FromSeconds(delay));
-							}
-						}
+                            Assert.IsTrue(target.getP4Server().RunCommand("fstat", ++cmdID, false, args, args.Length));
+                            Assert.IsTrue(target.ApiLevel > 0);
+                            int delay = rdm.Next(0, 11);
+                            if (delay > 0)
+                            {
+                                System.Threading.Thread.Sleep(TimeSpan.FromSeconds(delay));
+                            }
+                        }
 
-						if ((DateTime.Now - start) > TimeSpan.FromSeconds(158))
-							break;
-					}
-				}
-				finally
-				{
-					Utilities.RemoveTestServer(p4d, TestDir);
-				}
-				unicode = !unicode;
-			}
-		}
+                        if ((DateTime.Now - start) > TimeSpan.FromSeconds(158))
+                            break;
+                    }
+                }
+                finally
+                {
+                    Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                }
+            }
+        }
 
-		/// <summary>
-		///A test for Connect
-		///</summary>
-		[TestMethod()]
-		public void ConnectAndRunCommandsTest()
-		{
-			bool unicode = false;
+        /// <summary>
+        ///A test for Connect
+        ///</summary>
+        [TestMethod()]
+        public void ConnectAndRunCommandsTest()
+        {
+            string uri = configuration.ServerPort;
+            string user = "admin";
+            string pass = string.Empty;
+            string ws_client = "admin_space";
 
-			string uri = "localhost:6666";
-			string user = "admin";
-			string pass = string.Empty;
-			string ws_client = "admin_space";
+            for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
+            {
+                Process p4d = null;
+                Utilities.CheckpointType cptype = (Utilities.CheckpointType)i;
+                try
+                {
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
 
-			for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
-			{
-				Process p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
-				Server server = new Server(new ServerAddress(uri));
-				try
-				{
-					using (Connection target = new Connection(server))
-					{
-						target.UserName = user;
-						target.Client = new Client();
-						target.Client.Name = ws_client;
-                        target.CharacterSetName = unicode ? "utf8" : "none";
+                    Server server = new Server(new ServerAddress(uri));
+                    using (Connection target = new Connection(server))
+                    {
+                        target.UserName = user;
+                        target.Client = new Client();
+                        target.Client.Name = ws_client;
+                        target.CharacterSetName = (cptype == Utilities.CheckpointType.U) ? "utf8" : "none";
 
-						Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
-						Assert.IsTrue(target.Connect(null));
-						Assert.AreEqual(target.Status, ConnectionStatus.Connected);
-						string[] args = new string[] {"-m", "1", "//depot/*."};
-						uint cmdID = 7; 
-						Assert.IsTrue(target.getP4Server().RunCommand("fstat", cmdID, false, args, args.Length));
-						Assert.IsTrue(target.getP4Server().RunCommand("fstat", ++cmdID, false, args, args.Length));
-					}
-				}
-				finally
-				{
-					Utilities.RemoveTestServer(p4d, TestDir);
-				}
-				unicode = !unicode;
-			}
-		}
+                        Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
+                        Assert.IsTrue(target.Connect(null));
+                        Assert.AreEqual(target.Status, ConnectionStatus.Connected);
+                        string[] args = new string[] { "-m", "1", "//depot/*." };
+                        uint cmdID = 7;
+                        Assert.IsTrue(target.getP4Server().RunCommand("fstat", cmdID, false, args, args.Length));
+                        Assert.IsTrue(target.getP4Server().RunCommand("fstat", ++cmdID, false, args, args.Length));
+                    }
+                }
+                finally
+                {
+                    Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                }
+            }
+        }
 
 
 #if _TEST_P4AUTH
@@ -1044,30 +1157,32 @@ namespace p4api.net.unit.test
 		[TestMethod()]
 		public void ConnectWithBadP4AuthTest()
 		{
-			bool unicode = false;
-
-			string uri = "localhost:6666";
+			string uri = configuration.ServerPort;
 			string user = "admin";
 			string pass = string.Empty;
 			string ws_client = "admin_space";
 
 			for (int i = 0; i < 3; i++) // run once for ascii, once for unicode
 			{
-				String zippedFile = "a.exe";
-				if (i == 1)
+				Utilities.CheckpointType cptype = (Utilities.CheckpointType) i;
+				String tarFile = "a.tar";
+				if (cptype == Utilities.CheckpointType.U)
 				{
-					zippedFile = "u.exe";
+					tarFile = "u.tar";
 				}
-				if (i == 2)
+				if (cptype == Utilities.CheckpointType.S3)
 				{
-					zippedFile = "s3.exe";
+					tarFile = "s3.tar";
 					pass = "Password";
 				}
 
-				Process p4d = Utilities.DeployP4TestServer(TestDir, 10, zippedFile, "P4AuthTest.bat");
-				Server server = new Server(new ServerAddress(uri));
+				Process p4d = null;
 				try
 				{
+					p4d = Utilities.DeployP4TestServer(TestDir, 10, tarFile, "P4AuthTest.bat");
+					Assert.IsNotNull(p4d, "Setup Failure");
+
+					Server server = new Server(new ServerAddress(uri));
 					using (Connection target = new Connection(server))
 					{
 						target.UserName = user;
@@ -1090,184 +1205,194 @@ namespace p4api.net.unit.test
 				finally
 				{
 					Utilities.RemoveTestServer(p4d, TestDir);
+					p4d?.Dispose();
 				}
-				unicode = !unicode;
 			}
 		}
 #endif
 
-		/// <summary>
-		///A test for Connect
-		///</summary>
-		[TestMethod()]
-		public void ConnectBadTest()
-		{
-			bool unicode = false;
-
-			string uri = "locadhost:77777";
-			string pass = string.Empty;
-
-			for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
-			{
-				Process p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
-				Server server = new Server(new ServerAddress(uri));
-				try
-				{
-					using (Connection target = new Connection(server))
-					{
-						Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
-						Assert.AreEqual(target.Server.State, ServerState.Unknown);
-
-						try
-						{
-							Assert.IsFalse(target.Connect(null));
-						}
-						catch (AssertFailedException) 
-						{ 
-							throw; 
-						}
-						catch (P4Exception ex)
-						{
-							Trace.WriteLine(string.Format("ConnectBadTest throw an exception: {0}", ex.Message));
-							Trace.WriteLine(string.Format("Stacktrace:\r\n{0}", ex.StackTrace));
-						}
-						catch (Exception ex)
-						{
-							Trace.WriteLine(string.Format("ConnectBadTest throw an exception: {0}", ex.Message));
-							Trace.WriteLine(string.Format("Stacktrace:\r\n{0}", ex.StackTrace));
-						}
-						Assert.AreEqual(target.Server.State, ServerState.Offline);
-						Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
-					}
-				}
-				finally
-				{
-					Utilities.RemoveTestServer(p4d, TestDir);
-				}
-				unicode = !unicode;
-			}
-		}
-
-		/// <summary>
-		///A test for Disconnect
-		///</summary>
-		[TestMethod()]
-		public void DisconnectTest()
-		{
-			bool unicode = false;
-
-			string uri = "localhost:6666";
-			string user = "admin";
-			string pass = string.Empty;
-			string ws_client = "admin_space";
-			
-
-			for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
-			{
-				Process p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
-				Server server = new Server(new ServerAddress(uri));
-				try
-				{
-					using (Connection target = new Connection(server))
-					{
-						target.UserName = user;
-						target.Client = new Client();
-						target.Client.Name = ws_client;
-
-						Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
-						Assert.AreEqual(target.Server.State, ServerState.Unknown);
-						Assert.IsTrue(target.Connect(null));
-						Assert.AreEqual(target.Server.State, ServerState.Online);
-						Assert.AreEqual(target.Status, ConnectionStatus.Connected);
-						Assert.IsTrue(target.Disconnect(null));
-						Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
-						Assert.IsFalse(target.Disconnect(null));
-					}
-				}
-				finally
-				{
-					Utilities.RemoveTestServer(p4d, TestDir);
-				}
-				unicode = !unicode;
-			}
-		}
-
-		/// <summary>
-		///A test for Client
-		///</summary>
-		[TestMethod()]
-		public void ClientTestA()
+        /// <summary>
+        ///A test for Connect
+        ///</summary>
+        [TestMethod()]
+        public void ConnectBadTest()
         {
-            ClientTest(false);
+            string uri = "locadhost:77777";
+            string pass = string.Empty;
+
+            for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
+            {
+                Utilities.CheckpointType cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                try
+                {
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    using (Connection target = new Connection(server))
+                    {
+                        Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
+                        Assert.AreEqual(target.Server.State, ServerState.Unknown);
+
+                        try
+                        {
+                            Assert.IsFalse(target.Connect(null));
+                        }
+                        catch (AssertFailedException)
+                        {
+                            throw;
+                        }
+                        catch (P4Exception ex)
+                        {
+                            Trace.WriteLine($"ConnectBadTest throw a P4Exception: {ex.Message}");
+                            Trace.WriteLine($"Stacktrace:{Environment.NewLine}{ex.StackTrace}");
+                        }
+                        catch (Exception ex)
+                        {
+                            Trace.WriteLine($"ConnectBadTest throw an Exception: {ex.Message}");
+                            Trace.WriteLine($"Stacktrace:{Environment.NewLine}{ex.StackTrace}");
+                        }
+                        Assert.AreNotEqual(ServerState.Online, target.Server.State);
+                        Assert.AreEqual(ConnectionStatus.Disconnected, target.Status);
+                    }
+                }
+                finally
+                {
+                    Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                }
+            }
+        }
+
+        /// <summary>
+        ///A test for Disconnect
+        ///</summary>
+        [TestMethod()]
+        public void DisconnectTest()
+        {
+            string uri = configuration.ServerPort;
+            string user = "admin";
+            string pass = string.Empty;
+            string ws_client = "admin_space";
+
+            for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
+            {
+                Utilities.CheckpointType cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                try
+                {
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    using (Connection target = new Connection(server))
+                    {
+                        target.UserName = user;
+                        target.Client = new Client();
+                        target.Client.Name = ws_client;
+
+                        Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
+                        Assert.AreEqual(target.Server.State, ServerState.Unknown);
+                        Assert.IsTrue(target.Connect(null));
+                        Assert.AreEqual(target.Server.State, ServerState.Online);
+                        Assert.AreEqual(target.Status, ConnectionStatus.Connected);
+                        Assert.IsTrue(target.Disconnect(null));
+                        Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
+                        Assert.IsFalse(target.Disconnect(null));
+                    }
+                }
+                finally
+                {
+                    Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                }
+            }
+        }
+
+        /// <summary>
+        ///A test for Client
+        ///</summary>
+        [TestMethod()]
+        public void ClientTestA()
+        {
+            ClientTest(Utilities.CheckpointType.A);
         }
 
         [TestMethod()]
         public void ClientTestU()
         {
-            ClientTest(true);
+            ClientTest(Utilities.CheckpointType.U);
         }
 
-        private void ClientTest(bool unicode)
-		{
-			string uri = "localhost:6666";
-			string user = "admin";
-			string pass = string.Empty;
-			string ws_client = "admin_space";
+        private void ClientTest(Utilities.CheckpointType cptype)
+        {
+            string uri = configuration.ServerPort;
+            string user = "admin";
+            string pass = string.Empty;
+            string ws_client = "admin_space";
 
-		    Process p4d = null;
+            Process p4d = null;
 
             try
             {
-				p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
-				Server server = new Server(new ServerAddress(uri));
-				
-				Repository rep = new Repository(server);
+                p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                Assert.IsNotNull(p4d, "Setup Failure");
 
-				using (Connection con = rep.Connection)
-				{
-					con.UserName = user;
-					con.Client = new Client();
-					con.Client.Name = ws_client;
+                Server server = new Server(new ServerAddress(uri));
 
-					Assert.AreEqual(con.Status, ConnectionStatus.Disconnected);
-					Assert.AreEqual(con.Server.State, ServerState.Unknown);
-					Assert.IsTrue(con.Connect(null));
-					Assert.AreEqual(con.Server.State, ServerState.Online);
-					Assert.AreEqual(con.Status, ConnectionStatus.Connected);
-					P4Command syncCmd = new P4Command(con.getP4Server(), "sync", false);
-					P4CommandResult r = syncCmd.Run();
-					Assert.AreEqual(r.ErrorList[0].ErrorMessage, "File(s) up-to-date.\n");
-				}
+                Repository rep = new Repository(server);
 
-				using (Connection con = rep.Connection)
-				{
-					con.UserName = user;
-					con.Client = new Client();
-					ws_client = "ws_bad_client";
-					con.Client.Name = ws_client;	
-					
-					bool failed = false;
-					Assert.IsTrue(con.Connect(null));
-						
-					try
-					{
-						P4Command syncCmd = new P4Command(con.getP4Server(), "sync", false);
-						P4CommandResult r = syncCmd.Run();
-					}
-					catch
-					{
-						failed = true;
-					}
+                using (Connection con = rep.Connection)
+                {
+                    con.UserName = user;
+                    con.Client = new Client();
+                    con.Client.Name = ws_client;
 
-					Assert.IsTrue(failed);
-					ws_client = "admin_space";
-				}
-			}
-			finally
-			{
-				Utilities.RemoveTestServer(p4d, TestDir);
-			}
-		}
+                    Assert.AreEqual(con.Status, ConnectionStatus.Disconnected);
+                    Assert.AreEqual(con.Server.State, ServerState.Unknown);
+                    Assert.IsTrue(con.Connect(null));
+                    Assert.AreEqual(con.Server.State, ServerState.Online);
+                    Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+                    using (P4Command syncCmd = new P4Command(con.getP4Server(), "sync", false))
+                    {
+                        P4CommandResult r = syncCmd.Run();
+                        Assert.AreEqual(r.ErrorList[0].ErrorMessage, "File(s) up-to-date.\n");
+                    }
+                }
+
+                using (Connection con = rep.Connection)
+                {
+                    con.UserName = user;
+                    con.Client = new Client();
+                    ws_client = "ws_bad_client";
+                    con.Client.Name = ws_client;
+
+                    bool failed = false;
+                    Assert.IsTrue(con.Connect(null));
+
+                    try
+                    {
+                        using (P4Command syncCmd = new P4Command(con.getP4Server(), "sync", false))
+                        {
+                            P4CommandResult r = syncCmd.Run();
+                        }
+                    }
+                    catch
+                    {
+                        failed = true;
+                    }
+
+                    Assert.IsTrue(failed);
+                    ws_client = "admin_space";
+                }
+            }
+            finally
+            {
+                Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+            }
+        }
 
 
         /// <summary>
@@ -1276,7 +1401,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void LoginFailTestA()
         {
-            LoginFailTest("a.exe", "Alex", "alex_space", false);
+            LoginFailTest("Alex", "alex_space", Utilities.CheckpointType.A);
         }
 
         /// <summary>
@@ -1285,7 +1410,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void LoginFailTestU()
         {
-            LoginFailTest("u.exe", "Алексей", "alex_space", true);
+            LoginFailTest("Алексей", "alex_space", Utilities.CheckpointType.U);
         }
 
         /// <summary>
@@ -1294,21 +1419,26 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void LoginFailTestS()
         {
-            LoginFailTest("s3.exe", "Alex", "alex_space", false);
+            LoginFailTest("Alex", "alex_space", Utilities.CheckpointType.S3);
         }
 
-        private void LoginFailTest(string exeName, string user, string client, bool unicode)
+        private void LoginFailTest(string user, string client, Utilities.CheckpointType cptype)
         {
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
+#if _WINDOWS
             string ticketfile = "c:\\notaticketfile";
-
+#else
+	        string ticketfile = "/tmp/notaticketfile";
+#endif
             System.IO.File.Delete(ticketfile);
 
             Process p4d = null;
             try
             {
                 P4Server.Set("P4TICKETS", ticketfile);
-                p4d = Utilities.DeployP4TestServer(TestDir, 10, exeName, unicode);
+                p4d = Utilities.DeployP4TestServer(TestDir, 10, cptype, TestContext.TestName);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
                 Server server = new Server(new ServerAddress(uri));
 
                 using (Connection target = new Connection(server))
@@ -1331,13 +1461,13 @@ namespace p4api.net.unit.test
                         if (e.ErrorCode == P4ClientError.MsgServer_BadPassword)
                             threwLoginException = true;
                     }
-
                     Assert.IsTrue(threwLoginException);
                 }
             }
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
             }
         }
 
@@ -1345,242 +1475,259 @@ namespace p4api.net.unit.test
         ///A test for Login
         ///</summary>
         [TestMethod()]
-		public void LoginTest()
-		{
-			bool unicode = false;
+        public void LoginTest()
+        {
+            string uri = configuration.ServerPort;
+            string user = "admin";
+            string pass = "pass";
 
-			string uri = "localhost:6666";
-			string user = "admin";
-			string pass = "pass";
+            Process p4d = null;
 
-		    Process p4d = null;
-
-			for (int i = 0; i < 3; i++) // run once for ascii, once for unicode, once for the security level 3 server
-			{
-			    try
-			    {
-				    String zippedFile = "a.exe";
-				    if (i == 1)
-				    {
-					    zippedFile = "u.exe";
-				    }
-				    if (i == 2)
-				    {
-					    zippedFile = "s3.exe";
-					    pass = "Password";
-				    }
-
-				    p4d = Utilities.DeployP4TestServer(TestDir, 10, zippedFile, unicode);
-				    Server server = new Server(new ServerAddress(uri));
-				
-					using (Connection target = new Connection(server))
-					{
-						Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
-						Assert.AreEqual(target.Server.State, ServerState.Unknown);
-
-						target.UserName = user;
-						Options options = new Options();
-						options["Password"] = pass;
-
-						Assert.IsTrue(target.Connect(options));
-						Assert.AreEqual(target.Server.State, ServerState.Online);
-						Assert.AreEqual(target.Status, ConnectionStatus.Connected);
-
-                        Credential cred = target.Login(pass);
-						Assert.IsNotNull(cred);
-						Assert.AreEqual(user, cred.UserName);
-						Assert.IsTrue(target.Logout(null));
-						Assert.IsTrue(target.Disconnect(null));
-						Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
-						Assert.IsFalse(target.Disconnect(null));
-					}
-				}
-				finally
-				{
-					Utilities.RemoveTestServer(p4d, TestDir);
-				}
-			    unicode = !unicode;
-			}
-		}
-		/// <summary>
-		///Another test for Login
-		///</summary>
-		[TestMethod()]
-		public void LoginTest2()
-		{
-			bool unicode = false;
-
-			string uri = "localhost:6666";   
-			string user = "admin";		    
-			string pass = "pass";
-			string user2 = "Alex";
-
-		    Process p4d = null;
-			
-			for (int i = 0; i < 3; i++) // run once for ascii, once for unicode, once for the security level 3 server
-			{
-				String zippedFile = "a.exe";
-				if (i == 1)
-				{
-					zippedFile = "u.exe";
-					user2 = "Алексей";
-				}
-				if (i == 2)
-				{
-					zippedFile = "s3.exe";
-					user2 = "Alex";
-					pass = "Password";
-				}
+            for (int i = 0; i < 3; i++) // run once for ascii, once for unicode, once for the security level 3 server
+            {
+                Utilities.CheckpointType cptype = (Utilities.CheckpointType)i;
                 try
                 {
-				    p4d = Utilities.DeployP4TestServer(TestDir, 10, zippedFile, unicode);
-				    Server server = new Server(new ServerAddress(uri));
-                    
+                    if (cptype == Utilities.CheckpointType.S3)
+                    {
+                        pass = "Password";
+                    }
+
+                    p4d = Utilities.DeployP4TestServer(TestDir, 10, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+
+                    using (Connection target = new Connection(server))
+                    {
+                        Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
+                        Assert.AreEqual(target.Server.State, ServerState.Unknown);
+
+                        target.UserName = user;
+                        Options options = new Options();
+                        options["Password"] = pass;
+
+                        Assert.IsTrue(target.Connect(options));
+                        Assert.AreEqual(target.Server.State, ServerState.Online);
+                        Assert.AreEqual(target.Status, ConnectionStatus.Connected);
+
+                        Credential cred = target.Login(pass);
+                        Assert.IsNotNull(cred);
+                        Assert.AreEqual(user, cred.UserName);
+                        Assert.IsTrue(target.Logout(null));
+                        Assert.IsTrue(target.Disconnect(null));
+                        Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
+                        Assert.IsFalse(target.Disconnect(null));
+                    }
+                }
+                finally
+                {
+                    Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                }
+            }
+        }
+        /// <summary>
+        ///Another test for Login
+        ///</summary>
+        [TestMethod()]
+        public void LoginTest2()
+        {
+            string uri = configuration.ServerPort;
+            string user = "admin";
+            string pass = "pass";
+            string user2 = "Alex";
+
+            Process p4d = null;
+
+            for (int i = 0; i < 3; i++) // run once for ascii, once for unicode, once for the security level 3 server
+            {
+                Utilities.CheckpointType cptype = (Utilities.CheckpointType)i;
+
+                if (cptype == Utilities.CheckpointType.U)
+                {
+                    user2 = "Алексей";
+                }
+                if (cptype == Utilities.CheckpointType.S3)
+                {
+                    user2 = "Alex";
+                    pass = "Password";
+                }
+                try
+                {
+                    p4d = Utilities.DeployP4TestServer(TestDir, 10, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+
                     // Override any Test machine P4Config or Environment settings
-				    P4Server.Update("P4CLIENT", "");
+                    P4Server.Update("P4CLIENT", "");
 
                     string myclient = P4Server.Get("P4CLIENT");
 
-					using (Connection target = new Connection(server))
-					{
-						Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
-						Assert.AreEqual(target.Server.State, ServerState.Unknown);
+                    using (Connection target = new Connection(server))
+                    {
+                        Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
+                        Assert.AreEqual(target.Server.State, ServerState.Unknown);
 
-						target.UserName = user;        
+                        target.UserName = user;
 
-						Options options = new Options();
-						options["Password"] = pass;
+                        Options options = new Options();
+                        options["Password"] = pass;
 
-						Assert.IsTrue(target.Connect(options));
-						Assert.AreEqual(target.Server.State, ServerState.Online);
-						Assert.AreEqual(target.Status, ConnectionStatus.Connected);
+                        Assert.IsTrue(target.Connect(options));
+                        Assert.AreEqual(target.Server.State, ServerState.Online);
+                        Assert.AreEqual(target.Status, ConnectionStatus.Connected);
 
                         // login as admin
                         Credential cred = target.Login(pass);
-						Assert.IsNotNull(cred);
-						Assert.AreEqual(user, cred.UserName);
+                        Assert.IsNotNull(cred);
+                        Assert.AreEqual(user, cred.UserName);
 
                         // Make sure user2 is logged out
                         //target.Logout(new LogoutCmdOptions(LogoutCmdFlags.AllHosts), user2);
 
                         // Log myself out also
-						target.Logout(null);
+                        target.Logout(null);
 
-						target.UserName = user2;
+                        target.UserName = user2;
 
-						options = new Options();
-						options["Password"] = pass;
+                        options = new Options();
+                        options["Password"] = pass;
 
-						Assert.IsTrue(target.Connect(options));
-						Assert.AreEqual(target.Server.State, ServerState.Online);
-						Assert.AreEqual(target.Status, ConnectionStatus.Connected);
+                        Assert.IsTrue(target.Connect(options));
+                        Assert.AreEqual(target.Server.State, ServerState.Online);
+                        Assert.AreEqual(target.Status, ConnectionStatus.Connected);
 
                         // login as alex/alexei
                         Credential cred2 = target.Login(pass);
-						Assert.IsNotNull(cred2);
+                        Assert.IsNotNull(cred2);
 
-						Assert.AreEqual(user2, cred2.UserName);
+                        Assert.AreEqual(user2, cred2.UserName);
 
-						if (zippedFile != "s3.exe")
-						{ Assert.IsTrue(target.Logout(null)); }
+                        //if (tarFile != "s3.tar")
+                        //{ Assert.IsTrue(target.Logout(null)); }
 
-						Assert.IsTrue(target.Disconnect(null));
-						Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
-						Assert.IsFalse(target.Disconnect(null));
-					}
-				}
-				finally
-				{
+                        Assert.IsTrue(target.Disconnect(null));
+                        Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
+                        Assert.IsFalse(target.Disconnect(null));
+                    }
+                }
+                finally
+                {
                     P4Bridge.ReloadEnviro();
-					Utilities.RemoveTestServer(p4d, TestDir);
-				}
-				unicode = !unicode;
-			}
-		}
-		/// <summary>
-		///A test for Login
-		///</summary>
-		[TestMethod()]
-		public void LoginTest3()
-		{
-			bool unicode = false;
+                    Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                }
+            }
+        }
+        /// <summary>
+        ///A test for Login
+        ///</summary>
+        [TestMethod()]
+        public void LoginTest3()
+        {
+            string uri = configuration.ServerPort; // "127.0.0.1:6666";
+            string user = "admin";
+            string pass = "pass";
 
-			string uri = "127.0.0.1:6666";
-			string user = "admin";
-			string pass = "pass";
+            for (int i = 2; i < 3; i++) // run once for ascii, once for unicode, once for the security level 3 server
+            {
+                Utilities.CheckpointType cptype = (Utilities.CheckpointType)i;
 
-			for (int i = 2; i < 3; i++) // run once for ascii, once for unicode, once for the security level 3 server
-			{
-				String zippedFile = "a.exe";
-				if (i == 1)
-				{
-					zippedFile = "u.exe";
-				}
-				if (i == 2)
-				{
-					zippedFile = "s3.exe";
-					pass = "Password";
-				}
+                if (cptype == Utilities.CheckpointType.S3)
+                {
+                    pass = "Password";
+                }
 
-				Process p4d = Utilities.DeployP4TestServer(TestDir, 10, zippedFile, unicode);
-				Server server = new Server(new ServerAddress(uri));
-				try
-				{
-					using (Connection target = new Connection(server))
-					{
-						Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
-						Assert.AreEqual(target.Server.State, ServerState.Unknown);
+                Process p4d = null;
+                try
+                {
+                    p4d = Utilities.DeployP4TestServer(TestDir, 10, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
 
-						target.UserName = user;
-						Options options = new Options();
-						options["Password"] = pass;
+                    Server server = new Server(new ServerAddress(uri));
+                    using (Connection target = new Connection(server))
+                    {
+                        Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
+                        Assert.AreEqual(target.Server.State, ServerState.Unknown);
 
-						Assert.IsTrue(target.Connect(options));
-						Assert.AreEqual(target.Server.State, ServerState.Online);
-						Assert.AreEqual(target.Status, ConnectionStatus.Connected);
+                        target.UserName = user;
+                        Options options = new Options();
+                        options["Password"] = pass;
 
-						Credential cred = target.Login(pass,true);//,true);
-						Assert.IsNotNull(cred);
-						Assert.AreEqual(user, cred.UserName);
-						Assert.IsTrue(target.Logout(null));
+                        Assert.IsTrue(target.Connect(options));
+                        Assert.AreEqual(target.Server.State, ServerState.Online);
+                        Assert.AreEqual(target.Status, ConnectionStatus.Connected);
 
-						cred = target.Login(pass,true); //,true);
-						Assert.IsNotNull(cred);
-						Assert.AreEqual(user, cred.UserName);
-						Assert.IsTrue(target.Logout(null));
-						Assert.IsTrue(target.Disconnect(null));
-						Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
-						Assert.IsFalse(target.Disconnect(null));
-					}
-				}
-				finally
-				{
-					Utilities.RemoveTestServer(p4d, TestDir);
-				}
-				unicode = !unicode;
-			}
-		}
+                        Credential cred = target.Login(pass, true);//,true);
+                        Assert.IsNotNull(cred);
+                        Assert.AreEqual(user, cred.UserName);
+                        Assert.IsTrue(target.Logout(null));
+
+                        cred = target.Login(pass, true); //,true);
+                        Assert.IsNotNull(cred);
+                        Assert.AreEqual(user, cred.UserName);
+                        Assert.IsTrue(target.Logout(null));
+                        Assert.IsTrue(target.Disconnect(null));
+                        Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
+                        Assert.IsFalse(target.Disconnect(null));
+                    }
+                }
+                finally
+                {
+                    Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                }
+            }
+        }
         /// <summary>
         ///A test for Loginjob080984
         ///</summary>
         [TestMethod()]
         public void LoginTestjob080984()
         {
-            string uri = "127.0.0.1:6666";
+            string uri = configuration.ServerPort; // "127.0.0.1:6666";
             string user = "admin";
             string pass = "Password";
 
-            String zippedFile = "s3.exe";
+            Process p4d = null;
+            Repository rep = null;
+            var cptype = Utilities.CheckpointType.S3;
+#if _WINDOWS
+            string tpath = @"%USERPROFILE%\p4testtickets.txt";
+#else
+            string tpath = @"%HOME%/.p4testtickets";
+#endif
+            string ticketPath = "";
 
-            Process p4d = Utilities.DeployP4TestServer(TestDir, 10, zippedFile, false);
-            Server server = new Server(new ServerAddress(uri));
             try
             {
-                using (Connection target = new Connection(server))
+                ticketPath = Environment.ExpandEnvironmentVariables(tpath);
+                
+                // make sure the ticket file exists
+                // Create the file, or overwrite if the file exists.
+                using (FileStream fs = System.IO.File.Create(ticketPath))
+                { }
+
+                p4d = Utilities.DeployP4TestServer(TestDir, 10, cptype, TestContext.TestName);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+                var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
+                var adminSpace = Path.Combine(clientRoot, "admin_space");
+                Directory.CreateDirectory(adminSpace);
+
+                Server server = new Server(new ServerAddress(uri));
+                rep = new Repository(server);
+
+                // fix the client so it is valid for this OS
+                Utilities.SetClientRoot(rep, TestDir, cptype, "admin_space");
+
+                using (Connection target = rep.Connection)
                 {
                     // taken from customer submitted Test_P4Api.Net
                     // BUG #1) this won't work.
-                    target.SetP4EnvironmentVar("P4TICKETS", @"C:\Users\testUser\p4tickets.txt");
+                    target.SetP4EnvironmentVar("P4TICKETS", ticketPath);
 
                     // this failed for user, as they tried to set it before
                     // establishing a connection
@@ -1599,9 +1746,9 @@ namespace p4api.net.unit.test
                     Assert.AreEqual(target.Status, ConnectionStatus.Connected);
 
                     // now this will work after connected
-                    target.SetP4EnvironmentVar("P4TICKETS", @"C:\Users\testUser\p4tickets.txt");
+                    target.SetP4EnvironmentVar("P4TICKETS", ticketPath);
                     envVar = target.GetP4EnvironmentVar("P4TICKETS");
-                    Assert.AreEqual(envVar, @"C:\Users\testUser\p4tickets.txt");
+                    Assert.AreEqual(envVar, ticketPath);
 
                     // now remove it
                     target.SetP4EnvironmentVar("P4TICKETS", "");
@@ -1612,10 +1759,10 @@ namespace p4api.net.unit.test
                     // to do that without modifying the environment variables.
 
                     // This is correct in that P4API.NET currently does not
-                    // allow passing -P for password or ticekt when running
+                    // allow passing -P for password or ticket when running
                     // commands. A better workaround than setting the P4TICKETS
                     // p4 environment variable (and assumingly needing to edit it
-                    // with the recently obtained ticket), is to set the 
+                    // with the recently obtained ticket), is to set the
                     // P4PASSWD environment variable with the ticket.
 
                     // login to get credential. This will return a ticket value
@@ -1632,9 +1779,13 @@ namespace p4api.net.unit.test
                     FileSpec fs = new FileSpec(new DepotPath("//depot..."),
                         null, null, null);
                     IList<FileSpec> fsl = target.Client.SyncFiles(null, fs);
-                    
+
                     // delete the tickets file
-                    var pathWithEnv = @"%USERPROFILE%\p4tickets.txt";
+#if _WINDOWS
+                    var pathWithEnv = @"%USERPROFILE%\p4testtickets.txt";
+#else
+	                var pathWithEnv = @"%HOME%/.p4testtickets";
+#endif
                     var filePath = Environment.ExpandEnvironmentVariables(pathWithEnv);
                     System.IO.File.SetAttributes(filePath, FileAttributes.Normal);
                     System.IO.File.Delete(filePath);
@@ -1702,6 +1853,8 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
             }
         }
 
@@ -1711,29 +1864,26 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void LoginTestWithNullClient()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = "pass";
 
             for (int i = 0; i < 3; i++) // run once for ascii, once for unicode, once for the security level 3 server
             {
-                String zippedFile = "a.exe";
-                if (i == 1)
+                Utilities.CheckpointType cptype = (Utilities.CheckpointType)i;
+
+                if (cptype == Utilities.CheckpointType.S3)
                 {
-                    zippedFile = "u.exe";
-                }
-                if (i == 2)
-                {
-                    zippedFile = "s3.exe";
                     pass = "Password";
                 }
 
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 10, zippedFile, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                Process p4d = null;
                 try
                 {
+                    p4d = Utilities.DeployP4TestServer(TestDir, 10, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
                     using (Connection target = new Connection(server))
                     {
                         Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
@@ -1758,176 +1908,169 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
-		/// <summary>
-		///Another test for Login
-		///</summary>
-		[TestMethod()]
-		public void TrustTest()
-		{
-			bool unicode = false;
 
-			string uri = "localhost:6666";
-			//			string user = "admin";
-			//			string pass = "pass";
-			//			string ws_client = "alex_space";
+        /// <summary>
+        ///Another test for Login
+        ///</summary>
+        [TestMethod()]
+        public void TrustTest()
+        {
+            string uri = configuration.ServerPort;
+            //			string user = "admin";
+            //			string pass = "pass";
+            //			string ws_client = "alex_space";
 
-			for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
-			{
-				String zippedFile = "a.exe";
-				if (i == 1)
-				{
-					zippedFile = "u.exe";
-				}
+            for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
+            {
+                Utilities.CheckpointType cptype = (Utilities.CheckpointType)i;
 
-				Process p4d = Utilities.DeployP4TestServer(TestDir, 10, zippedFile, unicode);
-				Server server = new Server(new ServerAddress(uri));
-				try
-				{
-					using (Connection target = new Connection(server))
-					{
-						Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
-						Assert.AreEqual(target.Server.State, ServerState.Unknown);
-						Assert.IsTrue(target.Connect(null));
-						Assert.AreEqual(target.Server.State, ServerState.Online);
-						Assert.AreEqual(target.Status, ConnectionStatus.Connected);
-						TrustCmdOptions options = new TrustCmdOptions(TrustCmdFlags.AutoAccept);
-						Assert.IsTrue(target.Trust(options, null));
-						Assert.IsTrue(target.Disconnect(null));
-					}
-				}
-				finally
-				{
-					Utilities.RemoveTestServer(p4d, TestDir);
-				}
-				unicode = !unicode;
-			}
-		}
+                Process p4d = null;
+                try
+                {
+                    p4d = Utilities.DeployP4TestServer(TestDir, 10, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    using (Connection target = new Connection(server))
+                    {
+                        Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
+                        Assert.AreEqual(target.Server.State, ServerState.Unknown);
+                        Assert.IsTrue(target.Connect(null));
+                        Assert.AreEqual(target.Server.State, ServerState.Online);
+                        Assert.AreEqual(target.Status, ConnectionStatus.Connected);
+                        TrustCmdOptions options = new TrustCmdOptions(TrustCmdFlags.AutoAccept);
+                        Assert.IsTrue(target.Trust(options, null));
+                        Assert.IsTrue(target.Disconnect(null));
+                    }
+                }
+                finally
+                {
+                    Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                }
+            }
+        }
+
         /// <summary>
         ///Another test for Login
         ///</summary>
         [TestMethod()]
         public void CharacterSetNameTestA()
         {
-            CharacterSetNameTest(false);
+            CharacterSetNameTest(Utilities.CheckpointType.A);
         }
 
         [TestMethod()]
         public void CharacterSetNameTestU()
         {
-            CharacterSetNameTest(true);
+            CharacterSetNameTest(Utilities.CheckpointType.U);
         }
 
-        private void CharacterSetNameTest(bool unicode)
-		{
+        private void CharacterSetNameTest(Utilities.CheckpointType cptype)
+        {
             Environment.SetEnvironmentVariable("P4CHARSET", "");
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
 
-			String zippedFile = "a.exe";
-			if (unicode)
-			{
-				zippedFile = "u.exe";
-			}
+            Process p4d = null;
+            try
+            {
+                p4d = Utilities.DeployP4TestServer(TestDir, 10, cptype, TestContext.TestName);
+                Assert.IsNotNull(p4d, "Setup Failure");
 
-			Process p4d = Utilities.DeployP4TestServer(TestDir, 10, zippedFile, unicode);
-			Server server = new Server(new ServerAddress(uri));
-			try
-			{
-				using (Connection target = new Connection(server))
-				{
-					Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
-					Assert.AreEqual(target.Server.State, ServerState.Unknown);
-					Assert.IsTrue(target.Connect(null));
-					Assert.AreEqual(target.Server.State, ServerState.Online);
-					Assert.AreEqual(target.Status, ConnectionStatus.Connected);
-					string actual = target.CharacterSetName;
+                Server server = new Server(new ServerAddress(uri));
+                using (Connection target = new Connection(server))
+                {
+                    Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
+                    Assert.AreEqual(target.Server.State, ServerState.Unknown);
+                    Assert.IsTrue(target.Connect(null));
+                    Assert.AreEqual(target.Server.State, ServerState.Online);
+                    Assert.AreEqual(target.Status, ConnectionStatus.Connected);
+                    string actual = target.CharacterSetName;
                     string p4charset = target.GetP4EnvironmentVar("P4CHARSET");
-					if ((p4charset != null) && (p4charset != "none"))
+                    if ((p4charset != null) && (p4charset != "none"))
                     {
                         Assert.AreEqual(p4charset, actual);
                     }
-                    else if (unicode)
-					{
-						// should have been automatically detected if the server is 
-						// unicode based on this systems codepage
-						Assert.IsFalse(string.IsNullOrEmpty(actual) || (actual == "none"));
-					}
-					else
-					{
-						// no charset needed on on non unicode servers
-						Assert.IsTrue(string.IsNullOrEmpty(actual) || (actual == "none"));
-					}
-					Assert.IsTrue(target.Disconnect(null));
-				}
-			}
-			finally
-			{
-				Utilities.RemoveTestServer(p4d, TestDir);
-			}
-		}
+                    else if (cptype == Utilities.CheckpointType.U)
+                    {
+                        // should have been automatically detected if the server is
+                        // unicode based on this systems codepage
+                        Assert.IsFalse(string.IsNullOrEmpty(actual) || actual == "none");
+                    }
+                    else
+                    {
+                        // no charset needed on on non unicode servers
+                        Assert.IsTrue(string.IsNullOrEmpty(actual) || actual == "none");
+                    }
+                    Assert.IsTrue(target.Disconnect(null));
+                }
+            }
+            finally
+            {
+                Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+            }
+        }
 
-		/// <summary>
-		///A test for SetPassword
-		///</summary>
-		[TestMethod()]
-		public void SetPasswordTest()
-		{
-			bool unicode = false;
+        /// <summary>
+        ///A test for SetPassword
+        ///</summary>
+        [TestMethod()]
+        public void SetPasswordTest()
+        {
+            string uri = configuration.ServerPort;
+            string user = "admin";
+            string pass = "pass";
 
-			string uri = "localhost:6666";
-			string user = "admin";
-			string pass = "pass";
+            for (int i = 0; i < 3; i++) // run once for ascii, once for unicode, once for the security level 3 server
+            {
+                Utilities.CheckpointType cptype = (Utilities.CheckpointType)i;
+                if (cptype == Utilities.CheckpointType.S3)
+                {
+                    pass = "Password";
+                }
 
-			for (int i = 0; i < 3; i++) // run once for ascii, once for unicode, once for the security level 3 server
-			{
-				String zippedFile = "a.exe";
-				if (i == 1)
-				{
-					zippedFile = "u.exe";
-				}
-				if (i == 2)
-				{
-					zippedFile = "s3.exe";
-					pass = "Password";
-				}
+                Process p4d = null;
+                try
+                {
+                    p4d = Utilities.DeployP4TestServer(TestDir, 10, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
 
-				Process p4d = Utilities.DeployP4TestServer(TestDir, 10, zippedFile, unicode);
-				Server server = new Server(new ServerAddress(uri));
-				try
-				{
-					using (Connection target = new Connection(server))
-					{
-						Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
-						Assert.AreEqual(target.Server.State, ServerState.Unknown);
+                    Server server = new Server(new ServerAddress(uri));
+                    using (Connection target = new Connection(server))
+                    {
+                        Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
+                        Assert.AreEqual(target.Server.State, ServerState.Unknown);
 
-						target.UserName = user;
-						Options options = new Options();
-						options["Password"] = pass;
+                        target.UserName = user;
+                        Options options = new Options();
+                        options["Password"] = pass;
 
-						Assert.IsTrue(target.Connect(options));
-						Assert.AreEqual(target.Server.State, ServerState.Online);
-						Assert.AreEqual(target.Status, ConnectionStatus.Connected);
+                        Assert.IsTrue(target.Connect(options));
+                        Assert.AreEqual(target.Server.State, ServerState.Online);
+                        Assert.AreEqual(target.Status, ConnectionStatus.Connected);
 
                         Credential cred = target.Login(pass);
-						Assert.IsNotNull(cred);
-						Assert.AreEqual(user, cred.UserName);
-						Assert.IsTrue(target.SetPassword(pass, pass + "2"));
-						Assert.IsTrue(target.Logout(null));
-						Assert.IsTrue(target.Disconnect(null));
-						Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
-						Assert.IsFalse(target.Disconnect(null));
-					}
-				}
-				finally
-				{
-					Utilities.RemoveTestServer(p4d, TestDir);
-				}
-				unicode = !unicode;
-			}
-		}
+                        Assert.IsNotNull(cred);
+                        Assert.AreEqual(user, cred.UserName);
+                        Assert.IsTrue(target.SetPassword(pass, pass + "2"));
+                        Assert.IsTrue(target.Logout(null));
+                        Assert.IsTrue(target.Disconnect(null));
+                        Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
+                        Assert.IsFalse(target.Disconnect(null));
+                    }
+                }
+                finally
+                {
+                    Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                }
+            }
+        }
 
         /// <summary>
         ///A test for SetTicketFile
@@ -1935,15 +2078,19 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void SetTicketFileTest()
         {
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = "Password";
 
-            String zippedFile = "s3.exe";
-            Process p4d = Utilities.DeployP4TestServer(TestDir, 10, zippedFile, false);
-            Server server = new Server(new ServerAddress(uri));
+            var cptype = Utilities.CheckpointType.S3;
+
+            Process p4d = null;
             try
             {
+                p4d = Utilities.DeployP4TestServer(TestDir, 10, cptype, TestContext.TestName);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+                Server server = new Server(new ServerAddress(uri));
                 using (Connection target = new Connection(server))
                 {
                     Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
@@ -1958,7 +2105,7 @@ namespace p4api.net.unit.test
                     Assert.AreEqual(target.Status, ConnectionStatus.Connected);
 
                     P4Server pServer = target.getP4Server();
-                    pServer.SetTicketFile(TestDir + "\\p4tickets.txt");
+                    pServer.SetTicketFile(Path.Combine(TestDir, "p4tickets.txt"));
 
                     Credential cred = target.Login(pass);
                     Assert.IsNotNull(cred);
@@ -1971,6 +2118,7 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
             }
         }
 
@@ -1980,15 +2128,18 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetTicketTest()
         {
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = "Password";
 
-            String zippedFile = "s3.exe";
-            Process p4d = Utilities.DeployP4TestServer(TestDir, 10, zippedFile, false);
-            Server server = new Server(new ServerAddress(uri));
+
+            Process p4d = null;
             try
             {
+                p4d = Utilities.DeployP4TestServer(TestDir, 10, Utilities.CheckpointType.S3, "GetTicketTest");
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+                Server server = new Server(new ServerAddress(uri));
                 using (Connection target = new Connection(server))
                 {
                     Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
@@ -2003,7 +2154,7 @@ namespace p4api.net.unit.test
                     Assert.AreEqual(target.Status, ConnectionStatus.Connected);
 
                     P4Server pServer = target.getP4Server();
-                    string random = TestDir + "\\" + Path.GetRandomFileName();
+                    string random = Path.Combine(TestDir, Path.GetRandomFileName());
                     pServer.SetTicketFile(random);
 
                     // ticket file just set, should not exist yet
@@ -2034,52 +2185,60 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
             }
+        }
+
+        /// <summary>
+		///A test for GetExistingTicket
+		///</summary>
+		[TestMethod()]
+        public void GetTicketFileTest()
+        {
+#if _WINDOWS
+            string expected = "p4tickets.txt";
+#else
+			string expected = ".p4tickets";
+#endif
+            string actual = P4Server.GetEnvironmentTicketFile();
+
+            Assert.IsTrue(actual.Contains(expected));
         }
 
         /// <summary>
         ///A test for GetExistingTicket
         ///</summary>
         [TestMethod()]
-		public void GetTicketFileTest()
-		{
-			string actual = P4Server.GetEnvironmentTicketFile();
-
-			Assert.IsTrue(actual.Contains("p4tickets.txt"));
-		}
-
-		/// <summary>
-		///A test for GetExistingTicket
-		///</summary>
-		[TestMethod()]
-		public void GetExistingTicketTest()
-		{
+        public void GetExistingTicketTest()
+        {
 #if DEBUG_GET_TICKET
-			bool unicode = false;
-
-			string uri = "localhost:6666";
+			string uri = configuration.ServerPort;
 			string user = "admin";
 			string pass = "pass";
 			string ws_client = "admin_space";
 
 			// run once for the security level 3 server, user has a password and a ticket will get generated
-			for (int i = 2; i < 3; i++) 
+			for (int i = 2; i < 3; i++)
 			{
-				String zippedFile = "a.exe";
-				if (i == 1)
+				var cptype = (Utilities.CheckpointType) i;
+				String tarFile = "a.tar";
+				if (cptype == Utilities.CheckpointType.U)
 				{
-					zippedFile = "u.exe";
+					tarFile = "u.tar";
 				}
-				if (i == 2)
+				if (cptype == Utilities.CheckpointType.S3)
 				{
-					zippedFile = "s3.exe";
+					tarFile = "s3.tar";
 					pass = "Password";
 				}
 
-				Process p4d = Utilities.DeployP4TestServer(TestDir, 10, zippedFile);
-				Server server = new Server(new ServerAddress(uri));
+				Process p4d = null;
 				try
 				{
+					Process p4d = Utilities.DeployP4TestServer(TestDir, 10, tarFile, cptype);
+					Assert.IsNotNull(p4d, "Setup Failure");
+
+					Server server = new Server(new ServerAddress(uri));
 					using (Connection target = new Connection(server))
 					{
 
@@ -2118,42 +2277,56 @@ namespace p4api.net.unit.test
 	finally
 				{
 					Utilities.RemoveTestServer(p4d, TestDir);
+					p4d?.Dispose();
 				}
-				unicode = !unicode;
 			}
-			
 #endif
-		}
+        }
+
+        // When running on mac, the '/tmp' directory will sometimes return as '/private/tmp'
+        // so this routine removes their privates ;)
+        public string FixPathForMac(string src)
+        {
+            string findkey = "/private";
+            int loc = src.IndexOf(findkey, StringComparison.Ordinal);
+            if (loc != -1)
+            {
+                return src.Remove(loc, findkey.Length).Insert(loc, "");
+            }
+            return src;
+        }
+
         /// <summary>
         ///Another test for Login
         ///</summary>
         [TestMethod()]
         public void GetP4ConfigP4EnvVarWithCWDTest()
         {
-            bool unicode = false;
-
-            string server = "localhost:6666";
+            string server = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
             string spaceRoot = "";
 
             string oldConfig = P4Server.Get("P4CONFIG");
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                Utilities.CheckpointType cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
-                    var serverRoot = Utilities.TestClientRoot(TestDir, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    var serverRoot = Utilities.TestClientRoot(TestDir, cptype);
                     spaceRoot = Path.Combine(serverRoot, "admin_space");
 
                     using (Repository rep = new Repository(new Server(new ServerAddress(string.Empty))))
                     {
                         string expected = Path.Combine(spaceRoot, "MyCode", "myP4Config.txt");
-                        P4Server.Set("P4CONFIG", "myP4Config.txt");
+                        P4Server.Update("P4CONFIG", "myP4Config.txt");
 
                         // Delete the config file if it exists
                         if (System.IO.File.Exists(expected))
@@ -2165,7 +2338,7 @@ namespace p4api.net.unit.test
                         string actual = P4Server.GetConfig(Path.Combine(spaceRoot, "MyCode"));
                         if (actual != null)
                         {
-                            Assert.AreEqual(actual, "noconfig", true);
+                            Assert.AreEqual("noconfig", actual, true);
                         }
                         using (System.IO.StreamWriter sw = new StreamWriter(expected))
                         {
@@ -2175,7 +2348,7 @@ namespace p4api.net.unit.test
                         }
 
                         actual = P4Server.GetConfig(Path.Combine(spaceRoot, "MyCode"));
-                        Assert.AreEqual(actual, expected, true);
+                        Assert.AreEqual(expected, actual, true);
 
                         System.Environment.CurrentDirectory = Path.Combine(spaceRoot, "MyCode");
 
@@ -2189,14 +2362,13 @@ namespace p4api.net.unit.test
                             Assert.IsTrue(rep.Connection.Connect(opts));
 
                             actual = rep.Connection.GetP4EnvironmentVar("P4CONFIG");
-                            Assert.AreEqual(actual, "myP4Config.txt", true);
+                            Assert.AreEqual("myP4Config.txt", actual, true);
 
-                            actual = rep.Connection.GetP4ConfigFile();
-                            Assert.AreEqual(actual, expected, true);
+                            actual = FixPathForMac(rep.Connection.GetP4ConfigFile());
+                            Assert.AreEqual(expected, actual, true);
 
-                            actual = rep.Connection.GetP4ConfigFile(System.Environment.CurrentDirectory);
-                            Assert.AreEqual(actual, expected, true);
-
+                            actual = FixPathForMac(rep.Connection.GetP4ConfigFile(System.Environment.CurrentDirectory));
+                            Assert.AreEqual(expected, actual, true);
                         }
                     }
                 }
@@ -2208,95 +2380,109 @@ namespace p4api.net.unit.test
                     {
                         System.IO.File.Delete(Path.Combine(spaceRoot, "myP4Config.txt"));
                     }
+                    p4d?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
-
+#if _WINDOWS
         /// <summary>
         ///A test for mapped CWD job098063
         ///</summary>
-        [TestMethod()]
+        ///[TestMethod()]
         public void ConnectWithCWDTestA()
         {
-            ConnectWithCWDTest(false);
+            ConnectWithCWDTest(Utilities.CheckpointType.A);
         }
 
         /// <summary>
         ///A test for mapped CWD job098063
         ///</summary>
-        [TestMethod()]
+        ///[TestMethod()]
         public void ConnectWithCWDTestU()
         {
-            ConnectWithCWDTest(true);
+            ConnectWithCWDTest(Utilities.CheckpointType.U);
         }
         /// <summary>
-        ///A test for mapped CWD job098063
+        ///A test for mapped CWD job098063 (reopened)
+        /// Windows only
+        /// 2022-07-15 nmorse This fails with: Path 'x:\MyCode\Readme.txt' is not under client's root 'C:\MyTestDir\a\clients\admin_space'.
+        /// job098063 is not fixed, it has been reopened,
+        /// The initial reason for this test was to support (now punted) P4V Job061540
+        /// Once Job061540 and job098063 are fixed, we can try reenabling this test.
         ///</summary>
-        public void ConnectWithCWDTest(bool unicode)
+        public void ConnectWithCWDTest(Utilities.CheckpointType cptype)
         {
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
             Process p4d = null;
+            Repository rep = null;
 
-                try
+            try
+            {
+                p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+                var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
+                var adminSpace = Path.Combine(clientRoot, "admin_space");
+                Directory.CreateDirectory(adminSpace);
+                Server server = new Server(new ServerAddress(uri));
+                rep = new Repository(server);
+                Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
+
+                using (Process proc = new Process())
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
-                    var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
-                    var adminSpace = Path.Combine(clientRoot, "admin_space");
-                    Directory.CreateDirectory(adminSpace);
-                    Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
-
-                    Process proc = new Process();
                     proc.StartInfo.FileName = "subst.exe";
                     proc.StartInfo.Arguments = "X: " + adminSpace;
                     proc.Start();
-
-                    using (Connection con = rep.Connection)
-                    {
-                        con.UserName = user;
-                        con.Client = new Client();
-                        con.Client.Name = ws_client;
-                        List<string> altRoots = new List<string>();
-                        altRoots.Add("X:\\");
-                        con.Client.AltRoots = altRoots;
-                        Assert.AreEqual(con.Status, ConnectionStatus.Disconnected);
-                        Assert.AreEqual(con.Server.State, ServerState.Unknown);
-
-                        // set the CWD prior to establishing a connection
-                        con.CurrentWorkingDirectory = "X:\\";
-
-                        Assert.IsTrue(con.Connect(null));
-
-                        // need to update the client since we
-                        // added an AltRoot for the mapped drive
-                        rep.UpdateClient(con.Client);
-
-                        Assert.AreEqual(con.Server.State, ServerState.Online);
-                        Assert.AreEqual(con.Status, ConnectionStatus.Connected);
-                        Assert.AreEqual("admin", con.Client.OwnerName);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
-
-                        FileSpec toFile = new FileSpec(new LocalPath(Path.Combine("X:\\", "MyCode", "ReadMe.txt")),
-                            null);
-                        Options options = new Options(EditFilesCmdFlags.None, -1, null);
-                        IList<FileSpec> oldfiles = con.Client.EditFiles(options, toFile);
-                        Assert.AreEqual(1, oldfiles.Count);
-                    }
                 }
-                finally
+
+                using (Connection con = rep.Connection)
                 {
-                    Utilities.RemoveTestServer(p4d, TestDir);
-                    Process proc = new Process();
+                    con.UserName = user;
+                    con.Client = new Client();
+                    con.Client.Name = ws_client;
+                    List<string> altRoots = new List<string>();
+                    altRoots.Add("X:\\");
+                    con.Client.AltRoots = altRoots;
+                    Assert.AreEqual(con.Status, ConnectionStatus.Disconnected);
+                    Assert.AreEqual(con.Server.State, ServerState.Unknown);
+
+                    // set the CWD prior to establishing a connection
+                    con.CurrentWorkingDirectory = "X:\\";
+
+                    Assert.IsTrue(con.Connect(null));
+
+                    // need to update the client since we
+                    // added an AltRoot for the mapped drive
+                    rep.UpdateClient(con.Client);
+
+                    Assert.AreEqual(con.Server.State, ServerState.Online);
+                    Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+                    Assert.AreEqual("admin", con.Client.OwnerName);
+
+                    FileSpec toFile = new FileSpec(new LocalPath(Path.Combine("X:\\", "MyCode", "ReadMe.txt")),
+                        null);
+                    Options options = new Options(EditFilesCmdFlags.None, -1, null);
+                    IList<FileSpec> oldfiles = con.Client.EditFiles(options, toFile);
+                    Assert.AreEqual(1, oldfiles.Count);
+                }
+            }
+            finally
+            {
+                Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
+                using (Process proc = new Process())
+                {
                     proc.StartInfo.FileName = "subst.exe";
                     proc.StartInfo.Arguments = "X: /D";
                     proc.Start();
                 }
+            }
         }
-
+#endif
     }
 }

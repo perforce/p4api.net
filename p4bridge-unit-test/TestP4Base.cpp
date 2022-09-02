@@ -1,7 +1,6 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "UnitTestFrameWork.h"
 #include "TestP4Base.h"
-#include "../p4bridge/p4Base.h"
 
 CREATE_TEST_SUITE(TestP4Base)
 
@@ -19,9 +18,11 @@ bool TestP4Base::Setup()
     return true;
 }
 
-bool TestP4Base::TearDown(char* testName)
+bool TestP4Base::TearDown(const char* testName)
 {
+#ifdef _DEBUG_MEMORY
 	p4base::PrintMemoryState(testName);
+#endif
     return true;
 }
 
@@ -43,6 +44,7 @@ public:
 
 bool TestP4Base::p4BaseSmokeTest()
 {
+    bool rv = [] {
     // try to validate a NULL pointer, should fail
     class0 * obj0 = NULL;
 
@@ -50,28 +52,28 @@ bool TestP4Base::p4BaseSmokeTest()
 
     ASSERT_EQUAL(r0, 0)
 
+        // It is really hard to handle invalid pointers in a cross platform way,
+        // This was only possible in windows using SEH.  disabled
     // try to validate an invalid pointer, should fail
-    obj0 = (class0 *) 0x001;
-
-    r0 = p4base::ValidateHandle( obj0, 0 );
-
-    ASSERT_EQUAL(r0, 0)
+        // obj0 = (class0 *) 0x001;
+        //
+        //r0 = p4base::ValidateHandle( obj0, 0 );
+        //
+        //ASSERT_EQUAL(r0, 0)
 
     // validate a good pointer
     obj0 = new class0();
-
     r0 = p4base::ValidateHandle( obj0, 0 );
-
     ASSERT_EQUAL(r0, 1)
+        delete obj0;
 
     // validate a good pointer of a different class
-
     class1 * obj1 = new class1();
-
     r0 = p4base::ValidateHandle( obj1, 1 );
-
     ASSERT_EQUAL(r0, 1)
 
+        // Cross platform issues with Access Violations, disabled
+#if 0
     // try to validate a pointer for a deleted object, should fail
     delete obj0;
 
@@ -159,13 +161,13 @@ bool TestP4Base::p4BaseSmokeTest()
     ASSERT_EQUAL(p4base::ValidateHandle( obj0d, 0 ), 0) // should fail
     ASSERT_EQUAL(p4base::ValidateHandle( obj0e, 0 ), 0) // should fail
     ASSERT_EQUAL(p4base::ValidateHandle( obj0f, 0 ), 0) // should fail
-
+#endif
     // good ol' object 1 should still be valid
     r0 = p4base::ValidateHandle( obj1, 1 );
-
     ASSERT_EQUAL(r0, 1)
-
 	delete obj1;
 
-    return 1; // we passed all tests!
+        return true;
+    }();
+    return rv;
 }

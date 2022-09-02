@@ -119,8 +119,9 @@ namespace Perforce.P4
 				_initialized = true;
 				return;
 			}
-			P4Command cmd = new P4Command(connection, "change", true, "-o", Id.ToString());
 
+            using (P4Command cmd = new P4Command(connection, "change", true, "-o", Id.ToString()))
+            {
 			P4CommandResult results = cmd.Run();
 
 			if ((results.Success) && (results.TaggedOutput != null) && (results.TaggedOutput.Count > 0))
@@ -133,6 +134,7 @@ namespace Perforce.P4
 				P4Exception.Throw(results.ErrorList);
 			}
 		}
+        }
 		internal Connection Connection { get; private set; }
 		internal FormBase _baseForm;
 
@@ -350,7 +352,7 @@ namespace Perforce.P4
 			char[] array = {'\r', '\n'};
 			Description = Description.TrimEnd(array);
 			Description = Description.Replace("\r", "");
-			Description = Description.Replace("\n", "\r\n");
+			Description = Description.Replace("\n", $"{Environment.NewLine}");
 
 			if (objectInfo.ContainsKey("Type"))
 			{
@@ -617,7 +619,7 @@ namespace Perforce.P4
 					{
                         if (addCRLF)
                         {
-                            Description += "\r\n";
+                            Description += $"{Environment.NewLine}";
                         }
                         else
                         {
@@ -635,7 +637,7 @@ namespace Perforce.P4
 					{
                         if (idx >0)
                         {
-                            Description += "\r\n";
+                            Description += $"{Environment.NewLine}";
                         }
                         Description += strList[idx];
 					}
@@ -775,7 +777,7 @@ namespace Perforce.P4
 			{
 				foreach (string jobId in Jobs.Keys)
 				{
-					jobsStr += string.Format("\t{0}\r\n", jobId);
+					jobsStr += $"\t{jobId}{Environment.NewLine}";
 				}
 			}
 			
@@ -784,7 +786,7 @@ namespace Perforce.P4
 			{
 				foreach (FileSpec file in Files)
 				{
-					filesStr += String.Format("\t{0}\r\n", file.ToEscapedString());
+					filesStr += $"\t{file.ToEscapedString()}{Environment.NewLine}";
 				}
 			}
 
@@ -839,6 +841,7 @@ namespace Perforce.P4
                 desc = FormBase.FormatMultilineField(Description.ToString());
 			return String.Format("Change {0} on {1} by {2}: {3}", Id, dateTime, OwnerName, desc);
 		}
+
 		/// <summary>
 		/// 
 		/// </summary>
@@ -885,24 +888,19 @@ namespace Perforce.P4
 			{
 				throw new ApplicationException("Changelist connection is not initialized");
 			}
+
 			IList<Fix> value = null;
 
-			P4Command cmd = null;
-			if ((jobs != null) && (jobs.Length > 0))
+            using (P4Command cmd = (jobs?.Length ?? 0) > 0
+                ? new P4Command(Connection, "fix", true, Job.ToStrings(jobs))
+                : new P4Command(Connection, "fix", true))
 			{
-				cmd = new P4Command(Connection, "fix", true, Job.ToStrings(jobs));
-			}
-			else
-			{
-				cmd = new P4Command(Connection, "fix", true);
-			}
 			if (options == null)
-			{
 				options = new Options();
-			}
+
 			if (options.ContainsKey("-c") == false)
 			{
-				options["-c"] = this.Id.ToString();
+                    options["-c"] = Id.ToString();
 			}
 
 			P4CommandResult results = cmd.Run(options);
@@ -923,7 +921,7 @@ namespace Perforce.P4
 			{
 				P4Exception.Throw(results.ErrorList);
 			}
-
+            }
 			return value;
 		}
 		/// <summary>
@@ -984,15 +982,10 @@ namespace Perforce.P4
 			}
 			IList<Fix> value = null;
 
-			P4Command cmd = null;
-			if ((jobIds != null) && (jobIds.Length > 0))
+            using (P4Command cmd = (jobIds?.Length ?? 0) > 0
+                ? new P4Command(Connection, "fix", true, jobIds)
+                : new P4Command(Connection, "fix", true))
 			{
-				cmd = new P4Command(Connection, "fix", true, jobIds);
-			}
-			else
-			{
-				cmd = new P4Command(Connection, "fix", true);
-			}
 			if (options == null)
 			{
 				options = new Options();
@@ -1020,6 +1013,7 @@ namespace Perforce.P4
 			{
 				P4Exception.Throw(results.ErrorList);
 			}
+            }
 
 			return value;
 		}

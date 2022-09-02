@@ -84,7 +84,7 @@ extern "C"
      *  NOTE: Call DeletMapApi() on the returned pointer to free the object
      *
      **************************************************************************/
-    __declspec(dllexport) void * CreateMapApi()
+    EXPORT void * CreateMapApi()
     {
         return (void *) new P4MapApi();
     }
@@ -92,7 +92,7 @@ extern "C"
     /**************************************************************************
      * Helper function to delete a MapApi object allocated by CreateMApApi().
      **************************************************************************/
-    __declspec(dllexport) void DeleteMapApi( P4MapApi * pMap )
+    EXPORT void DeleteMapApi( P4MapApi * pMap )
     {
         delete pMap;
     }
@@ -116,7 +116,7 @@ extern "C"
     *
     **************************************************************************/
 
-    __declspec(dllexport) void Clear( P4MapApi *pMap )
+    EXPORT void Clear( P4MapApi *pMap )
     {
         VALIDATE_HANDLE_V(pMap, tP4MapApi)
 
@@ -133,7 +133,7 @@ extern "C"
     *
     **************************************************************************/
 
-    __declspec(dllexport) int Count( P4MapApi *pMap )
+    EXPORT int Count( P4MapApi *pMap )
     {
         VALIDATE_HANDLE_I(pMap, tP4MapApi)
 
@@ -151,7 +151,7 @@ extern "C"
     *
     **************************************************************************/
 
-    __declspec(dllexport) const char * GetLeft( P4MapApi *pMap, int i )
+    EXPORT const char * GetLeft( P4MapApi *pMap, int i )
     {
         VALIDATE_HANDLE_P(pMap, tP4MapApi)
 
@@ -169,7 +169,7 @@ extern "C"
     *
     **************************************************************************/
 
-    __declspec(dllexport) const char * GetRight( P4MapApi *pMap, int i )
+    EXPORT const char * GetRight( P4MapApi *pMap, int i )
     {
         VALIDATE_HANDLE_P(pMap, tP4MapApi)
 
@@ -190,7 +190,7 @@ extern "C"
     *
     **************************************************************************/
 
-    __declspec(dllexport) int GetType( P4MapApi *pMap, int i )
+    EXPORT int GetType( P4MapApi *pMap, int i )
     {
         VALIDATE_HANDLE_I(pMap, tP4MapApi)
 
@@ -210,7 +210,7 @@ extern "C"
     *
     **************************************************************************/
 
-    __declspec(dllexport) void Insert1( P4MapApi *pMap, const char * lr, int t )
+    EXPORT void Insert1( P4MapApi *pMap, const char * lr, int t )
     {
         VALIDATE_HANDLE_V(pMap, tP4MapApi)
         StrBuf lrs(lr);
@@ -231,7 +231,7 @@ extern "C"
     *
     **************************************************************************/
 
-    __declspec(dllexport) void Insert2( P4MapApi *pMap, const char * l, 
+    EXPORT void Insert2( P4MapApi *pMap, const char * l,
                                        const char * r, int t )
     {
         VALIDATE_HANDLE_V(pMap, tP4MapApi)
@@ -252,7 +252,7 @@ extern "C"
     *
     **************************************************************************/
 
-    __declspec(dllexport) void * Join1( P4MapApi *pLeft, P4MapApi *pRight )
+    EXPORT void * Join1( P4MapApi *pLeft, P4MapApi *pRight )
     {
         VALIDATE_HANDLE_P(pLeft, tP4MapApi)
         VALIDATE_HANDLE_P(pRight, tP4MapApi)
@@ -275,7 +275,7 @@ extern "C"
     *
     **************************************************************************/
 
-    __declspec(dllexport) void * Join2( P4MapApi *pLeft, int ld,
+    EXPORT void * Join2( P4MapApi *pLeft, int ld,
                                        P4MapApi *pRight, int rd )
     {
         VALIDATE_HANDLE_P(pLeft, tP4MapApi)
@@ -300,7 +300,7 @@ extern "C"
     *
     **************************************************************************/
 
-    __declspec(dllexport) const char * Translate( P4MapApi *pMap, const char * p,
+    EXPORT const char * Translate( P4MapApi *pMap, const char * p,
                                                     MapDir d)
     {
         VALIDATE_HANDLE_P(pMap, tP4MapApi)

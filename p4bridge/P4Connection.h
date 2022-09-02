@@ -1,5 +1,6 @@
 #pragma once
 
+class Client;
 class P4BridgeClient;
 class P4BridgeServer;
 
@@ -51,7 +52,7 @@ public:
 
 	void		SetTicketFile(const char *c);
 
-	unsigned _int64 ReleaseTime;
+	unsigned long long ReleaseTime;
 
 #ifdef _DEBUG_MEMORY
 	    // Simple type identification for registering objects

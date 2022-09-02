@@ -62,7 +62,7 @@ namespace Perforce.P4
             {
                 if (idx > 0)
                 {
-                    sb.Append("\r\n");
+                    sb.Append($"{Environment.NewLine}");
                 }
                 sb.Append(curItem.Item.ToString());
                 curItem = curItem.Next;

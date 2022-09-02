@@ -487,9 +487,9 @@ namespace Perforce.P4
                 string[] list = _list.ToArray();
                 foreach (string line in list)
                 {
-                    result += line + "\r\n\t";
+                    result += line + Environment.NewLine + "\t";
                 }
-                result = result.Substring(0, result.Length - 3);
+                result = result.Substring(0, result.Length - Environment.NewLine.Length - 1);
             }
 
             if (specDef.ContainsKey(key))
@@ -516,64 +516,47 @@ namespace Perforce.P4
         /// Format of a stream specification used to save a stream to the server
         /// </summary>
         private static String StreamSpecFormat =
-                                                    "Stream:\t{0}\r\n" +
-                                                    "\r\n" +
-                                                    "Update:\t{1}\r\n" +
-                                                    "\r\n" +
-                                                    "Access:\t{2}\r\n" +
-                                                    "\r\n" +
-                                                    "Owner:\t{3}\r\n" +
-                                                    "\r\n" +
-                                                    "Name:\t{4}\r\n" +
-                                                    "\r\n" +
-                                                    "Parent:\t{5}\r\n" +
-                                                    "\r\n" +
-                                                    "Type:\t{6}\r\n" +
-                                                    "\r\n" +
-                                                    "Description:\r\n\t{7}\r\n" +
-                                                    "\r\n" +
-                                                    "Options:\t{8}\r\n" +
-                                                    "\r\n" +
-                                                    "ParentView:\t{9}\r\n" +
-                                                    "\r\n" +
-                                                    "Paths:\r\n\t{10}\r\n" +
-                                                    "\r\n" +
-                                                    "Remapped:\r\n\t{11}\r\n" +
-                                                    "\r\n" +
-                                                    "Ignored:\r\n\t{12}\r\n" +
-                                                    "\r\n" +
-                                                    "{13}";
+                                "Stream:\t{0}" + Environment.NewLine + Environment.NewLine
+                                + "Update:\t{1}" + Environment.NewLine + Environment.NewLine 
+                                + "Access:\t{2}" + Environment.NewLine + Environment.NewLine
+                                + "Owner:\t{3}" + Environment.NewLine + Environment.NewLine
+                                + "Name:\t{4}" + Environment.NewLine + Environment.NewLine
+                                + "Parent:\t{5}" + Environment.NewLine + Environment.NewLine
+                                + "Type:\t{6}" + Environment.NewLine + Environment.NewLine
+                                + "Description:" + Environment.NewLine 
+                                + "\t{7}" + Environment.NewLine + Environment.NewLine
+                                + "Options:\t{8}" + Environment.NewLine + Environment.NewLine
+                                + "ParentView:\t{9}" + Environment.NewLine + Environment.NewLine
+                                + "Paths:" + Environment.NewLine 
+                                + "\t{10}" + Environment.NewLine + Environment.NewLine 
+                                + "Remapped:" + Environment.NewLine
+                                + "\t{11}" + Environment.NewLine + Environment.NewLine
+                                + "Ignored:" + Environment.NewLine 
+                                + "\t{12}" + Environment.NewLine + Environment.NewLine
+                                + "{13}";
 
         /// <summary>
         /// Format of a stream specification used to save a stream to the server,
         /// used for Stream specs without parentview field - pre 20.2
         /// </summary>
         private static String StreamSpecFormatPre202 =
-                                            "Stream:\t{0}\r\n" +
-                                            "\r\n" +
-                                            "Update:\t{1}\r\n" +
-                                            "\r\n" +
-                                            "Access:\t{2}\r\n" +
-                                            "\r\n" +
-                                            "Owner:\t{3}\r\n" +
-                                            "\r\n" +
-                                            "Name:\t{4}\r\n" +
-                                            "\r\n" +
-                                            "Parent:\t{5}\r\n" +
-                                            "\r\n" +
-                                            "Type:\t{6}\r\n" +
-                                            "\r\n" +
-                                            "Description:\r\n\t{7}\r\n" +
-                                            "\r\n" +
-                                            "Options:\t{8}\r\n" +
-                                            "\r\n" +
-                                            "Paths:\r\n\t{9}\r\n" +
-                                            "\r\n" +
-                                            "Remapped:\r\n\t{10}\r\n" +
-                                            "\r\n" +
-                                            "Ignored:\r\n\t{11}\r\n" +
-                                            "\r\n" +
-                                            "{12}";
+                                "Stream:\t{0}" + Environment.NewLine + Environment.NewLine
+                                + "Update:\t{1}" + Environment.NewLine + Environment.NewLine
+                                + "Access:\t{2}" + Environment.NewLine + Environment.NewLine
+                                + "Owner:\t{3}" + Environment.NewLine + Environment.NewLine
+                                + "Name:\t{4}" + Environment.NewLine + Environment.NewLine
+                                + "Parent:\t{5}" + Environment.NewLine + Environment.NewLine
+                                + "Type:\t{6}" + Environment.NewLine + Environment.NewLine
+                                + "Description:"+ Environment.NewLine
+                                + "\t{7}" + Environment.NewLine + Environment.NewLine
+                                + "Options:\t{8}" + Environment.NewLine + Environment.NewLine
+                                + "Paths:" + Environment.NewLine
+                                + "\t{9}" + Environment.NewLine + Environment.NewLine
+                                + "Remapped:" + Environment.NewLine
+                                + "\t{10}" + Environment.NewLine + Environment.NewLine
+                                + "Ignored:" + Environment.NewLine
+                                + "\t{11}" + Environment.NewLine + Environment.NewLine
+                                + "{12}";
 
 
         /// <summary>
@@ -584,7 +567,16 @@ namespace Perforce.P4
         {
             String descStr = String.Empty;
             if (Description != null)
-                descStr = Description.Replace("\n", "\n\t");
+            {
+                string lf = "\n";
+                string crlf = "\r\n";
+
+                // replace all Windows line endings '\r\n' with linux line endings '\n'
+                string descStrNormalized = Description.Replace(crlf, lf);
+
+                // Now replace all '\n' with Environment.NewLine + '\t'
+                descStr = descStrNormalized.Replace(lf, Environment.NewLine + "\t");
+            }
 
             String Type = _type.ToString(StringEnumCase.Lower);
 
@@ -600,15 +592,15 @@ namespace Perforce.P4
 
             String pathsView = String.Empty;
             if (Paths != null)
-                pathsView = Paths.ToString().Replace("\r\n", "\r\n\t").Trim();
+                pathsView = Paths.ToString().Replace(Environment.NewLine, Environment.NewLine + "\t").Trim();
 
             String remappedView = String.Empty;
             if (Remapped != null)
-                remappedView = Remapped.ToString().Replace("\r\n", "\r\n\t").Trim();
+                remappedView = Remapped.ToString().Replace(Environment.NewLine, Environment.NewLine + "\t").Trim();
 
             String ignoredView = String.Empty;
             if (Ignored != null)
-                ignoredView = Ignored.ToString().Replace("\r\n", "\r\n\t").Trim();
+                ignoredView = Ignored.ToString().Replace(Environment.NewLine, Environment.NewLine + "\t").Trim();
 
             string customFieldsString = String.Empty;
             if (CustomFields.Count != 0)
@@ -641,26 +633,25 @@ namespace Perforce.P4
             {
                 if (kvp.Value is int)
                 {
-                    result += kvp.Key.ToString() + ":\t" + kvp.Value.ToString() + "\r\n\r\n";
+                    result += kvp.Key.ToString() + ":\t" + kvp.Value.ToString() + Environment.NewLine + Environment.NewLine;
                 }
 
                 if (kvp.Value is String)
                 {
-                    result += kvp.Key.ToString() + ":\t" + kvp.Value.ToString() + "\r\n\r\n";
+                    result += kvp.Key.ToString() + ":\t" + kvp.Value.ToString() + Environment.NewLine + Environment.NewLine;
                 }
 
                 if (kvp.Value is List<string>)
                 {
-                    result += kvp.Key.ToString() + ":\r\n";
+                    result += kvp.Key.ToString() + ":" + Environment.NewLine;
                     foreach (string foo in (List<string>)kvp.Value)
                     {
-                        result += "\t" + foo + "\r\n";
+                        result += "\t" + foo + Environment.NewLine;
                     }
-                    //result = result.Substring(0, result.Length - 3);
-                    result += "\r\n";
+                    result += Environment.NewLine;
                 }
             }
-            return result.Substring(0, result.Length - 2);
+            return result.Substring(0, result.Length - Environment.NewLine.Length );
         }
         
         private void GetSpecDefinition(FormBase _baseForm)

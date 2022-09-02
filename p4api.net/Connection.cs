@@ -58,9 +58,10 @@ namespace Perforce.P4
         /// </summary>
         Connected = 0x0001
     }
+
     /// <summary>
     /// Represents the logical connection between a specific Perforce
-    /// Server instance and a specific client application. 
+    /// Server instance and a specific client application.
     /// </summary>
     public class Connection : IDisposable
     {
@@ -103,7 +104,7 @@ namespace Perforce.P4
             {
                 if (connectionEstablished())
                 {
-                    getP4Server().User = value != null ? value : string.Empty;
+                    getP4Server().User = value ?? string.Empty;
                 }
                 username = value;
             }
@@ -131,14 +132,7 @@ namespace Perforce.P4
             {
                 if (connectionEstablished())
                 {
-                    if (value!=null)
-                    {
-                        getP4Server().Password = value.Ticket != null ? value.Ticket : string.Empty;
-                    }
-                    else
-                    {
-                        getP4Server().Password = null;
-                    }
+                    getP4Server().Password = (value != null && value.Ticket != null) ? value.Ticket : string.Empty;
                 }
                 credential = value;
             }
@@ -215,7 +209,7 @@ namespace Perforce.P4
                 if (connectionEstablished())
                 {
                     getP4Server().CharacterSet = value;
-                } 
+                }
                 _cachedCharacterSet = value;
             }
         }
@@ -226,7 +220,7 @@ namespace Perforce.P4
         private P4Server _p4serverST;
 
         /// <summary>
-        /// Return the server connetion
+        /// Return the server connection
         /// </summary>
         public P4Server getP4Server()
         {
@@ -305,34 +299,30 @@ namespace Perforce.P4
             {
                 if (connectionEstablished())
                 {
-                    getP4Server().Dispose();
+                    if (multithreaded)
+                        _p4serverMT.Dispose();
+                    else
+                        getP4Server().Dispose();
                 }
 
                 string password = null;
                 string ticket = null;
 
-
-                if (options != null)
+                if (options?.Keys?.Contains("Ticket") ?? false)
                 {
-                    if (options.Keys.Contains("Ticket"))
-                    {
                         ticket = options["Ticket"];
-                    }
-                
-                    if (options.Keys.Contains("Password"))
-                    {
-                        password = options["Password"];
-                    }
                 }
 
-                string clientName = null;
-                if ((Client != null) && (string.IsNullOrEmpty(Client.Name) == false))
+                if (options?.Keys?.Contains("Password") ?? false)
                 {
-                    clientName = Client.Name;
+                    password = options["Password"];
                 }
+
+                string clientName = Client?.Name;
+
                 try
                 {
-                    if ((options != null) && (options.Keys.Contains("cwd")))
+                    if (options?.Keys?.Contains("cwd") ?? false)
                     {
                         _cwd = options["cwd"];
                         if (multithreaded)
@@ -355,15 +345,14 @@ namespace Perforce.P4
                     }
                     else
                     {
+                        _cwd = null;
                         if (multithreaded)
                         {
                             _p4serverMT = new P4ServerMT(Server.Address.Uri, UserName, password,
                                 clientName, _cwd, null, null);
                         }
-
                         else
                         {
-                            
                             _p4serverST = new P4Server(Server.Address.Uri, UserName, password,
                                 clientName, _cwd);
                             // allow the developer to manage the threading problems on their own
@@ -374,30 +363,32 @@ namespace Perforce.P4
                     if (_cachedCharacterSet != "none")
                     {
                         getP4Server().CharacterSet = _cachedCharacterSet;
-                    }                  
+                    }
 
                     if (_commandTimeout != TimeSpan.Zero)
                     {
                         getP4Server().RunCmdTimeout = _commandTimeout;
                     }
-                    try
-                    {
+
                         // set the program name and version before the first command is run
-                        if ((options != null) && (options.Keys.Contains("ProgramName")))
-                        {
-                            getP4Server().ProgramName = options["ProgramName"];
-                        }
-                        if ((options != null) && (options.Keys.Contains("ProgramVersion")))
-                        {
-                            getP4Server().ProgramVersion = options["ProgramVersion"];
-                        }
-                        // run a help command
-                        getP4Server().RunCommand("help", 0, false, null, 0);
-                    }
-                    finally
+                    if (options?.Keys?.Contains("ProgramName") ?? false)
                     {
-                        // getP4Server().Disconnect();
+                        if (multithreaded)
+                            _p4serverMT.ProgramName = options["ProgramName"];
+                        else
+                            getP4Server().ProgramName = options["ProgramName"];
                     }
+
+                    if (options?.Keys?.Contains("ProgramVersion") ?? false)
+                    {
+                        if (multithreaded)
+                            _p4serverMT.ProgramVersion = options["ProgramVersion"];
+                        else
+                            getP4Server().ProgramVersion = options["ProgramVersion"];
+                    }
+                    // run a help command, what was this for?
+                    // using this with SSL enabled was causing big problems!
+                    //getP4Server().RunCommand("help", 0, false, null, 0);
                 }
                 catch (Exception e)
                 {
@@ -405,7 +396,7 @@ namespace Perforce.P4
                     Server.SetState(ServerState.Offline);
                     throw;
                 }
-                if ((connectionEstablished()) && (getP4Server().pServer != IntPtr.Zero))
+                if (connectionEstablished() && getP4Server().pServer != IntPtr.Zero)
                 {
                     if (ticket != null)
                     {
@@ -429,7 +420,7 @@ namespace Perforce.P4
                                 getP4Server().RunCommand("info", 0, true, null, 0);
                             }
                             TaggedObjectList results = getP4Server().GetTaggedOutput(0);
-                            if (results != null && results.Count > 0)
+                            if ((results?.Count ?? 0) > 0)
                             {
                                 value.FromGetServerMetaDataCmdTaggedOutput(results[0]);
                             }
@@ -437,17 +428,18 @@ namespace Perforce.P4
                             else
                             {
                                 P4ClientInfoMessageList infoOut = getP4Server().GetInfoResults(0);
-                                if (infoOut != null && infoOut.Count > 0)
+                                if ((infoOut?.Count ?? 0) > 0)
                                 {
                                     foreach (P4ClientInfoMessage info in infoOut)
                                     {
                                         System.Diagnostics.Trace.TraceInformation(info.Message);
                                     }
                                 }
-                                P4.P4ClientErrorList errors = getP4Server().GetErrorResults(0);
-                                if (errors != null && errors.Count > 0)
+
+                                P4ClientErrorList errors = getP4Server().GetErrorResults(0);
+                                if ((errors?.Count ?? 0) > 0)
                                 {
-                                    foreach (P4.P4ClientError error in errors)
+                                    foreach (P4ClientError error in errors)
                                     {
                                         System.Diagnostics.Trace.TraceInformation(error.ErrorMessage);
                                     }
@@ -462,10 +454,9 @@ namespace Perforce.P4
                         }
                     }
 
-                    if ((Server.Address == null) || (string.IsNullOrEmpty(Server.Address.Uri)))
+                    if (string.IsNullOrEmpty(Server.Address?.Uri))
                     {
-                        string newUri = getP4Server().Port;
-                        Server.Address = new ServerAddress(newUri);
+                        Server.Address = new ServerAddress(getP4Server().Port);
                     }
                     if (string.IsNullOrEmpty(UserName))
                     {
@@ -495,7 +486,7 @@ namespace Perforce.P4
                         }
                     }
 
-                    if ((Client != null) && (string.IsNullOrEmpty(Client.Name) == false))
+                    if (!string.IsNullOrEmpty(Client?.Name))
                     {
                         try
                         {
@@ -504,9 +495,9 @@ namespace Perforce.P4
                         catch (Exception ex)
                         {
                             LogFile.LogException("P4API.NET", ex);
-                            if ((!connectionEstablished()) || (getP4Server().pServer == IntPtr.Zero))
+                            if (!connectionEstablished() || getP4Server().pServer == IntPtr.Zero)
                             {
-                                // Connection failed and was discarderd, so rethrow the error
+                                // Connection failed and was discarded, so rethrow the error
                                 throw;
                             }
                             // can't initialize yet, probably need to login
@@ -519,9 +510,9 @@ namespace Perforce.P4
                             }
                         }
 
-                        if ((Client.Initialized) && (string.IsNullOrEmpty(getP4Server().CurrentWorkingDirectory)))
+                        if (Client.Initialized != false && string.IsNullOrEmpty(getP4Server().CurrentWorkingDirectory))
                         {
-                            if ((string.IsNullOrEmpty(Client.Root) == false) && (System.IO.Directory.Exists(Client.Root)))
+                            if (string.IsNullOrEmpty(Client.Root) == false && System.IO.Directory.Exists(Client.Root))
                             {
                                 getP4Server().CurrentWorkingDirectory = Client.Root;
                             }
@@ -531,25 +522,21 @@ namespace Perforce.P4
                                 {
                                     foreach (string altRoot in Client.AltRoots)
                                     {
-                                        if ((string.IsNullOrEmpty(altRoot) == false) && (System.IO.Directory.Exists(altRoot)))
+                                        if (string.IsNullOrEmpty(altRoot) == false &&
+                                            System.IO.Directory.Exists(altRoot))
                                         {
                                             getP4Server().CurrentWorkingDirectory = Client.Root;
                                             return true;
                                         }
                                     }
-                                    throw new P4Exception(ErrorSeverity.E_WARN, "The client root and alternate roots do not exist on this system");
+
+                                    throw new P4Exception(ErrorSeverity.E_WARN,
+                                        "The client root and alternate roots do not exist on this system");
                                 }
                             }
                         }
                     }
-                    //if ((options != null) && (options.Keys.Contains("ProgramName")))
-                    //{
-                    //    getP4Server().ProgramName = options["ProgramName"];
-                    //}
-                    //if ((options != null) && (options.Keys.Contains("ProgramVersion")))
-                    //{
-                    //    getP4Server().ProgramVersion = options["ProgramVersion"];
-                    //}
+
                     return true;
                 }
                 Server.SetState(ServerState.Offline);
@@ -563,6 +550,7 @@ namespace Perforce.P4
         /// <param name="options">connect options</param>
         /// <param name="trustFlag">arguments to the "trust" command</param>
         /// <param name="fingerprint">fingerprint to install</param>
+        /// <exception cref="P4Exception">Connection errors</exception>
         /// <returns>true if the connection succeeds</returns>
         public bool TrustAndConnect(Options options, string trustFlag, string fingerprint)
         {
@@ -577,45 +565,41 @@ namespace Perforce.P4
                 string ticket = null;
 
 
-                if ((options != null) && (options.Keys.Contains("Ticket")))
+                if (options != null && options.Keys.Contains("Ticket"))
                 {
                     ticket = options["Ticket"];
                 }
                 else
                 {
-                    if ((options != null) && (options.Keys.Contains("Password")))
+                    if (options != null && options.Keys.Contains("Password"))
                     {
                         password = options["Password"];
                     }
                 }
 
-                string clientName = null;
-                if ((Client != null) && (string.IsNullOrEmpty(Client.Name) == false))
-                {
-                    clientName = Client.Name;
-                }
+                string clientName = string.IsNullOrEmpty(Client?.Name) ? null : Client.Name;
                 try
                 {
                     if (multithreaded)
-                        _p4serverMT = new P4ServerMT(Server.Address.Uri, UserName, password, clientName, _cwd, trustFlag, fingerprint);
-                    else
                     {
-                        _p4serverST = new P4Server(Server.Address.Uri, UserName, password, clientName, _cwd, trustFlag, fingerprint);
+                        _p4serverMT = new P4ServerMT(Server.Address.Uri, UserName, password, clientName, _cwd,
+                        trustFlag, fingerprint);
+                        _p4serverMT.RunCmdTimeout = _commandTimeout;
+                    } else {
+                        _p4serverST = new P4Server(Server.Address.Uri, UserName, password, clientName, _cwd, trustFlag,
+                            fingerprint);
                         // allow the developer to manage the threading problems on their own
                         _p4serverST.SetThreadOwner(-1);
+                        _p4serverST.RunCmdTimeout = _commandTimeout;
                     }
-
-                    if (_commandTimeout != null)
-                    {
-                        getP4Server().RunCmdTimeout = _commandTimeout;
                     }
-                }
                 catch (Exception)
                 {
                     Server.SetState(ServerState.Offline);
                     throw;
                 }
-                if ((connectionEstablished()) && (getP4Server().pServer != IntPtr.Zero))
+
+                if (connectionEstablished() && getP4Server().pServer != IntPtr.Zero)
                 {
                     if (ticket != null)
                     {
@@ -658,7 +642,7 @@ namespace Perforce.P4
                                 P4.P4ClientErrorList errors = getP4Server().GetErrorResults(0);
                                 if (errors != null && errors.Count > 0)
                                 {
-                                    foreach (P4.P4ClientError error in errors)
+                                    foreach (P4ClientError error in errors)
                                     {
                                         System.Diagnostics.Trace.TraceInformation(error.ErrorMessage);
                                     }
@@ -673,15 +657,16 @@ namespace Perforce.P4
                         }
                     }
 
-                    if (string.IsNullOrEmpty(Server.Address.Uri))
+                    if (string.IsNullOrEmpty(Server.Address?.Uri))
                     {
-                        string newUri = getP4Server().Port;
-                        Server.Address = new ServerAddress(newUri);
+                        Server.Address = new ServerAddress(getP4Server().Port);
                     }
+
                     if (string.IsNullOrEmpty(UserName))
                     {
                         UserName = getP4Server().User;
                     }
+
                     if (string.IsNullOrEmpty(clientName))
                     {
                         clientName = getP4Server().Client;
@@ -692,7 +677,7 @@ namespace Perforce.P4
 
                             try
                             {
-                                Client = newClient;
+                                Client = newClient; // go to server to fill out Client
                             }
                             catch
                             {
@@ -706,7 +691,7 @@ namespace Perforce.P4
                         }
                     }
 
-                    if ((Client != null) && (string.IsNullOrEmpty(Client.Name) == false))
+                    if (!string.IsNullOrEmpty(Client?.Name))
                     {
                         try
                         {
@@ -716,7 +701,7 @@ namespace Perforce.P4
 
                         if (Client.Initialized)
                         {
-                            if ((string.IsNullOrEmpty(Client.Root) == false) && (System.IO.Directory.Exists(Client.Root)))
+                            if (!string.IsNullOrEmpty(Client.Root) && System.IO.Directory.Exists(Client.Root))
                             {
                                 getP4Server().CurrentWorkingDirectory = Client.Root;
                                 return true;
@@ -727,13 +712,14 @@ namespace Perforce.P4
                                 {
                                     foreach (string altRoot in Client.AltRoots)
                                     {
-                                        if ((string.IsNullOrEmpty(altRoot) == false) && (System.IO.Directory.Exists(altRoot)))
+                                        if (!string.IsNullOrEmpty(altRoot) && Directory.Exists(altRoot))
                                         {
                                             getP4Server().CurrentWorkingDirectory = Client.Root;
                                             return true;
                                         }
                                     }
-                                    throw new P4Exception(ErrorSeverity.E_WARN, "The client root and alternate roots do not exist on this system");
+                                    throw new P4Exception(ErrorSeverity.E_WARN,
+                                        "The client root and alternate roots do not exist on this system");
                                 }
                             }
                         }
@@ -746,8 +732,8 @@ namespace Perforce.P4
         }
 
         /// <summary>
-        /// Release the connection held by the bridge to the server. This will cause the 
-        /// bridge to call init before the next command is run, forcing it to reinitialize 
+        /// Release the connection held by the bridge to the server. This will cause the
+        /// bridge to call init before the next command is run, forcing it to reinitialize
         /// any cached connection settings.
         /// </summary>
         public void ReleaseConnection()
@@ -785,6 +771,7 @@ namespace Perforce.P4
                 return true;
             }
         }
+
         /// <summary>
         /// Run a Login on the Perforce Server
         /// </summary>
@@ -794,45 +781,45 @@ namespace Perforce.P4
         /// <returns>Success/Failure</returns>
         /// <remarks>
         /// <br/><b>p4 help login</b>
-        /// <br/> 
+        /// <br/>
         /// <br/>     login -- Log in to Perforce by obtaining a session ticket
-        /// <br/> 
+        /// <br/>
         /// <br/>     p4 login [-a -p] [-h &lt;host&gt;] [user]
         /// <br/>     p4 login [-s]
         /// <br/>     p4 login [-r remote spec]
-        /// <br/> 
+        /// <br/>
         /// <br/> 	The login command enables a user to access Perforce until the session
         /// <br/> 	expires or the user logs out.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	When a user logs in to Perforce, they are prompted for a password
         /// <br/> 	If they enter the correct password, they are issued a ticket.  The
         /// <br/> 	ticket expires when the default timeout value has been reached and
         /// <br/> 	is valid only for the host machine where the 'login' command was
         /// <br/> 	executed (see below for exception).
-        /// <br/> 
+        /// <br/>
         /// <br/> 	The ticket can be used anywhere that a password can be used.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	Example: p4 -P &lt;ticket value&gt; changes -m1
-        /// <br/> 
+        /// <br/>
         /// <br/> 	The -a flag causes the server to issue a ticket that is valid on all
         /// <br/> 	host machines.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	The -h flag causes the server to issue a ticket that is valid on the
         /// <br/> 	specified host (IP address).  This flag is typically used together
         /// <br/> 	with the -p flag to acquire a ticket that can be used on a different
         /// <br/> 	machine.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	The -p flag displays the ticket, but does not store it on the client
         /// <br/> 	machine.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	The -s flag displays the status of the current ticket (if there is
         /// <br/> 	one).
-        /// <br/> 
+        /// <br/>
         /// <br/> 	Specifying a username as an argument to 'p4 login' requires 'super'
         /// <br/> 	access, which is granted by 'p4 protect'.  In this case, 'p4 login'
         /// <br/> 	does not prompt for the password (you must already be logged in).
-        /// <br/> 
-        /// <br/> 
+        /// <br/>
+        /// <br/>
         /// </remarks>
         public Credential Login(string password, Options options, string user)
         {
@@ -844,19 +831,16 @@ namespace Perforce.P4
                 DateTime exp = DateTime.MaxValue;
 
                 // Login into the server. The login command will prompt
-                // for the password. If user does not have a password, 
-                // the command will just return with a result saying 
+                // for the password. If user does not have a password,
+                // the command will just return with a result saying
                 // that login is not required.
-                P4Command login = null;
-                if (user == null)
+                using (P4Command login = (user == null)
+                    ? new P4Command(this, "login", true)
+                    : new P4Command(this, "login", true, user))
                 {
-                    login = new P4Command(this, "login", true);
-                }
-                else
-                {
-                    login = new P4Command(this, "login", true, user);
+                    if (user != null)
                     usr = user;
-                }
+
                 login.Responses = new Dictionary<string, string>();
                 login.Responses["DefaultResponse"] = password;
                 P4CommandResult results;
@@ -868,10 +852,11 @@ namespace Perforce.P4
                     {
                         return null;
                     }
-                    if ((results.Success) && (results.InfoOutput != null) && (results.InfoOutput.Count > 0))
+
+                        if (results.Success && (results?.InfoOutput?.Count ?? 0) > 0)
                     {
-                        if ((results.InfoOutput[0].MessageCode == P4.P4ClientError.MsgServer_LoginNotRequired) ||
-                                (results.InfoOutput[0].MessageCode == P4.P4ClientError.MsgServer_LoginUser))
+                            if (results.InfoOutput[0].MessageCode == P4ClientError.MsgServer_LoginNotRequired ||
+                                results.InfoOutput[0].MessageCode == P4ClientError.MsgServer_LoginUser)
                         {
                             return new Credential(usr, tkt, exp);
                         }
@@ -884,33 +869,37 @@ namespace Perforce.P4
                             tkt = password;
                         }
                     }
-                    if ((results.TaggedOutput != null) && (results.TaggedOutput.Count > 0))
+
+                        if ((results?.TaggedOutput?.Count ?? 0) > 0)
                     {
                         if (results.TaggedOutput[0].ContainsKey("TicketExpiration"))
                         {
-                            string expStr = string.Empty;
-                            expStr = results.TaggedOutput[0]["TicketExpiration"];
+                                string expStr = results.TaggedOutput[0]["TicketExpiration"];
                             long seconds = 0;
                             long.TryParse(expStr, out seconds);
                             exp = DateTime.Now.AddSeconds(seconds);
                         }
+
                         if (results.TaggedOutput[0].ContainsKey("User"))
                         {
                             usr = results.TaggedOutput[0]["User"];
                         }
                     }
-                    if ((results.TaggedOutput != null) && (options.ContainsKey("-s")))
+
+                        if (results.TaggedOutput != null && options.ContainsKey("-s"))
                     {
-                        // if this was a dsplay status reques, we can get the active ticket
+                            // if this was a display status request, we can get the active ticket
                         // by calling GetPassword() on the C++ api server
                         tkt = getP4Server().Password;
                     }
+
                     return new Credential(UserName, tkt, exp);
                 }
                 catch
                 {
                     return null;
                 }
+            }
             }
             getP4Server().User = UserName;
             getP4Server().Password = password;
@@ -925,44 +914,44 @@ namespace Perforce.P4
         /// <returns>Success/Failure</returns>
         /// <remarks>
         /// <br/><b>p4 help login</b>
-        /// <br/> 
+        /// <br/>
         /// <br/>     login -- Log in to Perforce by obtaining a session ticket
-        /// <br/> 
+        /// <br/>
         /// <br/>     p4 login [-a -p] [-h &lt;host&gt;] [user]
         /// <br/>     p4 login [-s]
-        /// <br/> 
+        /// <br/>
         /// <br/> 	The login command enables a user to access Perforce until the session
         /// <br/> 	expires or the user logs out.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	When a user logs in to Perforce, they are prompted for a password
         /// <br/> 	If they enter the correct password, they are issued a ticket.  The
         /// <br/> 	ticket expires when the default timeout value has been reached and
         /// <br/> 	is valid only for the host machine where the 'login' command was
         /// <br/> 	executed (see below for exception).
-        /// <br/> 
+        /// <br/>
         /// <br/> 	The ticket can be used anywhere that a password can be used.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	Example: p4 -P &lt;ticket value&gt; changes -m1
-        /// <br/> 
+        /// <br/>
         /// <br/> 	The -a flag causes the server to issue a ticket that is valid on all
         /// <br/> 	host machines.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	The -h flag causes the server to issue a ticket that is valid on the
         /// <br/> 	specified host (IP address).  This flag is typically used together
         /// <br/> 	with the -p flag to acquire a ticket that can be used on a different
         /// <br/> 	machine.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	The -p flag displays the ticket, but does not store it on the client
         /// <br/> 	machine.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	The -s flag displays the status of the current ticket (if there is
         /// <br/> 	one).
-        /// <br/> 
+        /// <br/>
         /// <br/> 	Specifying a username as an argument to 'p4 login' requires 'super'
         /// <br/> 	access, which is granted by 'p4 protect'.  In this case, 'p4 login'
         /// <br/> 	does not prompt for the password (you must already be logged in).
-        /// <br/> 
-        /// <br/> 
+        /// <br/>
+        /// <br/>
         /// </remarks>
         public Credential Login(string password, Options options)
         {
@@ -975,8 +964,8 @@ namespace Perforce.P4
         /// <param name="password">User password</param>
         /// <returns>Success/Failure</returns>
         /// <remarks>
-        /// Runs the login process. If the server is using ticket based 
-        /// authentication, actually runs the logon three times. Once to 
+        /// Runs the login process. If the server is using ticket based
+        /// authentication, actually runs the logon three times. Once to
         /// login and update the ticket file, once to get the ticket from
         /// the server and finally once to get the ticket expiration data.
         /// </remarks>
@@ -987,8 +976,8 @@ namespace Perforce.P4
         }
 
         /// <summary>
-        /// Runs the login process. If the server is using ticket based 
-        /// authentication, actually runs the logon three times. Once to 
+        /// Runs the login process. If the server is using ticket based
+        /// authentication, actually runs the logon three times. Once to
         /// login and update the ticket file, once to get the ticket from
         /// the server and finally once to get the ticket expiration data.
         /// </summary>
@@ -997,24 +986,14 @@ namespace Perforce.P4
         /// <returns>Success/Failure</returns>
         public Credential Login(string password, bool allHostTicket)
         {
-            //    return Login(password, allHostTicket, false);
-            //}
-            //public Credential Login(string password, bool allHostTicket, bool GetHostAlias )
-            //{
-            //IDictionary<string, string> OldTickets = null;
-            //if (GetHostAlias)
-            //{
-            //    // Read the ticket file before logging in so we can see what is added or changed.
-            //    OldTickets = LoadTicketFile();
-            //}
             if (getP4Server().RequiresLogin)
             {
                 // Login into the server. The login command will prompt
-                // for the password. If user does not have a password, 
-                // the command will just return with a result saying 
+                // for the password. If user does not have a password,
+                // the command will just return with a result saying
                 // that login is not required.
-                P4Command login = new P4Command(this, "login", true);
-
+                using (P4Command login = new P4Command(this, "login", true))
+                {
                 login.Responses = new Dictionary<string, string>();
                 login.Responses["DefaultResponse"] = password;
                 P4CommandResult results;
@@ -1032,12 +1011,13 @@ namespace Perforce.P4
                         opt = new Options();
                         opt["-a"] = null;
                     }
+
                     // this login will write the ticket into the ticket file
                     results = login.Run(opt);
 
-                    if ((results.InfoOutput != null) && (results.InfoOutput.Count > 0) &&
-                        ((results.InfoOutput[0].MessageCode == P4ClientError.MsgServer_LoginNotRequired) ||
-                         (results.InfoOutput[0].MessageCode == P4ClientError.MsgServer_LoginUser)) )
+                        if ((results?.InfoOutput?.Count ?? 0) > 0 &&
+                            (results.InfoOutput[0].MessageCode == P4ClientError.MsgServer_LoginNotRequired ||
+                             results.InfoOutput[0].MessageCode == P4ClientError.MsgServer_LoginUser))
                     {
                         return new Credential(usr, tkt, exp);
                     }
@@ -1051,7 +1031,7 @@ namespace Perforce.P4
                     //        {
                     //            if ((OldTickets == null) || (OldTickets.ContainsKey(hostId) == false) || (newTickets[hostId] != OldTickets[hostId]))
                     //            {
-                    //                // either no tickets before, so whatever was added was the new ticket, 
+                    //                // either no tickets before, so whatever was added was the new ticket,
                     //                // or new hostId, so must be from this login, or the value
                     //                // has changed so must be updated ticket from this login
                     //                Credential cred = new Credential(usr, newTickets[hostId], exp);
@@ -1070,7 +1050,8 @@ namespace Perforce.P4
                 {
                     throw;
                 }
-                if (results.Success)
+
+                if (results?.Success ?? false)
                 {
                     try
                     {
@@ -1082,43 +1063,45 @@ namespace Perforce.P4
                         {
                             opt["-a"] = null;
                         }
+
                         results = login.Run(opt);
 
-                        if ((results.InfoOutput != null) && (results.InfoOutput.Count > 0) &&
-                            (results.InfoOutput[0].MessageCode == P4.P4ClientError.MsgServer_LoginNotRequired))
+                        if ((results?.InfoOutput?.Count ?? 0) > 0 &&
+                                results.InfoOutput[0].MessageCode == P4ClientError.MsgServer_LoginNotRequired)
                         {
                             return new Credential(usr, tkt, exp);
                         }
-                        else if (results.InfoOutput != null)
+                        else if (results?.InfoOutput != null)
                         {
                             tkt = results.InfoOutput[results.InfoOutput.Count - 1].Message;
 
                             getP4Server().Password = tkt;
                         }
 
-                        login = new P4Command(getP4Server(), "login", true);
-
-                        opt = new Options();
-                        opt["-s"] = null;
-                        results = login.Run(opt);
-
-                        if ((results.TaggedOutput != null) && (results.TaggedOutput.Count > 0))
+                        using (P4Command login1 = new P4Command(getP4Server(), "login", true))
                         {
-                            if (results.TaggedOutput[0].ContainsKey("TicketExpiration"))
+                            opt = new Options();
+                            opt["-s"] = null;
+                            results = login1.Run(opt);
+
+                            if ((results?.TaggedOutput?.Count ?? 0) > 0)
                             {
-                                string expStr = string.Empty;
-                                expStr = results.TaggedOutput[0]["TicketExpiration"];
-                                long seconds = 0;
-                                long.TryParse(expStr, out seconds);
-                                exp = DateTime.Now.AddSeconds(seconds);
+                                if (results.TaggedOutput[0].ContainsKey("TicketExpiration"))
+                                {
+                                    string expStr = string.Empty;
+                                    expStr = results.TaggedOutput[0]["TicketExpiration"];
+                                    long seconds = 0;
+                                    long.TryParse(expStr, out seconds);
+                                    exp = DateTime.Now.AddSeconds(seconds);
+                                }
+
+                                if (results.TaggedOutput[0].ContainsKey("User"))
+                                {
+                                    usr = results.TaggedOutput[0]["User"];
+                                }
                             }
-                            if (results.TaggedOutput[0].ContainsKey("User"))
+                            else if (results?.InfoOutput != null)
                             {
-                                usr = results.TaggedOutput[0]["User"];
-                            }
-                        }
-                        else if (results.InfoOutput != null)
-                        {
                             string line = results.InfoOutput[0].Message;
 
                             int idx = line.IndexOf("ticket");
@@ -1150,9 +1133,9 @@ namespace Perforce.P4
                             int.TryParse(mStr, out minutes);
 
                             exp = DateTime.Now.AddHours(hours).AddMinutes(minutes);
+                            }
                         }
-                        if ((Client != null) && (Client.Initialized == false) &&
-                            (string.IsNullOrEmpty(Client.Name) == false))
+                        if (!(Client?.Initialized ?? false) && !string.IsNullOrEmpty(Client?.Name))
                         {
                             try
                             {
@@ -1162,7 +1145,7 @@ namespace Perforce.P4
 
                             if (Client.Initialized)
                             {
-                                if ((string.IsNullOrEmpty(Client.Root) == false) && (System.IO.Directory.Exists(Client.Root)))
+                                if (!string.IsNullOrEmpty(Client.Root) && System.IO.Directory.Exists(Client.Root))
                                 {
                                     getP4Server().CurrentWorkingDirectory = Client.Root;
                                 }
@@ -1172,7 +1155,7 @@ namespace Perforce.P4
                                     {
                                         foreach (string altRoot in Client.AltRoots)
                                         {
-                                            if ((string.IsNullOrEmpty(altRoot) == false) && (System.IO.Directory.Exists(altRoot)))
+                                            if (!string.IsNullOrEmpty(altRoot) && System.IO.Directory.Exists(altRoot))
                                             {
                                                 getP4Server().CurrentWorkingDirectory = Client.Root;
                                                 break;
@@ -1182,7 +1165,6 @@ namespace Perforce.P4
                                 }
                             }
                         }
-
                     }
                     catch
                     {
@@ -1190,6 +1172,7 @@ namespace Perforce.P4
                     }
 
                     return new Credential(usr, tkt, exp);
+                }
                 }
                 return null;
             }
@@ -1207,26 +1190,26 @@ namespace Perforce.P4
         /// <returns>Success/Failure</returns>
         /// <remarks>
         /// <br/><b>p4 help logout</b>
-        /// <br/> 
+        /// <br/>
         /// <br/>     logout -- Log out from Perforce by removing or invalidating a ticket.
-        /// <br/> 
+        /// <br/>
         /// <br/>     p4 logout [-a] [user]
-        /// <br/> 
+        /// <br/>
         /// <br/> 	The logout command removes the ticket on the client. To resume using
         /// <br/> 	Perforce, the user must log in again.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	If you are logged in to Perforce from more than one machine, you can
         /// <br/> 	log out of Perforce from all machines from which you were logged in
         /// <br/> 	by specifying the -a flag. The -a flag invalidates the ticket on the
         /// <br/> 	server. All of your Perforce tickets are invalidated and you are
         /// <br/> 	logged out.
-        /// <br/> 	
+        /// <br/>
         /// <br/> 	Specifying a username as an argument to 'p4 logout' requires 'super'
         /// <br/> 	access, which is granted by 'p4 protect'.  Note that the '-a' flag
         /// <br/> 	must be used to effectively log out a user who has a valid ticket on
         /// <br/> 	another machine.
-        /// <br/> 
-        /// <br/> 
+        /// <br/>
+        /// <br/>
         /// </remarks>
         public bool Logout(Options options, string user = null)
         {
@@ -1251,11 +1234,11 @@ namespace Perforce.P4
         /// <returns>Success/Failure</returns>
         /// <remarks>
         /// <br/><b>p4 trust -h</b>
-        /// <br/> 
+        /// <br/>
         /// <br/>         trust -- Establish trust of an SSL connection
-        /// <br/> 
+        /// <br/>
         /// <br/>         p4 trust [ -l -y -n -d -f -r -i &lt;fingerprint&gt; ]
-        /// <br/> 
+        /// <br/>
         /// <br/>         Establish trust of an SSL connection.  This client command manages
         /// <br/>         the p4 trust file.  This file contains fingerprints of the keys
         /// <br/>         received on ssl connections.  When an SSL connection is made, this
@@ -1263,53 +1246,50 @@ namespace Perforce.P4
         /// <br/>         before and if the key is the same as a previously seen key for that
         /// <br/>         connection.  Establishing trust with a connection prevents undetected
         /// <br/>         communication interception (man-in-the-middle) attacks.
-        /// <br/> 
+        /// <br/>
         /// <br/>         Most options are mutually exclusive.  Only the -r and -f options
         /// <br/>         can be combined with the others.
-        /// <br/> 
+        /// <br/>
         /// <br/>         The -l flag lists existing known fingerprints.
-        /// <br/> 
+        /// <br/>
         /// <br/>         Without options, this command will make a connection to a server
         /// <br/>         and examine the key if present, if one cannot be found this command
         /// <br/>         will show a fingerprint and ask if this connection should be trusted.
         /// <br/>         If a fingerprint exists and does not match, an error that a possible
         /// <br/>         security problems exists will be displayed.
-        /// <br/> 
+        /// <br/>
         /// <br/>         The -y flag will cause prompts to be automatically accepted.
-        /// <br/> 
+        /// <br/>
         /// <br/>         The -n flag will cause prompts to be automatically refused.
-        /// <br/> 
+        /// <br/>
         /// <br/>         The -d flag will remove an existing trusted fingerprint of a connection.
-        /// <br/> 
+        /// <br/>
         /// <br/>         The -f flag will force the replacement of a mismatched fingerprint.
-        /// <br/> 
+        /// <br/>
         /// <br/>         The -i flag will allow a specific fingerprint to be installed.
-        /// <br/> 
+        /// <br/>
         /// <br/>         The -r flag specifies that a replacement fingerprint is to be
         /// <br/>         affected.  Replacement fingerprints can be used in anticipation
         /// <br/>         of a server replacing its key.  If a replacement fingerprint
         /// <br/>         exists for a connection and the primary fingerprint does not match
         /// <br/>         while the replacement fnigerprint does, the replacement fingerprint
         /// <br/>         will replace the primary.  This flag can be combined with -l, -i,
-        /// <br/>         or -d. 
+        /// <br/>         or -d.
         /// </remarks>
         public bool Trust(Options options, string fingerprint)
         {
-            P4.P4Command trustCmd = null;
-            if (string.IsNullOrEmpty(fingerprint))
+            using (P4Command trustCmd = string.IsNullOrEmpty(fingerprint)
+                ? new P4Command(this, "trust", false)
+                : new P4Command(this, "trust", false, fingerprint))
             {
-                trustCmd = new P4Command(this, "trust", false);
+                P4CommandResult r = trustCmd.Run(options);
+                if (r.Success != true)
+                {
+                    P4Exception.Throw(r.ErrorList);
+                    return false;
+                }
             }
-            else
-            {
-                trustCmd = new P4Command(this, "trust", false, fingerprint);
-            }
-            P4.P4CommandResult r = trustCmd.Run(options);
-            if (r.Success != true)
-            {
-                P4Exception.Throw(r.ErrorList);
-                return false;
-            }
+
             return true;
         }
 
@@ -1321,34 +1301,34 @@ namespace Perforce.P4
         /// <returns>Success/Failure</returns>
         /// <remarks>
         /// <br/><b>p4 help passwd</b>
-        /// <br/> 
+        /// <br/>
         /// <br/>     passwd -- Set the user's password on the server (and Windows client)
-        /// <br/> 
+        /// <br/>
         /// <br/>     p4 passwd [-O oldPassword -P newPassword] [user]
-        /// <br/> 
+        /// <br/>
         /// <br/> 	'p4 passwd' sets the user's password on the server.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	After a password is set for a user, the same password must be set on
         /// <br/> 	the client in the environment variable $P4PASSWD to enable the user
         /// <br/> 	to use all Perforce client applications on that machine. (On Windows,
         /// <br/> 	you can use 'p4 passwd' to configure the password in the environment.)
-        /// <br/> 
+        /// <br/>
         /// <br/> 	'p4 passwd' prompts for both the old password and the new password
         /// <br/> 	with character echoing turned off.  To delete the password, set it to
         /// <br/> 	an empty string.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	The -O flag provides the old password, avoiding prompting. If you
         /// <br/> 	specify -O, you must also specify -P.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	The -P flag provides the new password, avoiding prompting.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	If you are using ticket-based authentication, changing your password
         /// <br/> 	automatically invalidates all of your tickets and logs you out.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	Specifying a username as an argument to 'p4 passwd' requires 'super'
         /// <br/> 	access granted by 'p4 protect'.
-        /// <br/> 
-        /// <br/> 
+        /// <br/>
+        /// <br/>
         /// </remarks>
         public bool SetPassword(string OldPassword, string NewPassword)
         {
@@ -1364,57 +1344,53 @@ namespace Perforce.P4
         /// <returns>Success/Failure</returns>
         /// <remarks>
         /// <br/><b>p4 help passwd</b>
-        /// <br/> 
+        /// <br/>
         /// <br/>     passwd -- Set the user's password on the server (and Windows client)
-        /// <br/> 
+        /// <br/>
         /// <br/>     p4 passwd [-O oldPassword -P newPassword] [user]
-        /// <br/> 
+        /// <br/>
         /// <br/> 	'p4 passwd' sets the user's password on the server.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	After a password is set for a user, the same password must be set on
         /// <br/> 	the client in the environment variable $P4PASSWD to enable the user
         /// <br/> 	to use all Perforce client applications on that machine. (On Windows,
         /// <br/> 	you can use 'p4 passwd' to configure the password in the environment.)
-        /// <br/> 
+        /// <br/>
         /// <br/> 	'p4 passwd' prompts for both the old password and the new password
         /// <br/> 	with character echoing turned off.  To delete the password, set it to
         /// <br/> 	an empty string.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	The -O flag provides the old password, avoiding prompting. If you
         /// <br/> 	specify -O, you must also specify -P.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	The -P flag provides the new password, avoiding prompting.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	If you are using ticket-based authentication, changing your password
         /// <br/> 	automatically invalidates all of your tickets and logs you out.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	Specifying a username as an argument to 'p4 passwd' requires 'super'
         /// <br/> 	access granted by 'p4 protect'.
-        /// <br/> 
-        /// <br/> 
+        /// <br/>
+        /// <br/>
         /// </remarks>
         public bool SetPassword(string OldPassword, string NewPassword, string User)
         {
-            P4Command passwd = null;
-            if (User == null)
+            using (P4Command passwd = (User == null)
+                ? new P4Command(this, "passwd", true)
+                : new P4Command(this, "passwd", true, User))
             {
-                passwd = new P4Command(this, "passwd", true);
+                passwd.Responses = new Dictionary<string, string>();
+                passwd.Responses["Enter old password: "] = OldPassword;
+                passwd.Responses["Enter new password: "] = NewPassword;
+                passwd.Responses["Re-enter new password: "] = NewPassword;
+
+                P4CommandResult results = passwd.Run();
+
+                // login using the new password to refresh the credentials used by the connection
+                Login(NewPassword);
+
+                return results.Success;
             }
-            else
-            {
-                passwd = new P4Command(this, "passwd", true, User);
-            }
-            passwd.Responses = new Dictionary<string, string>();
-            passwd.Responses["Enter old password: "] = OldPassword;
-            passwd.Responses["Enter new password: "] = NewPassword;
-            passwd.Responses["Re-enter new password: "] = NewPassword;
-
-            P4CommandResult results = passwd.Run();
-
-            // login using the new password to refresh the credentials used by the connection
-            Login(NewPassword);
-
-            return results.Success;
         }
 
         /// <summary>
@@ -1495,8 +1471,8 @@ namespace Perforce.P4
         /// </summary>
         public IKeepAlive KeepAlive
         {
-            get { return getP4Server().KeepAlive; }
-            set { getP4Server().KeepAlive = value; }
+            get => getP4Server().KeepAlive;
+            set => getP4Server().KeepAlive = value;
         }
 
         /// <summary>
@@ -1504,20 +1480,33 @@ namespace Perforce.P4
         /// </summary>
         public TimeSpan KeepAliveDelay
         {
-            get { return (connectionEstablished()) ? getP4Server().KeepAliveDelay : TimeSpan.Zero; }
-            set { if (connectionEstablished()) { getP4Server().KeepAliveDelay = value; } }
+            get => connectionEstablished() ? getP4Server().KeepAliveDelay : TimeSpan.Zero;
+            set
+            {
+                if (connectionEstablished())
+                {
+                    getP4Server().KeepAliveDelay = value;
+                }
+            }
         }
-
 
         private TimeSpan _commandTimeout = TimeSpan.Zero;
 
         public TimeSpan CommandTimeout
         {
-            get { return (connectionEstablished()) ? getP4Server().RunCmdTimeout : TimeSpan.Zero; }
+            get => connectionEstablished() ? getP4Server().RunCmdTimeout : TimeSpan.Zero;
             set
             {
                 _commandTimeout = value;
-                if (connectionEstablished()) { getP4Server().RunCmdTimeout = value; }
+                if (connectionEstablished())
+                {
+                    if (multithreaded)
+                        _p4serverMT.RunCmdTimeout = value;
+                    else
+                    {
+                        _p4serverST.RunCmdTimeout = value;
+                    }
+                }
             }
         }
 
@@ -1562,7 +1551,7 @@ namespace Perforce.P4
         {
             if (!connectionEstablished())
             {
-                return null;
+                return "noconfig";
             }
             return getP4Server().Config;
         }
@@ -1625,7 +1614,7 @@ namespace Perforce.P4
         //}
 
         /// <summary>
-        /// Get the existing ticket if any for a user on the secified server
+        /// Get the existing ticket if any for a user on the specified server
         /// </summary>
         /// <param name="user">user name</param>
         /// <returns></returns>
@@ -1640,7 +1629,7 @@ namespace Perforce.P4
 
             //if (this.Server.Metadata == null)
             //{
-            //    P4Command cmd = new P4Command(this, "info", true);
+            //    using P4Command cmd = new P4Command(this, "info", true);
 
             //    P4CommandResult results = cmd.Run(null);
             //    if (results.Success)

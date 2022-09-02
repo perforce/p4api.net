@@ -390,11 +390,12 @@ namespace Perforce.P4
 
 				if (entry.Comment != string.Empty)
 				{
-					value += String.Format("{0} {1} {2}\r\n", left, right, entry.Comment);
+					value += $"{left} {right} {entry.Comment}{Environment.NewLine}";
 				}
 				else 
 				{
-					value += String.Format("{0} {1}\r\n", left, right);
+					string pad = right.Length > 0 ? " " : "";
+					value += $"{left}{pad}{right}{Environment.NewLine}";
 				}
 			}
 			return value;

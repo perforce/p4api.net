@@ -77,9 +77,8 @@ namespace Perforce.P4
         /// </example>
 		public ClientMetadata GetClientMetadata()
 		{
-			
-			P4Command cmd = new P4Command(this, "info", true);
-
+            using (P4Command cmd = new P4Command(this, "info", true))
+            {
 			P4CommandResult results = cmd.Run();
 			if (results.Success)
 			{
@@ -87,19 +86,22 @@ namespace Perforce.P4
 				{
 					return null;
 				}
+
 				ClientMetadata value = new ClientMetadata();
 				foreach (TaggedObject obj in results.TaggedOutput)
 				{ 
 					value.FromGetClientMetadataCmdTaggedOutput(obj); 
 				}
+
 				return value;
 			}
 			else
 			{
 				P4Exception.Throw(results.ErrorList);
 			}
+
 			return null;
 		}
-
+        }
 	}
 }

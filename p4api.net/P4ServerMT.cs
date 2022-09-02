@@ -42,7 +42,7 @@ namespace Perforce.P4
 {
     /// <summary>
     /// A multithreaded manager for P4Server.  A P4Server instance should not be shared between threads;
-    /// instead, either create a P4Server in each thread where you need a conenction, or a create a global P4ServerMT and call P4ServerMT.getThread()
+    /// instead, either create a P4Server in each thread where you need a connection, or a create a global P4ServerMT and call P4ServerMT.getThread()
     /// from the thread context to get a thread-safe connection to a Perforce server.
     /// </summary>
     public class P4ServerMT : IDisposable
@@ -75,6 +75,10 @@ namespace Perforce.P4
             this.user = user;
             this.pass = pass;
             this.ws_client = ws_client;
+            _programName = "";
+            _programVersion = "";
+            _characterSet = "";
+            _runCmdTimeout = TimeSpan.Zero;
         }
 
         /// <summary>
@@ -92,7 +96,8 @@ namespace Perforce.P4
         /// <param name="cwd">Current working directory</param>
         /// <param name="trust_flag">Trust or not</param>
         /// <param name="fingerprint">Fingerprint to trust</param>
-        public P4ServerMT(string server, string user, string pass, string ws_client, string cwd, string trust_flag, string fingerprint) : this(server, user, pass, ws_client)
+        public P4ServerMT(string server, string user, string pass, string ws_client, string cwd, string trust_flag, string fingerprint) 
+            : this(server, user, pass, ws_client)
         {
             this.cwd = cwd;
             this.trustFlag = trust_flag;
@@ -107,6 +112,10 @@ namespace Perforce.P4
         public P4ServerMT(string cwd)
         {
             this.cwd = cwd;
+            _programName = "";
+            _programVersion = "";
+            _characterSet = "";
+            _runCmdTimeout = TimeSpan.Zero;
         }
 
         public void Dispose()
@@ -119,7 +128,7 @@ namespace Perforce.P4
         }
 
         /// <summary>
-        /// Create/retreive a P4Server for use in this thread's context
+        /// Create/retrieve a P4Server for use in this thread's context
         /// </summary>
         /// <returns>P4Server connection</returns>
         public P4Server getServer()
@@ -127,8 +136,84 @@ namespace Perforce.P4
             return getServerForThread(System.Threading.Thread.CurrentThread.ManagedThreadId);
         }
 
+        // persist some properties  in the P4ServerMT
+        // where they will be propagated to threads as they are created.
+        private string _programName;
+        private string _programVersion;
+        private string _characterSet;
+        private TimeSpan _runCmdTimeout;
+
+        public string ProgramName
+        {
+            get => _programName;
+            set
+            {
+                // update each thread associated with this P4ServerMT
+                _programName = value;
+                lock (dictLock)
+                {
+                    foreach (KeyValuePair<int, P4Server> entry in mapTIDtoServer)
+                    {
+                        entry.Value.ProgramName = _programName;
+                    }
+                }
+            }
+        }
+        
+        public string ProgramVersion
+        {
+            get => _programVersion;
+            set
+            {
+                // update each thread associated with this P4ServerMT
+                _programVersion = value;
+                lock (dictLock)
+                {
+                    foreach (KeyValuePair<int, P4Server> entry in mapTIDtoServer)
+                    {
+                        entry.Value.ProgramVersion = _programVersion;
+                    }
+                }
+            }
+        }
+        
+        public string CharacterSet
+        {
+            get => _characterSet;
+            set 
+            {
+                // update each thread associated with this P4ServerMT
+                _characterSet = value;
+                lock (dictLock)
+                {
+                    foreach (KeyValuePair<int, P4Server> entry in mapTIDtoServer)
+                    {
+                        entry.Value.CharacterSet = _characterSet;
+                    }
+                }
+            } 
+        }
+        
+        public TimeSpan RunCmdTimeout
+        {
+            get => _runCmdTimeout;
+            set 
+            {
+                // update each thread associated with this P4ServerMT
+                _runCmdTimeout = value;
+                lock (dictLock)
+                {
+                    foreach (KeyValuePair<int, P4Server> entry in mapTIDtoServer)
+                    {
+                        entry.Value.RunCmdTimeout = _runCmdTimeout;
+                    }
+                }
+            } 
+        }
+
+
         /// <summary>
-        /// Create/retreive a P4Server for a different thread
+        /// Create/retrieve a P4Server for a different thread
         /// </summary>
         /// <param name="threadId">Managed thread ID of the other thread</param>
         /// <returns>P4Server connection</returns>
@@ -143,12 +228,18 @@ namespace Perforce.P4
                 // only call the fingerprint constructor if we got configured with a fingerprint
                 // otherwise it will not throw the correct "you need to trust this" exception
                 // (which seems wrong, both methods should operate similarly))
-                P4Server p4server = (fingerprint != null && fingerprint.Length != 0) || 
-                                    (trustFlag != null && trustFlag.Length != 0) ?
+                P4Server p4server = !string.IsNullOrEmpty(fingerprint) || 
+                                    !string.IsNullOrEmpty(trustFlag) ?
                     new P4Server(server, user, pass, ws_client, cwd, trustFlag, fingerprint) :
                     new P4Server(server, user, pass, ws_client, cwd);
                 p4server.SetThreadOwner(threadId);
                 mapTIDtoServer[threadId] = p4server;
+                
+                // initialize the new server with current cross-thread shared properties
+                if (ProgramName.Length > 0) p4server.ProgramName = ProgramName;
+                if (ProgramVersion.Length > 0) p4server.ProgramVersion = ProgramVersion;
+                if (CharacterSet.Length > 0) p4server.CharacterSet = CharacterSet;
+                if (RunCmdTimeout != TimeSpan.Zero) p4server.RunCmdTimeout = RunCmdTimeout;
                 return p4server;
             }
         }

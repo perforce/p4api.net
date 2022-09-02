@@ -36,24 +36,25 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *  are created so they can be validated when passed in as parameters.
  *
  ******************************************************************************/
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "p4base.h"
-#include "lock.h"
+#include "Lock.h"
 #include "P4BridgeServer.h"
 
+#include <stdexcept>
 #include <sstream>
 
 /*******************************************************************************
 * Keep a doubly linked list of handles for each type to be tracked.
 *******************************************************************************/
 #ifdef _DEBUG
+
 #ifdef _DEBUG_MEMORY
-
 #include <tchar.h>
-
 #endif
-p4base** p4base::pFirstObject = NULL;
-p4base** p4base::pLastObject = NULL;
+
+p4base** p4base::pFirstObject = nullptr;
+p4base** p4base::pLastObject = nullptr;
 
 int p4base::ItemCount = 0;
 int p4base::ItemCounts[p4typesCount];
@@ -100,7 +101,7 @@ p4base::p4base(int ntype)
 		pFirstObject = new p4base*[p4typesCount];
 		for (int i = 0; i < p4typesCount; i++)
 		{
-			pFirstObject[i] = NULL;
+			pFirstObject[i] = nullptr;
 			ItemCounts[i] = 0;
 			NextItemIds[i] = 0;
 		}
@@ -110,13 +111,13 @@ p4base::p4base(int ntype)
 		pLastObject = new p4base*[p4typesCount];
 		for (int i = 0; i < p4typesCount; i++)
 		{
-			pLastObject[i] = NULL;
+			pLastObject[i] = nullptr;
 		}
    }
 
 	// Initialize the list pointers
-	pNextItem = NULL;
-	pPrevItem = NULL;
+	pNextItem = nullptr;
+	pPrevItem = nullptr;
 
 	// Add to the list of objects registered to be exported
 	if(!pFirstObject[type])
@@ -144,6 +145,15 @@ p4base::p4base(int ntype)
 #endif
 }
 
+#ifdef _DEBUG
+// move these from the header to keep MSVC from inlining them and messing
+// up the DLL linkage
+int p4base::GetItemCount() { return ItemCount;}
+int p4base::GetItemCount(int type) { return ItemCounts[type];}
+int p4base::GetTotalItemCount() { return TotalItems;}
+int p4base::GetTotalItemCount(int type) { return NextItemIds[type];}
+#endif
+
 /*******************************************************************************
 * Destructor
 *
@@ -167,20 +177,20 @@ p4base::~p4base(void)
 	if (!pPrevItem && !pNextItem)
 	{
 		// last object in the list, so NULL out the list head and tail pointers
-		pFirstObject[type] = NULL;
-		pLastObject[type] = NULL;
+		pFirstObject[type] = nullptr;
+		pLastObject[type] = nullptr;
 	}
 	else if (!pPrevItem && pNextItem)
 	{
 		// first object in list, set the head to the next object in the list
 		pFirstObject[type] = pNextItem;
-		pNextItem->pPrevItem = NULL;
+		pNextItem->pPrevItem = nullptr;
 	}
 	else if (pPrevItem && !pNextItem)
 	{
 		// last object, set the tail to the pervious object in the list
 		pLastObject[type] = pPrevItem;
-		pPrevItem->pNextItem = NULL;
+		pPrevItem->pNextItem = nullptr;
 	}
 	else 
 	{
@@ -213,8 +223,9 @@ int p4base::ValidateHandle_Int( p4base* pObject, int type )
 
 	p4base* pCur = NULL;
 
-	// Use Windows Structured Exception Handling to detect memory violations
-	__try
+	// We no longer use Windows Structured Exception Handling to detect memory violations
+	// we use standard C++ exceptions instead
+	try
 	{
 		if ((type < 0) || (type >=p4typesCount) || (type != pObject->Type()))
 		{
@@ -223,17 +234,17 @@ int p4base::ValidateHandle_Int( p4base* pObject, int type )
 #ifndef _DEBUG
 		return 1;
 	}
-	__except (1) //EXCEPTION_EXECUTE_HANDLER
+	catch(...)
 	{
-		// access violation, so definitely not valid.
+		// exception, so not valid.
 		return 0;
 	}
 #else
 		pCur = pFirstObject[type];
 	}
-	__except (1) //EXCEPTION_EXECUTE_HANDLER
+	catch (...)
 	{
-		// access violation, so definitely not valid.
+		// exception, so not valid.
 		return 0;
 	}
 	while ( pCur != NULL)
@@ -255,7 +266,7 @@ int p4base::ValidateHandle_Int( p4base* pObject, int type )
 *   Static function to validate a handle
 *
 *   nType: The type of this object. It is passed from the derived objects 
-*       constructer so it can be determined at run time. A call to the virtual
+*       constructor so it can be determined at run time. A call to the virtual
 *       function GetType() does not work here in the base class constructor.
 *
 *******************************************************************************/
@@ -313,14 +324,18 @@ const char* p4base::GetTypeStr(int type)
 
 #ifdef _DEBUG_MEMORY
 
+#ifdef OS_NT
 static char* MemLogFile = "c:\\tmp\\p4bridge.memory.log.txt"; 
+#else
+static char* MemLogFile = "/temp/p4bridge.memory.log.txt"
+#endif
 
-void  p4base::LogMemoryEvent(char * Event)
+void  p4base::LogMemoryEvent(const char * Event)
 {
 	LOG_DEBUG(4, Event);
 }
 
-void  p4base::PrintMemoryState(char *Title)
+void  p4base::PrintMemoryState(const char *Title)
 {
 	printf("%s: Object Count Dump\r\n", Title);
 		
@@ -332,7 +347,7 @@ void  p4base::PrintMemoryState(char *Title)
 	}
 }
 
-void  p4base::DumpMemoryState(char *Title)
+void  p4base::DumpMemoryState(const char *Title)
 {
 	int bErrorFlag;
 	DWORD dwBytesWritten = 0;
@@ -384,8 +399,8 @@ void  p4base::DumpMemoryState(char *Title)
 	CloseHandle(hLogFile);
 }
 #else
-void  p4base::LogMemoryEvent(char * Event) {}
-void  p4base::PrintMemoryState(char *Title) {}
-void  p4base::DumpMemoryState(char *Title) {}
+//void  p4base::LogMemoryEvent(const char * Event) {}
+//void  p4base::PrintMemoryState(const char *Title) {}
+//void  p4base::DumpMemoryState(const char *Title) {}
 #endif
 #endif

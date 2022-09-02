@@ -40,17 +40,39 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <set>
 
+#ifndef OS_NT
+#if defined(_DEBUG)
+
+#endif
+
+#include <atomic>
+#define __STDC_WANT_LIB_EXT1__ 1  // for strcpy_s
+#endif
+
+
 namespace Utils
 {
+#if defined(_DEBUG)
+
+#ifdef OS_NT
 	volatile long allocs = 0;
 	volatile long frees = 0;
-#if defined(_DEBUG)
+
 #define ALLOC_COUNT(p)	{ InterlockedIncrement(&allocs); }
 #define FREE_COUNT(p)	{ InterlockedIncrement(&frees); }
-
 	long AllocCount() { return allocs; }
 	long FreeCount() { return frees; }
-#else
+#else // Linux or OSX
+    std::atomic<long> allocs{0};
+    std::atomic<long> frees{0};
+
+#define ALLOC_COUNT(p) { allocs.fetch_add(1, std::memory_order_relaxed); }
+#define FREE_COUNT(p)  { frees.fetch_add(1, std::memory_order_relaxed); }
+    long AllocCount() { return allocs.load(); }
+    long FreeCount() { return frees.load(); }
+#endif
+
+#else // Not _DEBUG
 #define ALLOC_COUNT(p) {  }
 #define FREE_COUNT(p) {  }
 
@@ -71,9 +93,10 @@ namespace Utils
 		size_t len = strlen(p);
 		if (len == 0) return NULL;
 		char* ret = new char[len + 1];
-		LOG_DEBUG3(4, "Alloc [%d]: (0x%llu) %s", allocs, ret, p);
+		LOG_DEBUG3(4, "Alloc [%d]: (%p) %s", AllocCount(), ret, p);
 		ALLOC_COUNT(ret);
-		strcpy_s(ret, len + 1, p);
+		strncpy(ret, p, len);
+		ret[len] = '\0';      // null terminate
 		return ret;
 	}
 
@@ -85,9 +108,9 @@ namespace Utils
 	void ReleaseString(void* p)
 	{
 		if (!p) return;	// skip the debug logging code
-		LOG_DEBUG3(4, "Free [%d]: (0x%llu) %s", frees, p, p);
+		LOG_DEBUG3(4, "Free [%d]: (%p) %s", FreeCount(), p, p);
 		FREE_COUNT((const char*)p);
-		delete p;
+		delete[] (const char *)p;
 	}
 
 	string stringFromPtr(const char* s)

@@ -1,0 +1,5 @@
+directory  /opt/perforce/clients/perforce/depot/main/p4 
+set substitute-path ./p4 /opt/perforce/clients/perforce/depot/main/p4
+show substitute-path
+
+Save configurations in ~/.gdbinit

@@ -305,7 +305,9 @@ namespace Perforce.P4
 			{
 				throw new ArgumentNullException("stream");
 			}
-			P4Command cmd = new P4Command(this, "stream", true);
+
+            using (P4Command cmd = new P4Command(this, "stream", true))
+            {
 
             stream.ParentView = GetParentView(stream);
 
@@ -315,6 +317,7 @@ namespace Perforce.P4
 			{
                 options = new Options();
 			}
+
 			options["-i"] = null;
 
 			P4CommandResult results = cmd.Run(options);
@@ -326,8 +329,10 @@ namespace Perforce.P4
 			{
 				P4Exception.Throw(results.ErrorList);
 			}
+
 			return null;
 		}
+        }
         /// <summary>
 		/// Create a new stream in the repository.
 		/// </summary>
@@ -451,14 +456,16 @@ namespace Perforce.P4
             if (stream == null)
             {
                 throw new ArgumentNullException("stream");
-
             }
-            P4Command cmd = new P4Command(this, "stream", true, stream);
+
+            using (P4Command cmd = new P4Command(this, "stream", true, stream))
+            {
 
             if (options == null)
             {
                 options = new StreamCmdOptions((StreamCmdFlags.Output), null, null);
             }
+
             if (options.ContainsKey("-o") == false)
             {
                 options["-o"] = null;
@@ -471,6 +478,7 @@ namespace Perforce.P4
                 {
                     return null;
                 }
+
                 Stream value = new Stream();
 
                 value.FromStreamCmdTaggedOutput(results.TaggedOutput[0]);
@@ -481,7 +489,9 @@ namespace Perforce.P4
             {
                 P4Exception.Throw(results.ErrorList);
             }
+
             return null;
+        }
         }
         /// <summary>
         /// Get the record for an existing stream from the repository.
@@ -550,7 +560,7 @@ namespace Perforce.P4
         /// </example>
 		public Stream GetStream(string stream)
 		{
-			return GetStream(stream, null, null);
+            return GetStream(stream, null);
 		}
         /// <summary>
         /// Get a list of streams from the repository
@@ -605,15 +615,10 @@ namespace Perforce.P4
         /// </example>
         public IList<Stream> GetStreams(Options options, params FileSpec[] files)
 		{
-			P4Command cmd = null;
-			if ((files != null) && (files.Length > 0))
+            using (P4Command cmd = (files?.Length ?? 0) > 0
+                ? new P4Command(this, "streams", true, FileSpec.ToEscapedStrings(files))
+                : new P4Command(this, "streams", true))
 			{
-				cmd = new P4Command(this, "streams", true, FileSpec.ToEscapedStrings(files));
-			}
-			else
-			{
-				cmd = new P4Command(this, "streams", true);
-			}
 
 			P4CommandResult results = cmd.Run(options);
 			if (results.Success)
@@ -622,31 +627,35 @@ namespace Perforce.P4
 				{
 					return null;
 				}
+
 				List<Stream> value = new List<Stream>();
 
-                bool dst_mismatch = false;
+                    bool dstMismatch = false;
                 string offset = string.Empty;
 
                 if (Server != null && Server.Metadata != null)
                 {
                     offset = Server.Metadata.DateTimeOffset;
-                    dst_mismatch = FormBase.DSTMismatch(Server.Metadata);
+                        dstMismatch = FormBase.DSTMismatch(Server.Metadata);
                 }
 
 				foreach (TaggedObject obj in results.TaggedOutput)
 				{
 					Stream stream = new Stream();
-					stream.FromStreamsCmdTaggedOutput(obj,offset, dst_mismatch);
+                        stream.FromStreamsCmdTaggedOutput(obj, offset, dstMismatch);
 					value.Add(stream);
 				}
+
 				return value;
 			}
 			else
 			{
 				P4Exception.Throw(results.ErrorList);
 			}
+
 			return null;
 		}
+        }
 		/// <summary>
 		/// Delete a stream from the repository
 		/// </summary>
@@ -666,14 +675,16 @@ namespace Perforce.P4
 			if (stream == null)
 			{
 				throw new ArgumentNullException("stream");
+            }
 
-			}
-			P4Command cmd = new P4Command(this, "stream", true, stream.Id);
+            using (P4Command cmd = new P4Command(this, "stream", true, stream.Id))
+            {
 
 			if (options == null)
 			{
 				options = new Options((StreamCmdFlags.Delete), null, null);
 			}
+
             if (options.ContainsKey("-d") == false)
             {
                 options["-d"] = null;
@@ -685,6 +696,7 @@ namespace Perforce.P4
 				P4Exception.Throw(results.ErrorList);
 			}
 		}
+        }
 
         /// <summary>
 		/// Get the integration status for a stream in the repository
@@ -749,9 +761,10 @@ namespace Perforce.P4
             if (stream == null)
             {
                 throw new ArgumentNullException("stream");
-
             }
-            P4Command cmd = new P4Command(this, "istat", true, stream.Id);
+
+            using (P4Command cmd = new P4Command(this, "istat", true, stream.Id))
+            {
 
             P4CommandResult results = cmd.Run(options);
             if (results.Success)
@@ -760,6 +773,7 @@ namespace Perforce.P4
                 {
                     return null;
                 }
+
                 StreamMetaData value = new StreamMetaData();
                 value.FromIstatCmdTaggedData((results.TaggedOutput[0]));
 
@@ -769,7 +783,9 @@ namespace Perforce.P4
             {
                 P4Exception.Throw(results.ErrorList);
             }
+
             return null;
+        }
         }
 
         private ParentView GetParentView(Stream stream)
@@ -790,7 +806,9 @@ namespace Perforce.P4
                     throw new ArgumentNullException("Parent");
                 }
 
+#pragma warning disable 618
                 return GetStream(stream.Id, stream.Parent.ToString(), null).ParentView;
+#pragma warning restore 618
             }
         }
 

@@ -1,12 +1,14 @@
-﻿using Perforce.P4;
+﻿
+using Perforce.P4;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.Collections;
 using System.IO;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System.Text;
 using NLog;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace p4api.net.unit.test
 {
@@ -16,10 +18,15 @@ namespace p4api.net.unit.test
     ///to contain all P4ServerTest Unit Tests
     ///</summary>
     [TestClass()]
+#if NET462
+    [DeploymentItem("x64", "x64")]
+    [DeploymentItem("x86", "x86")]
+#endif
     public class P4ServerTest
     {
         private static Logger logger = LogManager.GetCurrentClassLogger();
-        String TestDir = "c:\\MyTestDir";
+        private static UnitTestConfiguration configuration;
+        private string TestDir = "";
 
         /// <summary>
         ///Gets or sets the test context which provides
@@ -30,6 +37,9 @@ namespace p4api.net.unit.test
         [TestInitialize]
         public void SetupTest()
         {
+            configuration = UnitTestSettings.GetApplicationConfiguration();
+            TestDir = configuration.TestDirectory;
+
             Utilities.LogTestStart(TestContext);
         }
 
@@ -66,9 +76,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void P4ServerConstructorTest()
         {
-            bool unicode = false;
-
-            string server = "localhost:6666";
+            string server = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -77,26 +85,29 @@ namespace p4api.net.unit.test
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     using (P4Server target = new P4Server(server, user, pass, ws_client))
                     {
-                        if (unicode)
+                        if (cptype == Utilities.CheckpointType.U)
                             Assert.IsTrue(target.UseUnicode, "Unicode server detected as not supporting Unicode");
                         else
                             Assert.IsFalse(target.UseUnicode, "Non Unicode server detected as supporting Unicode");
 
                         uint cmdId = 7;
-                        Assert.IsTrue(target.RunCommand("dirs", cmdId, false, new String[] { "//depot/*" }, 1),
+                        Assert.IsTrue(target.RunCommand("dirs", cmdId, false, new string[] { "//depot/*" }, 1),
                             "\"dirs\" command failed");
                     }
                 }
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -108,7 +119,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void P4ServerUrlHandledTestA()
         {
-            P4ServerUrlHandledTest(false);
+            P4ServerUrlHandledTest(Utilities.CheckpointType.A);
         }
 
         /// <summary>
@@ -118,16 +129,16 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void P4ServerUrlHandledTestU()
         {
-            P4ServerUrlHandledTest(true);
+            P4ServerUrlHandledTest(Utilities.CheckpointType.U);
         }
 
         /// <summary>
         /// A test for P4Server.UrlHandled(). Connect to a server, check for existence of
         /// UrlHandled bool.
         ///</summary>
-        public void P4ServerUrlHandledTest(bool unicode)
+        public void P4ServerUrlHandledTest(Utilities.CheckpointType cptype)
         {
-            string server = "localhost:6666";
+            string server = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -136,7 +147,9 @@ namespace p4api.net.unit.test
 
             try
             {
-                p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
+                p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
                 using (P4Server target = new P4Server(server, user, pass, ws_client))
                 {
                     bool UrlHandled = target.UrlHandled();
@@ -147,6 +160,7 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
             }
         }
 
@@ -156,9 +170,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void RunCommandTest()
         {
-            bool unicode = false;
-
-            string server = "localhost:6666";
+            string server = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -167,26 +179,29 @@ namespace p4api.net.unit.test
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     using (P4Server target = new P4Server(server, user, pass, ws_client))
                     {
-                        if (unicode)
+                        if (cptype == Utilities.CheckpointType.U)
                             Assert.IsTrue(target.UseUnicode, "Unicode server detected as not supporting Unicode");
                         else
                             Assert.IsFalse(target.UseUnicode, "Non Unicode server detected as supporting Unicode");
 
                         uint cmdId = 7;
-                        Assert.IsTrue(target.RunCommand("dirs", cmdId, false, new String[] { "//depot/*" }, 1),
+                        Assert.IsTrue(target.RunCommand("dirs", cmdId, false, new string[] { "//depot/*" }, 1),
                             "\"dirs\" command failed");
                     }
                 }
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -196,9 +211,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void IdleDisconnectTest()
         {
-            bool unicode = false;
-
-            string server = "localhost:6666";
+            string server = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -207,27 +220,30 @@ namespace p4api.net.unit.test
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     using (P4Server target = new P4Server(server, user, pass, ws_client))
                     {
-                        if (unicode)
+                        if (cptype == Utilities.CheckpointType.U)
                             Assert.IsTrue(target.UseUnicode, "Unicode server detected as not supporting Unicode");
                         else
                             Assert.IsFalse(target.UseUnicode, "Non Unicode server detected as supporting Unicode");
 
                         uint cmdId = 7;
-                        Assert.IsTrue(target.RunCommand("dirs", cmdId, false, new String[] { "//depot/*" }, 1),
+                        Assert.IsTrue(target.RunCommand("dirs", cmdId, false, new string[] { "//depot/*" }, 1),
                             "\"dirs\" command failed");
 
                         System.Threading.Thread.Sleep(TimeSpan.FromMilliseconds(target.IdleDisconnectWaitTime + 100));
                         Assert.IsFalse(target.IsConnected());
 
                         cmdId = 7;
-                        Assert.IsTrue(target.RunCommand("dirs", cmdId, false, new String[] { "//depot/*" }, 1),
+                        Assert.IsTrue(target.RunCommand("dirs", cmdId, false, new string[] { "//depot/*" }, 1),
                             "\"dirs\" command failed");
-                        Assert.IsTrue(target.RunCommand("dirs", cmdId + 1, false, new String[] { "//depot/*" }, 1),
+                        Assert.IsTrue(target.RunCommand("dirs", cmdId + 1, false, new string[] { "//depot/*" }, 1),
                             "\"dirs\" command failed");
 
                         System.Threading.Thread.Sleep(TimeSpan.FromMilliseconds(target.IdleDisconnectWaitTime + 100));
@@ -237,100 +253,109 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
 #if DEBUG_TIMEOUT
-/// <summary>
-///A test for RunCommand timeout
-///</summary>
-		[TestMethod()]
-		public void RunCommandTimeOutTest()
-		{
+        /// <summary>
+        ///A test for RunCommand timeout
+        ///</summary>
+        [TestMethod()]
+        public void RunCommandTimeOutTest()
+        {
+            var cptype = Utilities.CheckpointType.A;
+            string server = configuration.ServerPort;
+            string user = "admin";
+            string pass = string.Empty;
+            string ws_client = "admin_space";
 
-			string server = "localhost:6666";
-			string user = "admin";
-			string pass = string.Empty;
-			string ws_client = "admin_space";
+            string cmd = "verify";  // Was "TimeOutTest"
+            var args = new string[] { "-v","//..." };
 
-			Process p4d = Utilities.DeployP4TestServer(TestDir, false);
+            Process p4d = Utilities.DeployP4TestServer(TestDir, cptype);
+            Assert.IsNotNull(p4d, "Setup Failure");
 
-			try
-			{
-				using (P4Server target = new P4Server(server, user, pass, ws_client))
-				{
-					try
-					{
-						Assert.IsTrue(target.RunCommand("TimeOutTest", false, new String[] { "-1" }, 1));
-					}
-					catch (P4CommandTimeOutException)
-					{
-						Assert.Fail("Should not have timed out");
-					}
-					catch (Exception)
-					{
-						Assert.Fail("Wrong exception thrown for timeout");
-					}
+            uint cmdId = 7;
 
-					try
-					{
-						Assert.IsFalse(target.RunCommand("TimeOutTest", false, new String[] { "1" }, 1));
-						Assert.Fail("Didn't timeout");
-					}
-					catch (P4CommandTimeOutException)
-					{
-					}
-					catch (Exception)
-					{
-						Assert.Fail("Wrong exception thrown for timeout");
-					}
-				}
-			}
-			finally
-			{
-				Utilities.RemoveTestServer(p4d, TestDir);
-			}
-		}
+            try
+            {
+                using (P4Server target = new P4Server(server, user, pass, ws_client))
+                {
+                    try
+                    {
+                        Assert.IsTrue(target.RunCommand(cmd, cmdId, false, args, 2));
+                    }
+                    catch (P4CommandTimeOutException)
+                    {
+                        Assert.Fail("Should not have timed out");
+                    }
+                    catch (Exception)
+                    {
+                        Assert.Fail("Wrong exception thrown for timeout");
+                    }
 
-		/// <summary>
-		///A test for RunCommand timeout
-		///</summary>
-		[TestMethod()]
-		public void RunCommandLongTimeOutTest()
-		{
+                    try
+                    {
+                        Assert.IsFalse(target.RunCommand(cmd, cmdId, false, args, 2));
+                        Assert.Fail("Didn't timeout");
+                    }
+                    catch (P4CommandTimeOutException)
+                    {
+                    }
+                    catch (Exception e)
+                    {
+                        string msg = e.Message;
+                        Assert.Fail("Wrong exception thrown for timeout");
+                    }
+                }
+            }
+            finally
+            {
+                Utilities.RemoveTestServer(p4d, TestDir);
+            }
+        }
 
-			string server = "localhost:6666";
-			string user = "admin";
-			string pass = string.Empty;
-			string ws_client = "admin_space";
+        /// <summary>
+        ///A test for RunCommand timeout
+        ///</summary>
+        [TestMethod()]
+        public void RunCommandLongTimeOutTest()
+        {
+            var cptype = Utilities.CheckpointType.A;
+            string server = configuration.ServerPort;
+            string user = "admin";
+            string pass = string.Empty;
+            string ws_client = "admin_space";
 
-			Process p4d = Utilities.DeployP4TestServer(TestDir, false);
+            Process p4d = Utilities.DeployP4TestServer(TestDir, cptype);
+            Assert.IsNotNull(p4d, "Setup Failure");
+            uint cmdId = 7;
 
-			try
-			{
-				using (P4Server target = new P4Server(server, user, pass, ws_client))
-				{
-					try
-					{
-						Assert.IsTrue(target.RunCommand("LongTimeOutTest", false, new String[] { "10" }, 1));
-					}
-					catch (P4CommandTimeOutException)
-					{
-						Assert.Fail("Should not have timed out");
-					}
-					catch (Exception)
-					{
-						Assert.Fail("Wrong exception thrown for timeout");
-					}
-				}
-			}
-			finally
-			{
-				Utilities.RemoveTestServer(p4d, TestDir);
-			}
-		}
+            try
+            {
+                using (P4Server target = new P4Server(server, user, pass, ws_client))
+                {
+                    try
+                    {
+                        Assert.IsTrue(target.RunCommand("LongTimeOutTest", cmdId, false, new String[] { "10" }, 1));
+                    }
+                    catch (P4CommandTimeOutException)
+                    {
+                        Assert.Fail("Should not have timed out");
+                    }
+                    catch (Exception)
+                    {
+                        Assert.Fail("Wrong exception thrown for timeout");
+                    }
+                }
+            }
+            finally
+            {
+                Utilities.RemoveTestServer(p4d, TestDir);
+            }
+        }
 #endif
 
         /// <summary>
@@ -339,9 +364,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetBinaryResultsTest()
         {
-            bool unicode = false;
-
-            string server = "localhost:6666";
+            string server = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -350,18 +373,20 @@ namespace p4api.net.unit.test
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
 
                     using (P4Server target = new P4Server(server, user, pass, ws_client))
                     {
-                        if (unicode)
+                        if (cptype == Utilities.CheckpointType.U)
                             Assert.IsTrue(target.UseUnicode, "Unicode server detected as not supporting Unicode");
                         else
                             Assert.IsFalse(target.UseUnicode, "Non Unicode server detected as supporting Unicode");
 
-                        String[] parms = new String[] { "//depot/MyCode/Silly.bmp" };
+                        string[] parms = new string[] { "//depot/MyCode/Silly.bmp" };
 
                         uint cmdId = 7;
                         Assert.IsTrue(target.RunCommand("print", cmdId, false, parms, 1),
@@ -384,8 +409,8 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -395,9 +420,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetErrorResultsTest()
         {
-            bool unicode = false;
-
-            string server = "localhost:6666";
+            string server = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -406,17 +429,20 @@ namespace p4api.net.unit.test
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     using (P4Server target = new P4Server(server, user, pass, ws_client))
                     {
-                        if (unicode)
+                        if (cptype == Utilities.CheckpointType.U)
                             Assert.IsTrue(target.UseUnicode, "Unicode server detected as not supporting Unicode");
                         else
                             Assert.IsFalse(target.UseUnicode, "Non Unicode server detected as supporting Unicode");
 
-                        String[] parms = new String[] { "//depot/MyCode/NoSuchFile.bmp" };
+                        string[] parms = new string[] { "//depot/MyCode/NoSuchFile.bmp" };
 
                         uint cmdId = 7;
                         target.RunCommand("print", cmdId, false, parms, 1);
@@ -435,8 +461,8 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -446,9 +472,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetInfoResultsTest()
         {
-            bool unicode = false;
-
-            string server = "localhost:6666";
+            string server = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -457,17 +481,20 @@ namespace p4api.net.unit.test
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     using (P4Server target = new P4Server(server, user, pass, ws_client))
                     {
-                        if (unicode)
+                        if (cptype == Utilities.CheckpointType.U)
                             Assert.IsTrue(target.UseUnicode, "Unicode server detected as not supporting Unicode");
                         else
                             Assert.IsFalse(target.UseUnicode, "Non Unicode server detected as supporting Unicode");
 
-                        String[] parms = new String[] { "//depot/mycode/*" };
+                        string[] parms = new string[] { "//depot/mycode/*" };
 
                         uint cmdId = 7;
                         Assert.IsTrue(target.RunCommand("files", cmdId, false, parms, 1),
@@ -477,7 +504,7 @@ namespace p4api.net.unit.test
 
                         Assert.IsNotNull(results, "GetInfoResults returned null data");
 
-                        if (unicode)
+                        if (cptype == Utilities.CheckpointType.U)
                             Assert.AreEqual(3, results.Count);
                         else
                             Assert.AreEqual(3, results.Count);
@@ -489,8 +516,8 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -500,9 +527,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetTaggedOutputTest()
         {
-            bool unicode = false;
-
-            string server = "localhost:6666";
+            string server = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -511,17 +536,20 @@ namespace p4api.net.unit.test
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     using (P4Server target = new P4Server(server, user, pass, ws_client))
                     {
-                        if (unicode)
+                        if (cptype == Utilities.CheckpointType.U)
                             Assert.IsTrue(target.UseUnicode, "Unicode server detected as not supporting Unicode");
                         else
                             Assert.IsFalse(target.UseUnicode, "Non Unicode server detected as supporting Unicode");
 
-                        String[] parms = new String[] { "//depot/mycode/*" };
+                        string[] parms = new string[] { "//depot/mycode/*" };
 
                         uint cmdId = 7;
                         Assert.IsTrue(target.RunCommand("files", cmdId, true, parms, 1),
@@ -531,7 +559,7 @@ namespace p4api.net.unit.test
 
                         Assert.IsNotNull(results, "GetTaggedOutput returned null data");
 
-                        if (unicode)
+                        if (cptype == Utilities.CheckpointType.U)
                             Assert.AreEqual(3, results.Count);
                         else
                             Assert.AreEqual(3, results.Count);
@@ -540,8 +568,8 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -551,9 +579,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetTextResultsTest()
         {
-            bool unicode = false;
-
-            string server = "localhost:6666";
+            string server = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -562,30 +588,37 @@ namespace p4api.net.unit.test
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     using (P4Server target = new P4Server(server, user, pass, ws_client))
                     {
-                        if (unicode)
+                        if (cptype == Utilities.CheckpointType.U)
                             Assert.IsTrue(target.UseUnicode, "Unicode server detected as not supporting Unicode");
                         else
                             Assert.IsFalse(target.UseUnicode, "Non Unicode server detected as supporting Unicode");
 
-                        String[] parms = new String[] { "//depot/MyCode/ReadMe.txt" };
+                        string[] parms = new string[] { "//depot/MyCode/ReadMe.txt" };
 
                         uint cmdId = 7;
                         Assert.IsTrue(target.RunCommand("print", cmdId, false, parms, 1),
                             "\"print\" command failed");
 
-                        String results = target.GetTextResults(cmdId);
+                        string results = target.GetTextResults(cmdId);
 
                         Assert.IsNotNull(results, "GetErrorResults GetTextResults null data");
-
-                        if (unicode)
-                            Assert.AreEqual(results.Length, 30);
+#if _WINDOWS
+                        int expectedLen = 30;
+#else
+                        int expectedLen = 32;
+#endif
+                        if (cptype == Utilities.CheckpointType.U)
+                            Assert.AreEqual(expectedLen, results.Length);
                         else
-                            Assert.AreEqual(results.Length, 30);
+                            Assert.AreEqual(expectedLen, results.Length);
 
                         Assert.IsTrue(results.StartsWith("Don't Read This!"));
                     }
@@ -593,8 +626,8 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -602,7 +635,7 @@ namespace p4api.net.unit.test
 
         private void BinaryResultsCallback(uint cmdId, byte[] data)
         {
-            if ((data != null) && (data.Length > 0))
+            if (data != null && data.Length > 0)
                 BinaryCallbackResults = data;
         }
 
@@ -615,9 +648,7 @@ namespace p4api.net.unit.test
             P4Server.BinaryResultsDelegate cb =
                 new P4Server.BinaryResultsDelegate(BinaryResultsCallback);
 
-            bool unicode = false;
-
-            string server = "localhost:6666";
+            string server = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -626,19 +657,22 @@ namespace p4api.net.unit.test
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     using (P4Server target = new P4Server(server, user, pass, ws_client))
                     {
-                        if (unicode)
+                        if (cptype == Utilities.CheckpointType.U)
                             Assert.IsTrue(target.UseUnicode, "Unicode server detected as not supporting Unicode");
                         else
                             Assert.IsFalse(target.UseUnicode, "Non Unicode server detected as supporting Unicode");
 
                         target.BinaryResultsReceived += cb;
 
-                        String[] parms = new String[] { "//depot/MyCode/Silly.bmp" };
+                        string[] parms = new string[] { "//depot/MyCode/Silly.bmp" };
 
                         uint cmdId = 7;
                         Assert.IsTrue(target.RunCommand("print", cmdId, false, parms, 1),
@@ -661,8 +695,8 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -671,7 +705,7 @@ namespace p4api.net.unit.test
         private int ErrorCallbackResultsErrorNumber;
         private int ErrorCallbackResultsSeverity;
 
-        private void ErrorResultsCallback(uint cmdId, int severity, int errorNumber, String message)
+        private void ErrorResultsCallback(uint cmdId, int severity, int errorNumber, string message)
         {
             ErrorCallbackResultsMessageId = cmdId;
             ErrorCallbackResultsMessage = message;
@@ -688,9 +722,7 @@ namespace p4api.net.unit.test
             P4Server.ErrorDelegate cb =
                 new P4Server.ErrorDelegate(ErrorResultsCallback);
 
-            bool unicode = false;
-
-            string server = "localhost:6666";
+            string server = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -699,19 +731,22 @@ namespace p4api.net.unit.test
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     using (P4Server target = new P4Server(server, user, pass, ws_client))
                     {
-                        if (unicode)
+                        if (cptype == Utilities.CheckpointType.U)
                             Assert.IsTrue(target.UseUnicode, "Unicode server detected as not supporting Unicode");
                         else
                             Assert.IsFalse(target.UseUnicode, "Non Unicode server detected as supporting Unicode");
 
                         target.ErrorReceived += cb;
 
-                        String[] parms = new String[] { "//depot/MyCode/NoSuchFile.bmp" };
+                        string[] parms = new string[] { "//depot/MyCode/NoSuchFile.bmp" };
 
                         uint cmdId = 7;
                         Assert.IsTrue(target.RunCommand("fstat", cmdId, false, parms, 1),
@@ -719,7 +754,7 @@ namespace p4api.net.unit.test
 
                         P4ClientErrorList results = target.GetErrorResults(cmdId);
 
-                        Assert.IsFalse(String.IsNullOrEmpty(ErrorCallbackResultsMessage),
+                        Assert.IsFalse(string.IsNullOrEmpty(ErrorCallbackResultsMessage),
                             "ErrorCallbackResultsMessage is null or empty");
                         Assert.IsNotNull(results, "GetErrorResults returned null");
 
@@ -733,38 +768,38 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
         private class InfoCbData
         {
-            public InfoCbData(String m, int l, int id)
+            public InfoCbData(string m, int l, int id)
             {
                 Message = m;
                 Level = l;
                 MsgId = id;
             }
 
-            public String Message;
+            public string Message;
             public int Level;
             public int MsgId;
 
             public override string ToString()
             {
-                return String.Format("{0}:{1}", Level, Message);
+                return string.Format("{0}:{1}", Level, Message);
             }
         }
 
         private List<InfoCbData> InfoCallbackResults;
 
-        private void InfoResultsCallback(uint cmdId, int msgId, int level, String message)
+        private void InfoResultsCallback(uint cmdId, int msgId, int level, string message)
         {
             InfoCallbackResults.Add(new InfoCbData(message, level, msgId));
         }
 
-        private void BadInfoResultsCallback(uint cmdId, int msgId, int level, String message)
+        private void BadInfoResultsCallback(uint cmdId, int msgId, int level, string message)
         {
             throw new Exception("I'm a bad delegate");
         }
@@ -781,9 +816,7 @@ namespace p4api.net.unit.test
             P4Server.InfoResultsDelegate bcb =
                 new P4Server.InfoResultsDelegate(BadInfoResultsCallback);
 
-            bool unicode = false;
-
-            string server = "localhost:6666";
+            string server = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -792,12 +825,15 @@ namespace p4api.net.unit.test
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                Utilities.CheckpointType cptype = (Utilities.CheckpointType)i;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     using (P4Server target = new P4Server(server, user, pass, ws_client))
                     {
-                        if (unicode)
+                        if (cptype == Utilities.CheckpointType.U)
                             Assert.IsTrue(target.UseUnicode, "Unicode server detected as not supporting Unicode");
                         else
                             Assert.IsFalse(target.UseUnicode, "Non Unicode server detected as supporting Unicode");
@@ -808,7 +844,7 @@ namespace p4api.net.unit.test
                         // make sure the event broadcaster can handle it.
                         target.InfoResultsReceived += bcb;
 
-                        String[] parms = new String[] { "//depot/mycode/*" };
+                        string[] parms = new string[] { "//depot/mycode/*" };
 
                         InfoCallbackResults = new List<InfoCbData>();
 
@@ -832,8 +868,8 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -853,9 +889,7 @@ namespace p4api.net.unit.test
             P4Server.TaggedOutputDelegate cb =
                 new P4Server.TaggedOutputDelegate(TaggedOutputCallback);
 
-            bool unicode = false;
-
-            string server = "localhost:6666";
+            string server = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -864,19 +898,22 @@ namespace p4api.net.unit.test
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                Utilities.CheckpointType cptype = (Utilities.CheckpointType)i;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     using (P4Server target = new P4Server(server, user, pass, ws_client))
                     {
-                        if (unicode)
+                        if (cptype == Utilities.CheckpointType.U)
                             Assert.IsTrue(target.UseUnicode, "Unicode server detected as not supporting Unicode");
                         else
                             Assert.IsFalse(target.UseUnicode, "Non Unicode server detected as supporting Unicode");
 
                         target.TaggedOutputReceived += cb;
 
-                        StringList parms = new String[] { "//depot/mycode/*" };
+                        StringList parms = new string[] { "//depot/mycode/*" };
 
                         TaggedCallbackResults = new TaggedObjectList();
 
@@ -901,14 +938,14 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
-        private String TextCallbackResults;
+        private string TextCallbackResults;
 
-        private void TextResultsCallback(uint cmdId, String info)
+        private void TextResultsCallback(uint cmdId, string info)
         {
             TextCallbackResults += info;
         }
@@ -922,9 +959,7 @@ namespace p4api.net.unit.test
             P4Server.TextResultsDelegate cb =
                 new P4Server.TextResultsDelegate(TextResultsCallback);
 
-            bool unicode = false;
-
-            string server = "localhost:6666";
+            string server = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -933,30 +968,33 @@ namespace p4api.net.unit.test
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     using (P4Server target = new P4Server(server, user, pass, ws_client))
                     {
-                        if (unicode)
+                        if (cptype == Utilities.CheckpointType.U)
                             Assert.IsTrue(target.UseUnicode, "Unicode server detected as not supporting Unicode");
                         else
                             Assert.IsFalse(target.UseUnicode, "Non Unicode server detected as supporting Unicode");
 
                         target.TextResultsReceived += cb;
 
-                        String[] parms = new String[] { "//depot/mycode/ReadMe.txt" };
+                        string[] parms = new string[] { "//depot/mycode/ReadMe.txt" };
 
-                        TextCallbackResults = String.Empty;
+                        TextCallbackResults = string.Empty;
 
                         uint cmdId = 7;
                         Assert.IsTrue(target.RunCommand("print", cmdId, true, parms, 1),
                             "\"print\" command failed");
 
-                        String results = target.GetTextResults(cmdId);
+                        string results = target.GetTextResults(cmdId);
 
-                        Assert.IsFalse(String.IsNullOrEmpty(TextCallbackResults), "TextCallbackResults is null");
-                        Assert.IsFalse(String.IsNullOrEmpty(results), "GetTextResults is null");
+                        Assert.IsFalse(string.IsNullOrEmpty(TextCallbackResults), "TextCallbackResults is null");
+                        Assert.IsFalse(string.IsNullOrEmpty(results), "GetTextResults is null");
 
                         Assert.AreEqual(results.Length, TextCallbackResults.Length);
 
@@ -966,15 +1004,15 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
         P4Server forParallelTransferTest = null;
         bool callbackHappened = false;
 
-        private int ParallelTransferCallback(IntPtr pServer, String cmd, String[] args, uint argCount, IntPtr dictIter, uint threads)
+        private int ParallelTransferCallback(IntPtr pServer, string cmd, string[] args, uint argCount, IntPtr dictIter, uint threads)
         {
             callbackHappened = true;
             // verify the args
@@ -985,7 +1023,7 @@ namespace p4api.net.unit.test
             // iterate over the members to validate that it works
             while (iter.NextItem())
             {
-                KeyValuePair kv = null;
+                Perforce.P4.KeyValuePair kv = null;
                 while ((kv = iter.NextEntry()) != null)
                 {
                     // walking the data is enough
@@ -1002,7 +1040,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void SetParallelSyncCallbackTestUnicode()
         {
-            SetParallelSyncCallbackTest(true);
+            SetParallelSyncCallbackTest(Utilities.CheckpointType.U);
         }
 
         /// <summary>
@@ -1011,7 +1049,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void SetParallelSyncCallbackTestAscii()
         {
-            SetParallelSyncCallbackTest(false);
+            SetParallelSyncCallbackTest(Utilities.CheckpointType.A);
         }
 
         StringList getClientFiles(P4Server target)
@@ -1021,10 +1059,10 @@ namespace p4api.net.unit.test
             StringList ret = new StringList();
             foreach (TaggedObject obj in list)
             {
-                String action, localPath;
+                string action, localPath;
                 if (obj.TryGetValue("headAction", out action))
                 {
-                    if (action == "delete")
+                    if (action.Contains("delete"))
                         continue;
                 }
                 else
@@ -1041,12 +1079,25 @@ namespace p4api.net.unit.test
 
         public void OpenAndModifyFiles(StringList localFiles, P4Server target)
         {
-            foreach (String localPath in localFiles)
+            foreach (string localPath in localFiles)
             {
+                // Make writable
                 System.IO.File.SetAttributes(localPath, FileAttributes.Normal);
-                // modify the file
+
+                string name = Path.GetFileNameWithoutExtension(localPath);
+
+                if (name == "pup" || name == "Пюп")
+                {
+                    // modify the file UTF-16
+                    System.IO.File.WriteAllText(localPath, DateTime.Now.ToLongDateString(), Encoding.Unicode);
+                }
+                else
+                {
+                    // modify the file Text
                 System.IO.File.WriteAllText(localPath, DateTime.Now.ToLongDateString());
-                // add to the default CL?
+                }
+
+                // add to the default change?
                 if (target != null)
                     Assert.IsTrue(target.RunCommand("edit", 0, true, new string[] { localPath }, 1));
             }
@@ -1096,7 +1147,7 @@ namespace p4api.net.unit.test
             public List<uint> cmdIdErrors = new List<uint>();
             public List<int> severities = new List<int>();
             public List<int> errorNums = new List<int>();
-            public List<String> errorData = new List<String>();
+            public List<string> errorData = new List<string>();
 
             public void ErrorReceived(uint cmdId, int severity, int errorNum, string data)
             {
@@ -1111,7 +1162,7 @@ namespace p4api.net.unit.test
             public List<uint> cmdIdInfo = new List<uint>();
             public List<int> infoMsgIds = new List<int>();
             public List<int> infoLevels = new List<int>();
-            public List<String> infoData = new List<String>();
+            public List<string> infoData = new List<string>();
 
             public void InfoReceived(uint cmdId, int msgId, int level, string data)
             {
@@ -1124,9 +1175,9 @@ namespace p4api.net.unit.test
 
             public List<int> threadText = new List<int>();
             public List<uint> cmdIdText = new List<uint>();
-            public List<String> textData = new List<String>();
+            public List<string> textData = new List<string>();
 
-            public void TextReceived(uint cmdId, String data)
+            public void TextReceived(uint cmdId, string data)
             {
                 threadText.Add(Thread.CurrentThread.ManagedThreadId);
                 cmdIdText.Add(cmdId);
@@ -1145,34 +1196,42 @@ namespace p4api.net.unit.test
             }
         }
 
-        public void SetParallelSyncCallbackTest(bool unicode)
+        public void SetParallelSyncCallbackTest(Utilities.CheckpointType cptype)
         {
             P4Server.ParallelTransferDelegate cb =
                 new P4Server.ParallelTransferDelegate(ParallelTransferCallback);
 
-            string server = "localhost:6666";
+            string server = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
             Process p4d = null;
+            Repository rep = null;
 
             try
             {
                 //int checkpoint = unicode ? 19 : 21;
-                p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
+                p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+                Server svr = new Server(new ServerAddress(server));
+                rep = new Repository(svr);
+                Utilities.SetClientRoot(rep, TestDir, cptype, ws_client, false);
+
                 using (P4Server target = new P4Server(server, user, pass, ws_client))
                 {
                     // step 1 : set net.parallel.threads to > 0
-                    Assert.IsTrue(target.RunCommand("configure", 7, true, new String[] { "set", "net.parallel.max=4" }, 2));
-                    // disconnect so that we get a connection that recognizes the configurable
+                    Assert.IsTrue(target.RunCommand("configure", 7, true, new string[] { "set", "net.parallel.max=4" }, 2));
+
+                    // disconnect so that we get a connection that recognizes the net.parallel.max configurable
                 }
 
                 using (P4Server target = new P4Server(server, user, pass, ws_client))
                 {
                     forParallelTransferTest = target;
                     callbackHappened = false;
-                    // revert aynthing in progress, it just makes testing harder
+                    // revert anything in progress, it just makes testing harder
                     Assert.IsTrue(target.RunCommand("revert", 7, true, new string[] { "//..." }, 1));
 
                     // get the big file list
@@ -1184,7 +1243,7 @@ namespace p4api.net.unit.test
                         target.SetParallelTransferCallback(cb);
                         // set up event receivers to ensure that we're getting the events that we expect (error, tagged output, info?)
                         OutputReceiver outputCatcher = new OutputReceiver(target);
-                        Assert.IsTrue(target.RunCommand("sync", 7, true, new String[] { "--parallel", "threads=4,batch=8,batchsize=1,min=1,minsize=1", "-f", "//..." }, 4));
+                        Assert.IsTrue(target.RunCommand("sync", 7, true, new string[] { "--parallel", "threads=4,batch=8,batchsize=1,min=1,minsize=1", "-f", "//..." }, 4));
                         Assert.IsTrue(callbackHappened);
                         // assert some info about outputCatcher
                         // although we didn't perform the sync, weget tagged info on what would have happened
@@ -1197,9 +1256,9 @@ namespace p4api.net.unit.test
                         target.SetParallelTransferCallback(null);
                         // set up event receivers to ensure that we're getting the events that we expect (error, tagged output, info?)
                         OutputReceiver outputCatcher = new OutputReceiver(target);
-                        Assert.IsTrue(target.RunCommand("sync", 7, true, new String[] { "--parallel", "threads=4,batch=8,batchsize=1,min=1,minsize=1", "-f", "//..." }, 4));
+                        Assert.IsTrue(target.RunCommand("sync", 7, true, new string[] { "--parallel", "threads=4,batch=8,batchsize=1,min=1,minsize=1", "-f", "//..." }, 4));
                         // verify that we got the right files
-                        foreach (String localPath in localFiles)
+                        foreach (string localPath in localFiles)
                         {
                             // verify that the file exists, throws an exception if it doesn't
                             System.IO.File.GetAttributes(localPath);
@@ -1222,7 +1281,7 @@ namespace p4api.net.unit.test
 
                         // submit the new revs
                         Assert.IsTrue(target.RunCommand("submit", 0, true, new string[] { "-d", "Add a revision to each file" }, 2));
-                        // revert (the unicode server has repoen set, and this is easier than client modification)
+                        // revert (the unicode server has reopen set, and this is easier than client modification)
                         Assert.IsTrue(target.RunCommand("revert", 0, true, new string[] { "//..." }, 1));
 
                         // sync to revision #1
@@ -1237,7 +1296,7 @@ namespace p4api.net.unit.test
                         try
                         {
                             // the RunCommand should throw an exception, so this Assert should never be evaluated.  If it is, it should fail
-                            Assert.IsFalse(target.RunCommand("sync", 7, true, new String[] { "--parallel", "threads=4,batch=8,batchsize=1,min=1,minsize=1", "//..." }, 3));
+                            Assert.IsFalse(target.RunCommand("sync", 7, true, new string[] { "--parallel", "threads=4,batch=8,batchsize=1,min=1,minsize=1", "//..." }, 3));
                         }
                         catch (P4Exception e)
                         {
@@ -1276,6 +1335,8 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
             }
         }
 
@@ -1285,7 +1346,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void ParallelSubmitCallbackTestA()
         {
-            ParallelSubmitCallbackTest(false);
+            ParallelSubmitCallbackTest(Utilities.CheckpointType.A);
         }
 
         /// <summary>
@@ -1294,35 +1355,42 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void ParallelSubmitCallbackTestU()
         {
-            ParallelSubmitCallbackTest(true);
+            ParallelSubmitCallbackTest(Utilities.CheckpointType.U);
         }
 
-        public void ParallelSubmitCallbackTest(bool unicode)
+        public void ParallelSubmitCallbackTest(Utilities.CheckpointType cptype)
         {
             P4Server.ParallelTransferDelegate cb =
                 new P4Server.ParallelTransferDelegate(ParallelTransferCallback);
 
-            string server = "localhost:6666";
+            string server = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
             Process p4d = null;
+            Repository rep = null;
 
             try
             {
-                int checkpoint = unicode ? 19 : 21;
-                p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
+                int checkpoint = (cptype == Utilities.CheckpointType.U) ? 19 : 21;
+                p4d = Utilities.DeployP4TestServer(TestDir, checkpoint, cptype, TestContext.TestName);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+                Server svr = new Server(new ServerAddress(server));
+                rep = new Repository(svr);
+                Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
+
                 using (P4Server target = new P4Server(server, user, pass, ws_client))
                 {
                     // step 1 : set net.parallel.max to > 0
-                    Assert.IsTrue(target.RunCommand("configure", 7, true, new String[] { "set", "net.parallel.max=4" }, 2));
+                    Assert.IsTrue(target.RunCommand("configure", 7, true, new string[] { "set", "net.parallel.max=4" }, 2));
                     // disconnect so that we get a connection that recognizes the configurable
                 }
 
                 using (P4Server target = new P4Server(server, user, pass, ws_client))
                 {
-                    // revert aynthing in progress, it just makes testing harder
+                    // revert anything in progress, it just makes testing harder
                     Assert.IsTrue(target.RunCommand("revert", 7, true, new string[] { "//..." }, 1));
                     // also sync everything
                     Assert.IsTrue(target.RunCommand("sync", 7, true, new string[] { "-f", "//..." }, 2));
@@ -1340,9 +1408,9 @@ namespace p4api.net.unit.test
                     callbackHappened = false;
                     try
                     {
-                        Assert.IsTrue(target.RunCommand("submit", 7, true, new String[] { "--parallel", "threads=4,batch=8,min=1", "-d", "this should not create a submitted CL" }, 4));
+                        Assert.IsTrue(target.RunCommand("submit", 7, true, new string[] { "--parallel", "threads=4,batch=8,min=1", "-d", "this should not create a submitted CL" }, 4));
                     }
-                    catch (P4Exception e)
+                    catch (P4Exception)
                     {
                         Assert.IsTrue(callbackHappened);
                         // we should get lots of library errors because we're trying to submit files that didn't get transferred
@@ -1355,20 +1423,31 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
             }
+
+            p4d = null;
+            rep = null;
             try
             {
-                p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
+                p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+                Server svr = new Server(new ServerAddress(server));
+                rep = new Repository(svr);
+                Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
+
                 using (P4Server target = new P4Server(server, user, pass, ws_client))
                 {
                     // step 1 : set net.parallel.max to > 0
-                    Assert.IsTrue(target.RunCommand("configure", 7, true, new String[] { "set", "net.parallel.max=4" }, 2));
+                    Assert.IsTrue(target.RunCommand("configure", 7, true, new string[] { "set", "net.parallel.max=4" }, 2));
                     // disconnect so that we get a connection that recognizes the configurable
                 }
 
                 using (P4Server target = new P4Server(server, user, pass, ws_client))
                 {
-                    // revert aynthing in progress, it just makes testing harder
+                    // revert anything in progress, it just makes testing harder
                     Assert.IsTrue(target.RunCommand("revert", 7, true, new string[] { "//..." }, 1));
                     // also sync everything
                     Assert.IsTrue(target.RunCommand("sync", 7, true, new string[] { "-f", "//..." }, 2));
@@ -1379,10 +1458,10 @@ namespace p4api.net.unit.test
                     // 2b: use the default handler, verify that we got synced files and no errors
                     target.SetParallelTransferCallback(null);
                     OpenAndModifyFiles(localFiles, target);
-                    Assert.IsTrue(target.RunCommand("submit", 7, true, new String[] { "--parallel", "threads=4,batch=8,min=1", "-d", "this should create a submitted CL" }, 4));
+                    Assert.IsTrue(target.RunCommand("submit", 7, true, new string[] { "--parallel", "threads=4,batch=8,min=1", "-d", "this should create a submitted CL" }, 4));
 
                     // verify that we submitted
-                    Assert.IsTrue(target.RunCommand("changes", 7, true, new String[] { "-m1", "-L" }, 2));
+                    Assert.IsTrue(target.RunCommand("changes", 7, true, new string[] { "-m1", "-L" }, 2));
                     TaggedObjectList results = target.GetTaggedOutput(7);
                     TaggedObject res = results[0];
                     string desc = "";
@@ -1396,17 +1475,17 @@ namespace p4api.net.unit.test
                     // edit the files, but delete them before the submit.  the transmit errors should
                     // happen on the other threads and get forwarded to the initiator
                     OpenAndModifyFiles(localFiles, target);
-                    foreach (String file in localFiles)
+                    foreach (string file in localFiles)
                         System.IO.File.Delete(file);
                     // now submit
                     try
                     {
                         // this should throw an error
-                        Assert.IsFalse(target.RunCommand("submit", 7, true, new String[] { "--parallel", "threads=4,batch=8,min=1", "-d", "this should not create a submitted CL" }, 4));
+                        Assert.IsFalse(target.RunCommand("submit", 7, true, new string[] { "--parallel", "threads=4,batch=8,min=1", "-d", "this should not create a submitted CL" }, 4));
                     }
                     catch (P4Exception e)
                     {
-                        // loop thought the NextErrors looking for the
+                        // loop through the NextErrors looking for the
                         // Submit aborted message
                         bool foundIt = false;
                         bool notNull = true;
@@ -1431,19 +1510,20 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
             }
         }
 
         [TestMethod()]
         public void ParallelServerCancelTest()
         {
-            bool unicode = false;
-            string server = "localhost:6666";
+            string server = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
             Process p4d = null;
-            p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
+            var cptype = Utilities.CheckpointType.A;
 
             Thread proc = null;
             // to let us know that the cancel was caught
@@ -1451,10 +1531,13 @@ namespace p4api.net.unit.test
 
             try
             {
+                p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
                 using (P4Server target = new P4Server(server, user, pass, ws_client))
                 {
                     // step 1 : set net.parallel.threads to > 0
-                    Assert.IsTrue(target.RunCommand("configure", 7, true, new String[] { "set", "net.parallel.max=4" }, 2));
+                    Assert.IsTrue(target.RunCommand("configure", 7, true, new string[] { "set", "net.parallel.max=4" }, 2));
                 }
 
                 // sometimes because of timing issues we miss-fail the test (it hangs)
@@ -1477,7 +1560,7 @@ namespace p4api.net.unit.test
                                 target.SetThreadOwner(Thread.CurrentThread.ManagedThreadId);
                                 Thread.CurrentThread.IsBackground = true;
                                 starting.Set();
-                                Assert.IsTrue(target.RunCommand("sync", 7, true, new String[] { "--parallel", "threads=4,batch=8,batchsize=1,min=1,minsize=1", "-f", "//..." }, 4));
+                                Assert.IsTrue(target.RunCommand("sync", 7, true, new string[] { "--parallel", "threads=4,batch=8,batchsize=1,min=1,minsize=1", "-f", "//..." }, 4));
                                 // the sync will throw over this Set() if we are successful
                                 done.Set();
                             }
@@ -1520,6 +1603,7 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
             }
         }
 
@@ -1529,17 +1613,17 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void ClientTestA()
         {
-            ClientTest(false);
+            ClientTest(Utilities.CheckpointType.A);
         }
         [TestMethod()]
         public void ClientTestU()
         {
-            ClientTest(true);
+            ClientTest(Utilities.CheckpointType.U);
         }
 
-        private void ClientTest(bool unicode)
+        private void ClientTest(Utilities.CheckpointType cptype)
         {
-            string server = "localhost:6666";
+            string server = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -1552,31 +1636,33 @@ namespace p4api.net.unit.test
 
             try
             {
-                p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
+                p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
                 using (P4Server target = new P4Server(server, user, pass, ws_client))
                 {
-                    if (unicode)
+                    if (cptype == Utilities.CheckpointType.U)
                         Assert.IsTrue(target.UseUnicode, "Unicode server detected as not supporting Unicode");
                     else
                         Assert.IsFalse(target.UseUnicode, "Non Unicode server detected as supporting Unicode");
 
                     uint cmdId = 7;
-                    Assert.IsTrue(target.RunCommand("dirs", cmdId, false, new String[] { "//depot/*" }, 1),
+                    Assert.IsTrue(target.RunCommand("dirs", cmdId, false, new string[] { "//depot/*" }, 1),
                         "\"dirs\" command failed");
 
-                    String actual = target.Client;
+                    string actual = target.Client;
                     Assert.AreEqual(actual, "admin_space");
 
                     target.Client = "admin_space2";
 
                     // run a command to trigure a reconnect
-                    Assert.IsTrue(target.RunCommand("dirs", ++cmdId, false, new String[] { "//admin_space2/*" }, 1),
+                    Assert.IsTrue(target.RunCommand("dirs", ++cmdId, false, new string[] { "//admin_space2/*" }, 1),
                         "\"dirs //admin_space2/*\" command failed");
 
                     // try a bad value
                     target.Client = "admin_space3";
 
-                    Assert.IsTrue(target.RunCommand("dirs", ++cmdId, false, new String[] { "//admin_space3/*" }, 1),
+                    Assert.IsTrue(target.RunCommand("dirs", ++cmdId, false, new string[] { "//admin_space3/*" }, 1),
                         "\"dirs //admin_space3/*\" command failed");
 
                     P4ClientErrorList ErrorList = target.GetErrorResults(cmdId);
@@ -1588,6 +1674,7 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
             }
 
             // reset the exception level
@@ -1600,9 +1687,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void DataSetTest()
         {
-            bool unicode = false;
-
-            string server = "localhost:6666";
+            string server = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -1611,28 +1696,31 @@ namespace p4api.net.unit.test
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     using (P4Server target = new P4Server(server, user, pass, ws_client))
                     {
-                        if (unicode)
+                        if (cptype == Utilities.CheckpointType.U)
                             Assert.IsTrue(target.UseUnicode, "Unicode server detected as not supporting Unicode");
                         else
                             Assert.IsFalse(target.UseUnicode, "Non Unicode server detected as supporting Unicode");
 
-                        String expected = "The quick brown fox jumped over the tall white fence.";
+                        string expected = "The quick brown fox jumped over the tall white fence.";
                         target.SetDataSet(7, expected);
 
-                        String actual = target.GetDataSet(7);
+                        string actual = target.GetDataSet(7);
                         Assert.AreEqual(actual, expected);
                     }
                 }
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -1642,18 +1730,18 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void PasswordTestA()
         {
-            PasswordTest(false);
+            PasswordTest(Utilities.CheckpointType.A);
         }
 
         [TestMethod()]
         public void PasswordTestU()
         {
-            PasswordTest(true);
+            PasswordTest(Utilities.CheckpointType.U);
         }
 
-        private void PasswordTest(bool unicode)
+        private void PasswordTest(Utilities.CheckpointType cptype)
         {
-            string server = "localhost:6666";
+            string server = configuration.ServerPort;
             string user = "Alex";
             string pass = "pass";
             string ws_client = "admin_space";
@@ -1666,40 +1754,43 @@ namespace p4api.net.unit.test
 
             try
             {
-                if (unicode)
+                if (cptype == Utilities.CheckpointType.U)
                     user = "Алексей";
 
-                p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
+                p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
                 using (P4Server target = new P4Server(server, user, pass, ws_client))
                 {
-                    if (unicode)
+                    if (cptype == Utilities.CheckpointType.U)
                         Assert.IsTrue(target.UseUnicode, "Unicode server detected as not supporting Unicode");
                     else
                         Assert.IsFalse(target.UseUnicode, "Non Unicode server detected as supporting Unicode");
 
-                    String actual = target.Password;
-                    Assert.IsTrue(actual == null || actual == "");
+                    string actual = target.Password;
+                    Assert.IsFalse(string.IsNullOrEmpty(actual));
 
                     /// try a bad value
                     target.Password = "ssap";
 
                     uint cmdId = 7;
                     // command triggers a reconnect
-                    Assert.IsFalse(target.RunCommand("dirs", cmdId, false, new String[] { "//depot/*" }, 1),
+                    Assert.IsFalse(target.RunCommand("dirs", cmdId, false, new string[] { "//depot/*" }, 1),
                         "\"dirs\" command failed");
 
                     // try a user with no password
                     target.User = "admin";
-                    target.Password = String.Empty;
+                    target.Password = string.Empty;
 
                     // command triggers a reconnect
-                    Assert.IsTrue(target.RunCommand("dirs", ++cmdId, false, new String[] { "//depot/*" }, 1),
+                    Assert.IsTrue(target.RunCommand("dirs", ++cmdId, false, new string[] { "//depot/*" }, 1),
                         "\"dirs\" command failed");
                 }
             }
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
             }
 
             // reset the exception level
@@ -1707,23 +1798,108 @@ namespace p4api.net.unit.test
         }
 
         /// <summary>
+        ///A test for Password
+        ///</summary>
+        [TestMethod()]
+        public void PasswordTest2A()
+        {
+            PasswordTest2(Utilities.CheckpointType.A);
+        }
+
+        // From case 00808744
+
+        private void PasswordTest2(Utilities.CheckpointType cptype)
+        {
+            string p4port = configuration.ServerPort;
+            string user = "Alex";
+            string pass = "pass";
+
+            // turn off exceptions for this test
+            ErrorSeverity oldExceptionLevel = P4Exception.MinThrowLevel;
+            P4Exception.MinThrowLevel = ErrorSeverity.E_NOEXC;
+
+            Process p4d = null;
+
+            P4Server.ErrorDelegate OnConnectionErrorRecieved =
+                new P4Server.ErrorDelegate(ErrorResultsCallback);
+
+            try
+            {
+                if (cptype == Utilities.CheckpointType.U)
+                    user = "Алексей";
+
+                p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+                var server = new Server(new ServerAddress(p4port));
+                using (var repository = new Repository(server, _multithreaded: true))
+                {
+                    var connection = repository.Connection;
+                    connection.UserName = user;
+                    connection.Connect(null);
+                    connection.Client = null;
+                    connection.ErrorReceived += OnConnectionErrorRecieved;
+                    connection.CommandTimeout = TimeSpan.FromSeconds(5);
+
+                    var credential = connection.Login(pass,
+                        new LoginCmdOptions(LoginCmdFlags.DisplayTicket, null));
+                    if (credential is null)
+                    {
+                        connection.Disconnect();
+                        Assert.Fail();
+                        return;
+                    }
+
+                    connection.Credential = credential;
+                    var svr = connection.getP4Server();
+                    var pw = svr.Password;
+                    Task.Run(() =>
+                    {
+                        try
+                        {
+                            //connection.Credential = connection.Credential;
+                            // connection.UserName = connection.UserName;
+                            // connection.Client = connection.Client;
+
+                            var foo = repository.GetUser(connection.UserName);
+                        }
+                        catch (Exception ex)
+                        {
+                            var msg = ex.Message;
+                            // error handling
+                        }
+                    }).Wait();
+                    var svr1 = connection.getP4Server();
+                    var pw1 = svr1.Password;
+                }
+            }
+            finally
+            {
+                Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+            }
+        }
+
+
+
+        /// <summary>
         ///A test for Port
         ///</summary>
         [TestMethod()]
         public void PortTestA()
         {
-            PortTest(false);
+            PortTest(Utilities.CheckpointType.A);
         }
 
         [TestMethod()]
         public void PortTestU()
         {
-            PortTest(true);
+            PortTest(Utilities.CheckpointType.U);
         }
 
-        public void PortTest(bool unicode)
+        public void PortTest(Utilities.CheckpointType cptype)
         {
-            string server = "localhost:6666";
+            string server = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -1735,19 +1911,20 @@ namespace p4api.net.unit.test
             Process p4d = null;
             try
             {
-                p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
+                p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                Assert.IsNotNull(p4d, "Setup Failure");
 
                 using (P4Server target = new P4Server(server, user, pass, ws_client))
                 {
-                    if (unicode)
+                    if (cptype == Utilities.CheckpointType.U)
                         Assert.IsTrue(target.UseUnicode, "Unicode server detected as not supporting Unicode");
                     else
                         Assert.IsFalse(target.UseUnicode, "Non Unicode server detected as supporting Unicode");
 
-                    String expected = "localhost:6666";
+                    string expected = configuration.ServerPort;
                     target.Port = expected;
 
-                    String actual = target.Port;
+                    string actual = target.Port;
                     Assert.AreEqual(actual, expected);
 
                     // try a bad value
@@ -1759,7 +1936,7 @@ namespace p4api.net.unit.test
                     bool reconectSucceeded = true;
                     try
                     {
-                        reconectSucceeded = target.RunCommand("dirs", cmdId, false, new String[] { "//depot/*" }, 1);
+                        reconectSucceeded = target.RunCommand("dirs", cmdId, false, new string[] { "//depot/*" }, 1);
                     }
                     catch
                     {
@@ -1772,6 +1949,7 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
             }
             // reset the exception level
             P4Exception.MinThrowLevel = oldExceptionLevel;
@@ -1785,9 +1963,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void UserTest()
         {
-            bool unicode = false;
-
-            string server = "localhost:6666";
+            string server = configuration.ServerPort;
             string user = "Alex";
             string pass = "pass";
             string ws_client = "admin_space";
@@ -1800,21 +1976,23 @@ namespace p4api.net.unit.test
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                Utilities.CheckpointType cptype = (Utilities.CheckpointType)i;
                 try
                 {
-                    if (unicode)
+                    if (cptype == Utilities.CheckpointType.U)
                         user = "Алексей";
 
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
 
                     using (P4Server target = new P4Server(server, user, pass, ws_client))
                     {
-                        if (unicode)
+                        if (cptype == Utilities.CheckpointType.U)
                             Assert.IsTrue(target.UseUnicode, "Unicode server detected as not supporting Unicode");
                         else
                             Assert.IsFalse(target.UseUnicode, "Non Unicode server detected as supporting Unicode");
 
-                        String actual = target.User;
+                        string actual = target.User;
                         Assert.AreEqual(actual, user);
 
                         // try a bad value
@@ -1822,25 +2000,25 @@ namespace p4api.net.unit.test
 
                         uint cmdId = 7;
                         // command triggers a reconnect
-                        bool success = target.RunCommand("dirs", cmdId, false, new String[] { "//depot/*" }, 1);
+                        bool success = target.RunCommand("dirs", cmdId, false, new string[] { "//depot/*" }, 1);
                         Assert.IsTrue(success, "\"dirs\" command failed");
 
                         P4ClientErrorList errors = target.GetErrorResults(cmdId);
 
                         // try a user with no password
                         target.User = "admin";
-                        target.Password = String.Empty;
+                        target.Password = string.Empty;
 
                         // command triggers a reconnect
-                        Assert.IsTrue(target.RunCommand("dirs", ++cmdId, false, new String[] { "//depot/*" }, 1),
+                        Assert.IsTrue(target.RunCommand("dirs", ++cmdId, false, new string[] { "//depot/*" }, 1),
                             "\"dirs\" command failed");
                     }
                 }
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
                 }
-                unicode = !unicode;
             }
             // reset the exception level
             P4Exception.MinThrowLevel = oldExceptionLevel;
@@ -1852,9 +2030,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void ErrorListTest()
         {
-            bool unicode = false;
-
-            string server = "localhost:6666";
+            string server = configuration.ServerPort;
             string user = "Alex";
             string pass = "pass";
             string ws_client = "admin_space";
@@ -1868,27 +2044,25 @@ namespace p4api.net.unit.test
             // refactor this to test each one individually as its own test
             for (int i = 0; i < 3; i++) // run once for ascii, once for unicode, once for the security level 3 server
             {
+                var cptype = (Utilities.CheckpointType)i;
                 try
                 {
-                    String zippedFile = "a.exe";
-                    if (i == 1)
+                    if (cptype == Utilities.CheckpointType.U)
                     {
-                        zippedFile = "u.exe";
                         user = "Алексей";
                         pass = "pass";
                     }
-                    if (i == 2)
+                    if (cptype == Utilities.CheckpointType.S3)
                     {
-                        zippedFile = "s3.exe";
-                        user = "alex";
-                        pass = "Password";
+                        user = "Alex";
+                        pass = "Password";  // was Password
                     }
 
-                    p4d = Utilities.DeployP4TestServer(TestDir, 10, zippedFile, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 10, cptype, "ErrorListTest");
 
                     using (P4Server target = new P4Server(server, user, pass, ws_client))
                     {
-                        if (unicode)
+                        if (cptype == Utilities.CheckpointType.U)
                             Assert.IsTrue(target.UseUnicode, "Unicode server detected as not supporting Unicode");
                         else
                             Assert.IsFalse(target.UseUnicode, "Non Unicode server detected as supporting Unicode");
@@ -1896,15 +2070,15 @@ namespace p4api.net.unit.test
                         P4ClientErrorList errors = null;
 
                         uint cmdId = 7;
-                        // a bad user will not fail on the servers fro a.exe and u.exe, 
-                        // so only test on s3
-                        if (i == 2)
+                        // a bad user will not fail on the servers from a.tar and u.tar, 
+                        // so only test on s3.tar
+                        if (cptype == Utilities.CheckpointType.S3)
                         {
                             // setting the user name will trigger a disconnect
                             target.User = "badboy"; // nonexistent user
 
                             // command triggers an attempt to reconnect
-                            Assert.IsFalse(target.RunCommand("dirs", ++cmdId, false, new String[] { "//depot/*" }, 1));
+                            Assert.IsFalse(target.RunCommand("dirs", ++cmdId, false, new string[] { "//depot/*" }, 1));
 
                             errors = target.GetErrorResults(cmdId);
 
@@ -1916,7 +2090,7 @@ namespace p4api.net.unit.test
                         }
 
                         target.Password = "NoWayThisWillWork"; // bad password
-                        if (i == 2)
+                        if (cptype == Utilities.CheckpointType.S3)
                         {
                             Assert.IsFalse(target.Login("NoWayThisWillWork", null));
                             P4ClientError conError = target.ConnectionError;
@@ -1925,7 +2099,7 @@ namespace p4api.net.unit.test
                             Assert.IsTrue(conError.ErrorMessage.Contains("Password invalid"));
                         }
                         // command triggers an attempt to reconnect
-                        Assert.IsFalse(target.RunCommand("dirs", ++cmdId, false, new String[] { "//depot/*" }, 1));
+                        Assert.IsFalse(target.RunCommand("dirs", ++cmdId, false, new string[] { "//depot/*" }, 1));
 
                         errors = target.GetErrorResults(cmdId);
 
@@ -1952,7 +2126,7 @@ namespace p4api.net.unit.test
                         target.Port = "NoServerAtThisAddress:666";
 
                         // command triggers an attempt to reconnect
-                        Assert.IsFalse(target.RunCommand("dirs", ++cmdId, false, new String[] { "//depot/*" }, 1));
+                        Assert.IsFalse(target.RunCommand("dirs", ++cmdId, false, new string[] { "//depot/*" }, 1));
 
                         errors = target.GetErrorResults(cmdId);
                         P4ClientInfoMessageList info = target.GetInfoResults(cmdId);
@@ -1983,7 +2157,7 @@ namespace p4api.net.unit.test
 
                         // command triggers an attempt to reconnect
                         // run a good command to make sure the connection is solid
-                        bool success = target.RunCommand("dirs", ++cmdId, false, new String[] { "//depot/*" }, 1);
+                        bool success = target.RunCommand("dirs", ++cmdId, false, new string[] { "//depot/*" }, 1);
 
                         errors = target.GetErrorResults(cmdId);
                         if (!success)
@@ -1996,7 +2170,7 @@ namespace p4api.net.unit.test
                         Assert.IsNull(errors);
 
                         // try a bad command name
-                        Assert.IsFalse(target.RunCommand("dirrrrrs", ++cmdId, false, new String[] { "//depot/*" }, 1));
+                        Assert.IsFalse(target.RunCommand("dirrrrrs", ++cmdId, false, new string[] { "//depot/*" }, 1));
 
                         errors = target.GetErrorResults(cmdId);
 
@@ -2009,10 +2183,11 @@ namespace p4api.net.unit.test
                         {
                             target.Password = null;
                             Assert.IsTrue(target.Login(pass, null));
+                            P4ClientError conError = target.ConnectionError;
                         }
 
                         // try a bad command parameter
-                        Assert.IsFalse(target.RunCommand("dirs", ++cmdId, false, new String[] { "//freebird/*" }, 1));
+                        Assert.IsFalse(target.RunCommand("dirs", ++cmdId, false, new string[] { "//freebird/*" }, 1));
 
                         errors = target.GetErrorResults(cmdId);
 
@@ -2021,7 +2196,7 @@ namespace p4api.net.unit.test
                         //						Assert.IsTrue(errors[0].ErrorMessage.Contains("must refer to client"));
 
                         // try a bad command flag
-                        Assert.IsFalse(target.RunCommand("dirs", ++cmdId, false, new String[] { "-UX", "//depot/*" }, 1));
+                        Assert.IsFalse(target.RunCommand("dirs", ++cmdId, false, new string[] { "-UX", "//depot/*" }, 1));
 
                         errors = target.GetErrorResults(cmdId);
 
@@ -2033,8 +2208,8 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
                 }
-                unicode = !unicode;
             }
             // reset the exception level
             P4Exception.MinThrowLevel = oldExceptionLevel;
@@ -2046,9 +2221,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void ApiLevelTest()
         {
-            bool unicode = false;
-
-            string server = "localhost:6666";
+            string server = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -2057,13 +2230,15 @@ namespace p4api.net.unit.test
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
 
                     using (P4Server target = new P4Server(server, user, pass, ws_client))
                     {
-                        if (unicode)
+                        if (cptype == Utilities.CheckpointType.U)
                             Assert.IsTrue(target.UseUnicode, "Unicode server detected as not supporting Unicode");
                         else
                             Assert.IsFalse(target.UseUnicode, "Non Unicode server detected as supporting Unicode");
@@ -2074,8 +2249,8 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -2085,9 +2260,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void TestTaggedUntaggedOutputTest()
         {
-            bool unicode = false;
-
-            string server = "localhost:6666";
+            string server = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -2096,18 +2269,20 @@ namespace p4api.net.unit.test
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
 
                     using (P4Server target = new P4Server(server, user, pass, ws_client))
                     {
-                        if (unicode)
+                        if (cptype == Utilities.CheckpointType.U)
                             Assert.IsTrue(target.UseUnicode, "Unicode server detected as not supporting Unicode");
                         else
                             Assert.IsFalse(target.UseUnicode, "Non Unicode server detected as supporting Unicode");
 
-                        String[] parms = new String[] { "//depot/mycode/*" };
+                        string[] parms = new string[] { "//depot/mycode/*" };
 
                         uint cmdId = 7;
                         Assert.IsTrue(target.RunCommand("files", cmdId, false, parms, 1),
@@ -2124,7 +2299,7 @@ namespace p4api.net.unit.test
 
                         Assert.IsNotNull(results, "GetTaggedOutput returned null data");
 
-                        if (unicode)
+                        if (cptype == Utilities.CheckpointType.U)
                             Assert.AreEqual(3, results.Count);
                         else
                             Assert.AreEqual(3, results.Count);
@@ -2140,12 +2315,10 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
-
-        private static bool CommandCompletedCalled = false;
 
         /// <summary>
         /// Another test for IKeepAlive
@@ -2155,9 +2328,8 @@ namespace p4api.net.unit.test
         {
             // set a prompt handler, wait until the prompt comes in, cancel the command, get the "cancelled" state
             // then launch another command and watch it succeed
-            bool unicode = false;
 
-            string server = "localhost:6666";
+            string server = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -2166,20 +2338,23 @@ namespace p4api.net.unit.test
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
 
                     using (P4Server target = new P4Server(server, user, pass, ws_client))
                     {
-                        if (unicode)
+                        if (cptype == Utilities.CheckpointType.U)
                             Assert.IsTrue(target.UseUnicode, "Unicode server detected as not supporting Unicode");
                         else
                             Assert.IsFalse(target.UseUnicode, "Non Unicode server detected as supporting Unicode");
 
                         target.PromptHandler = PromptWaiter;
                         // attempt to change the password, this guarantees a prompt
-                        P4Command cmd = new P4Command(target, "passwd", false);
+                        using (P4Command cmd = new P4Command(target, "passwd", false))
+                        {
                         // start a thread to cancel as soon as the prompt comes in
                         System.Threading.Thread t = new System.Threading.Thread(KeepAliveKiller);
                         testKiller = new KillParams();
@@ -2203,15 +2378,17 @@ namespace p4api.net.unit.test
                         }
 
                         Assert.IsTrue(cancelledException, "Did not receive cancel exception");
+                        }
 
                         // run another command, but run a reconnect as "cancel" terminates the session
                         target.Reconnect();
                         target.PromptHandler = null;
-                        cmd = new P4Command(target, "depots", false);
-                        cancelledException = false;
+                        using (P4Command cmd1 = new P4Command(target, "depots", false))
+                        {
+                            bool cancelledException = false;
                         try
                         {
-                            P4CommandResult result = cmd.Run();
+                                P4CommandResult result = cmd1.Run();
                             // no exception
                         }
                         catch (P4CommandCanceledException)
@@ -2222,12 +2399,13 @@ namespace p4api.net.unit.test
                         Assert.IsFalse(cancelledException, "Received cancel exception");
                     }
                 }
+                }
                 finally
                 {
                     testKiller = new KillParams();
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -2242,7 +2420,7 @@ namespace p4api.net.unit.test
 
         private static KillParams testKiller;
 
-        private string PromptWaiter(uint cmdId, String msg, bool displayText)
+        private string PromptWaiter(uint cmdId, string msg, bool displayText)
         {
             testKiller.promptCalled.Set();
             // wait until the cancel got called
@@ -2270,9 +2448,8 @@ namespace p4api.net.unit.test
         public void KeepAliveTest()
         {
             // set a prompt handler, wait until the prompt comes in, cancel the command, get the "cancelled" state
-            bool unicode = false;
 
-            string server = "localhost:6666";
+            string server = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -2281,20 +2458,23 @@ namespace p4api.net.unit.test
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
 
                     using (P4Server target = new P4Server(server, user, pass, ws_client))
                     {
-                        if (unicode)
+                        if (cptype == Utilities.CheckpointType.U)
                             Assert.IsTrue(target.UseUnicode, "Unicode server detected as not supporting Unicode");
                         else
                             Assert.IsFalse(target.UseUnicode, "Non Unicode server detected as supporting Unicode");
 
                         target.PromptHandler = PromptWaiter;
                         // attempt to change the password, this guarantees a prompt
-                        P4Command cmd = new P4Command(target, "passwd", false);
+                        using (P4Command cmd = new P4Command(target, "passwd", false))
+                        {
                         // start a thread to cancel as soon as the prompt comes in
                         System.Threading.Thread t = new System.Threading.Thread(KeepAliveKiller);
                         testKiller = new KillParams();
@@ -2320,12 +2500,13 @@ namespace p4api.net.unit.test
                         Assert.IsTrue(cancelledException);
                     }
                 }
+                }
                 finally
                 {
                     testKiller = new KillParams();
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -2333,8 +2514,8 @@ namespace p4api.net.unit.test
         {
             try
             {
-                Process p = new Process();
-
+                using (Process p = new Process())
+                {
                 ProcessStartInfo ps = new ProcessStartInfo();
                 ps.FileName = "P4";
                 ps.Arguments = string.Format("set {0}=", var);
@@ -2352,6 +2533,7 @@ namespace p4api.net.unit.test
                 p.WaitForExit();
 
                 return output;
+            }
             }
             catch (Exception ex)
             {
@@ -2377,7 +2559,7 @@ namespace p4api.net.unit.test
 
             P4Server.Set("P4FOOBAR", null);
             value = P4Server.Get("P4FOOBAR");
-            Assert.IsNull(value);
+            // Assert.IsNull(value);    // FIXME  reenable test after job092355 is fixed
         }
 
         /// <summary>
@@ -2386,57 +2568,58 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void IsIgnoredTest()
         {
-            bool unicode = false;
-
-            Process p4d = null;
+            var cptype = Utilities.CheckpointType.A;
             string oldIgnore = null;
-            var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
+            var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
+
             var adminSpace = Path.Combine(clientRoot, "admin_space");
+            string mycode = Path.Combine(adminSpace, "MyCode");
+            string myp4ignore = Path.Combine(mycode, "myp4ignore.txt");
+            string foofoo = Path.Combine(mycode, "foofoofoo.foo");
+            string moomoo = Path.Combine(mycode, "moomoomoo.foo");
+            string ruabvg = Path.Combine(mycode, "myp4ignore_АБВГ.txt");
 
             try
             {
-                p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
+                Directory.CreateDirectory(mycode);
 
                 oldIgnore = P4Server.Get("P4IGNORE");
 
-                P4Server.Set("P4IGNORE", "myp4ignore.txt");
+                P4Server.Update("P4IGNORE", "myp4ignore.txt");
                 string val = P4Server.Get("P4IGNORE");
-                Assert.AreEqual(val, "myp4ignore.txt");
+                Assert.AreEqual("myp4ignore.txt", val);
 
-                Environment.CurrentDirectory = Path.Combine(adminSpace, "MyCode");
-                if (System.IO.File.Exists(Path.Combine(adminSpace, "MyCode\\myp4ignore.txt")))
+                Environment.CurrentDirectory = mycode;
+                if (System.IO.File.Exists(myp4ignore))
                 {
-                    System.IO.File.Delete(Path.Combine(adminSpace, "MyCode\\myp4ignore.txt"));
+                    System.IO.File.Delete(myp4ignore);
                 }
-                using (System.IO.StreamWriter sw = new StreamWriter(Path.Combine(adminSpace, "MyCode\\myp4ignore.txt")))
+                using (System.IO.StreamWriter sw = new StreamWriter(myp4ignore))
                 {
                     sw.WriteLine("foofoofoo.foo");
+                    sw.Close();
                 }
-                Assert.IsTrue(P4Server.IsIgnored(Path.Combine(adminSpace, "MyCode\\foofoofoo.foo")));
-                Assert.IsFalse(P4Server.IsIgnored(Path.Combine(adminSpace, "MyCode\\moomoomoo.foo")));
-
+                Assert.IsTrue(P4Server.IsIgnored(foofoo));
+                Assert.IsFalse(P4Server.IsIgnored(moomoo));
             }
             catch (Exception ex)
             {
-                Assert.Fail(ex.Message + "\r\n" + ex.StackTrace);
+                Assert.Fail(ex.Message + Environment.NewLine + ex.StackTrace);
             }
             finally
             {
                 P4Server.Set("P4IGNORE", oldIgnore);
 
-                if (System.IO.File.Exists(Path.Combine(adminSpace, "MyCode\\myp4ignore.txt")))
+                if (System.IO.File.Exists(myp4ignore))
                 {
-                    System.IO.File.Delete(Path.Combine(adminSpace, "MyCode\\myp4ignore.txt"));
+                    System.IO.File.Delete(myp4ignore);
                 }
-                if (System.IO.File.Exists(Path.Combine(adminSpace, "MyCode\\myp4ignore_АБВГ.txt")))
+                if (System.IO.File.Exists(ruabvg))
                 {
-                    System.IO.File.Delete(Path.Combine(adminSpace, "MyCode\\myp4ignore_АБВГ.txt"));
+                    System.IO.File.Delete(ruabvg);
                 }
-
-                Utilities.RemoveTestServer(p4d, TestDir);
+                P4Server.Update("P4IGNORE", "");
             }
-            unicode = !unicode;
-            //}
         }
 
         /// <summary>
@@ -2447,28 +2630,40 @@ namespace p4api.net.unit.test
         {
             string oldIgnore = P4Server.Get("P4IGNORE");
 
+            string noignore = Path.Combine(TestDir, "NoIgnore");
+            string myignore = Path.Combine(TestDir, "MyIgnore");
+            string p4ignore = Path.Combine(myignore, ".p4ignore");
+
             try
             {
-                P4Server.Set("P4IGNORE", ".p4ignore");
+                Directory.CreateDirectory(TestDir);
+                Directory.CreateDirectory(myignore);
+                Directory.CreateDirectory(noignore);
+
+                // set P4IGNORE in enviro
+                P4Server.Update("P4IGNORE", ".p4ignore");
                 string val = P4Server.Get("P4IGNORE");
                 Assert.AreEqual(val, ".p4ignore");
 
-                Environment.CurrentDirectory = "C:\\MyTestDir";
-                Directory.CreateDirectory("C:\\MyTestDir\\NoIgnore");
-                System.IO.File.Create("C:\\MyTestDir\\.p4ignore").Dispose();
-                System.IO.File.AppendAllText("C:\\MyTestDir\\.p4ignore", ".p4ignore");
+                // Create a .p4ignore file
+                System.IO.File.Create(p4ignore).Dispose();
+                System.IO.File.AppendAllText(p4ignore, ".p4ignore");
 
-                Assert.IsTrue(P4Server.IsIgnored("C:\\MyTestDir\\.p4ignore"));
-                Environment.CurrentDirectory = "C:\\MyTestDir";
+                // Test in a directory containing the .p4ignore file
+                Environment.CurrentDirectory = myignore;
                 Assert.IsTrue(P4Server.IsIgnored(".p4ignore"));
-                Environment.CurrentDirectory = "C:\\MyTestDir\\NoIgnore";
+                Assert.IsTrue(P4Server.IsIgnored(p4ignore));
+
+                // Test in a directory NOT containing the .p4ignore file
+                Environment.CurrentDirectory = noignore;
                 Assert.IsFalse(P4Server.IsIgnored(".p4ignore"));
             }
 
             finally
             {
+                P4Server.Update("P4IGNORE", null);
                 P4Server.Set("P4IGNORE", oldIgnore);
-                System.IO.File.Delete("C:\\MyTestDir\\.p4ignore");
+                System.IO.File.Delete(p4ignore);
             }
         }
 
@@ -2478,7 +2673,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetConfigTestA()
         {
-            GetConfigTest(false);
+            GetConfigTest(Utilities.CheckpointType.A);
         }
         /// <summary>
         ///A test for GetConfig()
@@ -2486,36 +2681,37 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetConfigTestU()
         {
-            GetConfigTest(true);
+            GetConfigTest(Utilities.CheckpointType.U);
         }
 
-        public void GetConfigTest(bool unicode)
+        public void GetConfigTest(Utilities.CheckpointType cptype)
         {
-            string server = "localhost:6666";
+            string server = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
             Process p4d = null;
 
-            string oldConfig = P4Server.Get("P4CONFIG");
             string adminSpace = "";
 
             try
             {
-                p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
-                var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
+                p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+                var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
                 adminSpace = Path.Combine(clientRoot, "admin_space");
 
                 using (P4Server target = new P4Server(server, user, pass, ws_client))
                 {
-                    if (unicode)
+                    if (cptype == Utilities.CheckpointType.U)
                         Assert.IsTrue(target.UseUnicode, "Unicode server detected as not supporting Unicode");
                     else
                         Assert.IsFalse(target.UseUnicode, "Non Unicode server detected as supporting Unicode");
 
-                    string expected = Path.Combine(adminSpace, "MyCode\\myP4Config.txt");
-                    P4Server.Set("P4CONFIG", "myP4Config.txt");
+                    string expected = Path.Combine(adminSpace, "MyCode", "myP4Config.txt");
+                    P4Server.Update("P4CONFIG", "myP4Config.txt");
                     if (System.IO.File.Exists(expected))
                     {
                         System.IO.File.Delete(expected);
@@ -2546,12 +2742,13 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
 
-                P4Server.Set("P4CONFIG", oldConfig);
+                P4Server.Update("P4CONFIG", null);
 
-                if (System.IO.File.Exists(Path.Combine(adminSpace, "MyCode\\myP4Config.txt")))
+                if (System.IO.File.Exists(Path.Combine(adminSpace, "MyCode", "myP4Config.txt")))
                 {
-                    System.IO.File.Delete(Path.Combine(adminSpace, "MyCode\\myP4Config.txt"));
+                    System.IO.File.Delete(Path.Combine(adminSpace, "MyCode", "myP4Config.txt"));
                 }
             }
         }
@@ -2562,7 +2759,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetConfigTestjob100191A()
         {
-            GetConfigTestjob100191(false);
+            GetConfigTestjob100191(Utilities.CheckpointType.A);
         }
         /// <summary>
         ///A test for GetConfigjob100191U()
@@ -2570,119 +2767,131 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetConfigTestjob100191U()
         {
-            GetConfigTestjob100191(true);
+            GetConfigTestjob100191(Utilities.CheckpointType.U);
         }
-        public void GetConfigTestjob100191(bool unicode)
+        public void GetConfigTestjob100191(Utilities.CheckpointType cptype)  // Fixme requires enviro fix
         {
-
-
-            string oldConfig = P4Server.Get("P4CONFIG");
-
-            string uri = "localhost:6666";
-            string user = "admin";
+            string uri = configuration.ServerPort;
             string pass = string.Empty;
-            string ws_client = "admin_space";
 
             Process p4d = null;
+            Repository rep = null;
 
             string adminSpace = "";
+            string topSpace = "";
+            string midSpace = "";
+            string botSpace = "";
+            string topConfig = "";
+            string midConfig = "";
+            string botConfig = "";
 
             try
             {
-                p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
-                var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
+                p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+                var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
                 adminSpace = Path.Combine(clientRoot, "admin_space");
+
+                topSpace = Path.Combine(adminSpace, "top_level");
+                midSpace = Path.Combine(topSpace, "mid_level");
+                botSpace = Path.Combine(midSpace, "bottom_level");
+
+                topConfig = Path.Combine(topSpace, "p4config");
+                midConfig = Path.Combine(midSpace, "p4config");
+                botConfig = Path.Combine(botSpace, "p4config");
 
                 Server server = new Server(new ServerAddress(uri));
 
-                Repository rep = new Repository(server);
+                rep = new Repository(server);
 
                 using (Connection con = rep.Connection)
                 {
                     // create some directories
-                    Directory.CreateDirectory("C:\\top_level\\mid_level\\bottom_level");
+                    Directory.CreateDirectory(botSpace);
 
-                    string topLevel = "C:\\top_level\\p4config";
-                    string midLevel = "C:\\top_level\\mid_level\\p4config";
-                    string bottomLevel = "C:\\top_level\\mid_level\\bottom_level\\p4config";
                     // create some config files
-                    System.IO.File.Create(topLevel).Dispose();
-                    System.IO.File.Create(midLevel).Dispose();
-                    System.IO.File.Create(bottomLevel).Dispose();
+                    System.IO.File.Create(topConfig).Dispose();
+                    System.IO.File.Create(midConfig).Dispose();
+                    System.IO.File.Create(botConfig).Dispose();
 
-                    System.IO.File.AppendAllText(topLevel, "P4PORT=6666\r\nP4USER=admin\r\nP4CLIENT=admin_space");
-                    System.IO.File.AppendAllText(midLevel, "P4PORT=6666\r\nP4USER=admin\r\nP4CLIENT=admin_space");
-                    System.IO.File.AppendAllText(bottomLevel, "P4PORT=6666\r\nP4USER=admin\r\nP4CLIENT=admin_space");
+                    string contents = "P4PORT=" + configuration.ServerPort + Environment.NewLine +
+                                      "P4USER=admin" + Environment.NewLine +
+                                      "P4CLIENT=admin_space" + Environment.NewLine;
+                    System.IO.File.AppendAllText(topConfig, contents);
+                    System.IO.File.AppendAllText(midConfig, contents);
+                    System.IO.File.AppendAllText(botConfig, contents);
 
-                    P4Server.Set("P4CONFIG", "p4config");
+                    P4Server.Update("P4CONFIG", "p4config");
 
                     Options options = new Options();
-                    options["cwd"] = "C:\\top_level\\mid_level\\bottom_level";
-                    Directory.SetCurrentDirectory("C:\\top_level\\mid_level\\bottom_level");
+                    options["cwd"] = botSpace;
                     con.Connect(options);
 
+                    P4Bridge.ListEnviro();
+
                     string config1 = con.GetP4ConfigFile();
-                    Assert.AreEqual(config1, bottomLevel);
-                    config1 = con.GetP4ConfigFile("C:\\top_level\\mid_level\\bottom_level");
-                    Assert.AreEqual(config1, bottomLevel);
-                    config1 = P4Server.GetConfig("C:\\top_level\\mid_level\\bottom_level");
-                    Assert.AreEqual(config1, bottomLevel);
+                    Assert.AreEqual(botConfig, config1);
+                    config1 = con.GetP4ConfigFile(botSpace);
+                    Assert.AreEqual(botConfig, config1);
+                    config1 = P4Server.GetConfig(botSpace);
+                    Assert.AreEqual(botConfig, config1);
 
                     con.Disconnect();
-                    options["cwd"] = "C:\\top_level\\mid_level";
-                    Directory.SetCurrentDirectory("C:\\top_level\\mid_level");
+                    options["cwd"] = midSpace;
+                    // Directory.SetCurrentDirectory(midSpace);
                     con.Connect(options);
 
                     string config2 = con.GetP4ConfigFile();
-                    Assert.AreEqual(config2, midLevel);
-                    config2 = con.GetP4ConfigFile("C:\\top_level\\mid_level");
-                    Assert.AreEqual(config2, midLevel);
-                    config2 = P4Server.GetConfig("C:\\top_level\\mid_level");
-                    Assert.AreEqual(config2, midLevel);
+                    Assert.AreEqual(midConfig, config2);
+                    config2 = con.GetP4ConfigFile(midSpace);
+                    Assert.AreEqual(midConfig, config2);
+                    config2 = P4Server.GetConfig(midSpace);
+                    Assert.AreEqual(midConfig, config2);
 
                     con.Disconnect();
-                    options["cwd"] = "C:\\top_level";
-                    Directory.SetCurrentDirectory("C:\\top_level");
+                    options["cwd"] = topSpace;
+                    //Directory.SetCurrentDirectory(topSpace);
                     con.Connect(options);
 
                     string config3 = con.GetP4ConfigFile();
-                    Assert.AreEqual(config3, topLevel);
-                    config3 = con.GetP4ConfigFile("C:\\top_level");
-                    Assert.AreEqual(config3, topLevel);
-                    config3 = P4Server.GetConfig("C:\\top_level");
-                    Assert.AreEqual(config3, topLevel);
+                    Assert.AreEqual(topConfig, config3);
+                    config3 = con.GetP4ConfigFile(topSpace);
+                    Assert.AreEqual(topConfig, config3);
+                    config3 = P4Server.GetConfig(topSpace);
+                    Assert.AreEqual(topConfig, config3);
 
                     //delete the config files
-                    System.IO.File.Delete("C:\\top_level\\mid_level\\bottom_level\\p4config");
-                    System.IO.File.Delete("C:\\top_level\\mid_level\\p4config");
-                    System.IO.File.Delete("C:\\top_level\\p4config");
+                    System.IO.File.Delete(topConfig);
+                    System.IO.File.Delete(midConfig);
+                    System.IO.File.Delete(botConfig);
 
                     con.Disconnect();
-                    options["cwd"] = "C:\\top_level";
+                    options["cwd"] = topSpace;
                     con.Connect(options);
 
                     string config4 = con.GetP4ConfigFile();
-                    Assert.AreEqual(config4, "noconfig");
-                    config4 = con.GetP4ConfigFile("C:\\top_level");
-                    Assert.AreEqual(config4, "noconfig");
-                    config4 = P4Server.GetConfig("C:\\top_level");
-                    Assert.AreEqual(config4, "noconfig");
+                    Assert.AreEqual("noconfig", config4);
+                    config4 = con.GetP4ConfigFile(topSpace);
+                    Assert.AreEqual("noconfig", config4);
+                    config4 = P4Server.GetConfig(topSpace);
+                    Assert.AreEqual("noconfig", config4);
 
                     con.Disconnect();
-                    Directory.SetCurrentDirectory("C:\\");
                 }
             }
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
 
-                P4Server.Set("P4CONFIG", oldConfig);
+                P4Server.Update("P4CONFIG", "");  // reset our P4CONFIG changes
 
-
-                // delete the directories
-                Directory.Delete("C:\\top_level\\mid_level\\bottom_level");
-                Directory.Delete("C:\\top_level\\mid_level");
-                Directory.Delete("C:\\top_level");
+                // delete the directories we created
+                Utilities.DeleteDirectory(botSpace);
+                Utilities.DeleteDirectory(midSpace);
+                Utilities.DeleteDirectory(topSpace);
             }
         }
 
@@ -2692,26 +2901,26 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void ConnectWithConfigFileTest()
         {
-            bool unicode = false;
-
-            string oldConfig = P4Server.Get("P4CONFIG");
             string adminSpace = "";
 
             Process p4d = null;
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
-                    var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
                     adminSpace = Path.Combine(clientRoot, "admin_space");
                     Directory.CreateDirectory(adminSpace);
 
                     // write a config file in the workspace root 
 
                     string expected = Path.Combine(adminSpace, "myP4Config.txt");
-                    P4Server.Set("P4CONFIG", "myP4Config.txt");
+                    P4Server.Update("P4CONFIG", "myP4Config.txt");
                     try
                     {
                         if (System.IO.File.Exists(expected))
@@ -2720,8 +2929,8 @@ namespace p4api.net.unit.test
                         }
                         using (System.IO.StreamWriter sw = new StreamWriter(expected))
                         {
-                            sw.WriteLine("P4PORT=localhost:6666");
-                            sw.WriteLine("P4user=admin");
+                            sw.WriteLine("P4PORT=" + configuration.ServerPort);
+                            sw.WriteLine("P4USER=admin");
                             sw.WriteLine("P4CLIENT=admin_space");
                         }
                     }
@@ -2734,31 +2943,31 @@ namespace p4api.net.unit.test
 
                     using (P4Server target = new P4Server(Path.Combine(adminSpace, "MyCode")))
                     {
-                        if (unicode)
+                        if (cptype == Utilities.CheckpointType.U)
                             Assert.IsTrue(target.UseUnicode, "Unicode server detected as not supporting Unicode");
                         else
                             Assert.IsFalse(target.UseUnicode, "Non Unicode server detected as supporting Unicode");
 
-                        Assert.AreEqual(target.User, "admin");
-                        Assert.AreEqual(target.Client, "admin_space");
-                        Assert.AreEqual(target.Port, "localhost:6666");
+                        Assert.AreEqual("admin", target.User);
+                        Assert.AreEqual("admin_space", target.Client);
+                        Assert.AreEqual(configuration.ServerPort, target.Port);
 
                         string actual = target.Config;
-                        Assert.AreEqual(actual, expected, true); // ignore case
+                        Assert.AreEqual(expected, actual, true); // ignore case
                     }
                 }
                 finally
                 {
-                    P4Server.Set("P4CONFIG", oldConfig);
+                    P4Server.Update("P4CONFIG", null);
 
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
 
                     if (System.IO.File.Exists(Path.Combine(adminSpace, "myP4Config.txt")))
                     {
                         System.IO.File.Delete(Path.Combine(adminSpace, "myP4Config.txt"));
                     }
                 }
-                unicode = !unicode;
             }
         }
 
@@ -2769,23 +2978,31 @@ namespace p4api.net.unit.test
         public void ShiftjisFilesTest()
         {
             // only applies to Unicode servers
-            bool unicode = true;
+            var cptype = Utilities.CheckpointType.U;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
             Process p4d = null;
-
+            Repository rep = null;
 
             try
             {
                 Environment.SetEnvironmentVariable("P4CHARSET", "shiftjis");
-                p4d = Utilities.DeployP4TestServer(TestDir, 16, unicode);
+                p4d = Utilities.DeployP4TestServer(TestDir, 16, cptype, TestContext.TestName);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
                 Server server = new Server(new ServerAddress(uri));
 
-                Repository rep = new Repository(server);
+                rep = new Repository(server);
+                Utilities.SetClientRoot(rep, TestDir, cptype, ws_client, false);
+
+                var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
+                string adminSpace = Path.Combine(clientRoot, "admin_space");
+
+                string localPath = Path.Combine(adminSpace, "ああえええええ");
 
                 using (Connection con = rep.Connection)
                 {
@@ -2804,8 +3021,11 @@ namespace p4api.net.unit.test
 
                     Assert.AreEqual("admin", con.Client.OwnerName);
 
+                    // Clear the local directory, so we get a clean sync
+                    Utilities.DeleteDirectory(localPath);
+
                     // confirm that ああえええええ directory does not exist locally
-                    Assert.IsFalse(System.IO.Directory.Exists(@"C:\MyTestDir\admin_space\ああえええええ"));
+                    Assert.IsFalse(System.IO.Directory.Exists(localPath));
 
                     // sync the ああえええええ dir
                     FileSpec dfs = new FileSpec(new DepotPath(@"//depot/ああえええええ/..."));
@@ -2818,7 +3038,7 @@ namespace p4api.net.unit.test
                     // confirm that the ああえええええ directory now exists
                     // that the files were synced and that there are 3
                     // files total in the new local directory
-                    Assert.IsTrue(System.IO.Directory.Exists(@"C:\MyTestDir\admin_space\ああえええええ"));
+                    Assert.IsTrue(System.IO.Directory.Exists(localPath));
                     Assert.IsNotNull(rFiles);
                     Assert.AreEqual(3, rFiles.Count);
 
@@ -2830,12 +3050,14 @@ namespace p4api.net.unit.test
                     // sync to none and confirm directory is empty
                     dfs.Version = new Revision(0);
                     rFiles = con.Client.SyncFiles(sFlags, dfs);
-                    Assert.AreEqual(System.IO.Directory.GetFiles(@"C:\MyTestDir\admin_space\ああえええええ").Length, 0);
+                    Assert.AreEqual(System.IO.Directory.GetFiles(localPath).Length, 0);
                 }
             }
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
             }
         }
 
@@ -2846,9 +3068,9 @@ namespace p4api.net.unit.test
         public void SetCharacterSetTest()
         {
             // only applies to Unicode servers
-            bool unicode = true;
+            var cptype = Utilities.CheckpointType.U;
 
-            string server = "localhost:6666";
+            string server = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -2860,24 +3082,28 @@ namespace p4api.net.unit.test
 
             try
             {
-                p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
-                var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
+                p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+                var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
                 adminSpace = Path.Combine(clientRoot, "admin_space");
                 Directory.CreateDirectory(adminSpace);
 
                 Environment.SetEnvironmentVariable("P4CHARSET", "utf8-bom");
+                // not picking it up from the environment on OSX - FIXME?
+                P4Server.Update("P4CHARSET", "utf8-bom");
 
                 using (P4Server target = new P4Server(server, user, pass, ws_client))
                 {
                     string gotCharset = P4Server.Get("P4CHARSET");
-                    Assert.AreEqual(gotCharset, "utf8-bom");
+                    Assert.AreEqual("utf8-bom", gotCharset);
 
                     //target.SetCharacterSet("utf8", "utf8-bom");
                     Assert.IsTrue(target.UseUnicode, "Unicode server detected as not supporting Unicode");
 
-                    Assert.AreEqual(target.User, "admin");
-                    Assert.AreEqual(target.Client, "admin_space");
-                    Assert.AreEqual(target.Port, "localhost:6666");
+                    Assert.AreEqual("admin", target.User);
+                    Assert.AreEqual("admin_space", target.Client);
+                    Assert.AreEqual(configuration.ServerPort, target.Port);
 
                     string localPath = Path.Combine(adminSpace, "MyCode", "Пюп.txt");
                     string depotPath = "//depot/MyCode/Пюп-utf8.txt";
@@ -2895,14 +3121,18 @@ namespace p4api.net.unit.test
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
                 Environment.SetEnvironmentVariable("P4CHARSET", origCharset);
+                P4Server.Update("P4CHARSET", "");
+                p4d?.Dispose();
             }
 
             try
             {
-                p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
+                p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                Assert.IsNotNull(p4d, "Setup Failure");
 
                 Environment.SetEnvironmentVariable("P4CHARSET", "utf16le-bom");
-                P4Bridge.ReloadEnviro();
+                // not picking it up from the environment on OSX - FIXME?
+                P4Server.Update("P4CHARSET", "utf16le-bom");
 
                 using (P4Server target = new P4Server(server, user, pass, ws_client))
                 {
@@ -2912,9 +3142,9 @@ namespace p4api.net.unit.test
                     //target.SetCharacterSet("utf8", "utf8-bom");
                     Assert.IsTrue(target.UseUnicode, "Unicode server detected as not supporting Unicode");
 
-                    Assert.AreEqual(target.User, "admin");
-                    Assert.AreEqual(target.Client, "admin_space");
-                    Assert.AreEqual(target.Port, "localhost:6666");
+                    Assert.AreEqual("admin", target.User);
+                    Assert.AreEqual("admin_space", target.Client);
+                    Assert.AreEqual(configuration.ServerPort, target.Port);
 
                     string localPath = Path.Combine(adminSpace, "MyCode", "Пюп.txt");
                     string depotPath = "//depot/MyCode/Пюп-utf8.txt";
@@ -2932,13 +3162,15 @@ namespace p4api.net.unit.test
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
                 Environment.SetEnvironmentVariable("P4CHARSET", origCharset);
+                P4Server.Update("P4CHARSET", "");
+                p4d?.Dispose();
             }
         }
 
         // helper
-        bool FindInLog(String logFile, String msg, int count = -1)
+        bool FindInLog(string logFile, string msg, int count = -1)
         {
-            String line;
+            string line;
             int foundCount = 0;
             // file must be explicitly closed or p4d will stop logging to it
             System.IO.StreamReader file = new System.IO.StreamReader(logFile);
@@ -2968,17 +3200,19 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void SetProtocolTest()
         {
-            string server = "localhost:6666";
+            string server = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
             Process p4d = null;
-
+            var cptype = Utilities.CheckpointType.A;
             try
             {
-                p4d = Utilities.DeployP4TestServer(TestDir, false, TestContext.TestName);
-                var serverRoot = Utilities.TestServerRoot(TestDir, false);
+                p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+                var serverRoot = Utilities.TestServerRoot(TestDir, cptype);
 
                 // turn on rpc debugging
                 using (P4Server target = new P4Server(server, user, pass, ws_client))
@@ -2998,25 +3232,28 @@ namespace p4api.net.unit.test
                     // now run a command, we should get an Rpc message in the log with our custom protocol
                     Assert.IsTrue(target.RunCommand("info", 0, true, null, 0));
                     // find RpcSendBuffer pizza = 3 in the log
-                    Assert.IsTrue(FindInLog(serverRoot + "\\p4d.log", "RpcRecvBuffer pizza = 3"));
+
+                    string logPath = Path.Combine(serverRoot, "p4d.log");
+                    Assert.IsTrue(FindInLog(logPath, "RpcRecvBuffer pizza = 3"));
 
                     // negative test: SetProtocol and nothing noted in the log
                     // (note that the log also does not show *pizza* after this request)
                     target.SetProtocol("calzone", "4");
                     Assert.IsTrue(target.RunCommand("info", 0, true, null, 0));
-                    Assert.IsFalse(FindInLog(serverRoot + "\\p4d.log", "RpcRecvBuffer pizza = 3", 2));
-                    Assert.IsFalse(FindInLog(serverRoot + "\\p4d.log", "RpcRecvBuffer calzone = 4"));
+                    Assert.IsFalse(FindInLog(logPath, "RpcRecvBuffer pizza = 3", 2));
+                    Assert.IsFalse(FindInLog(logPath, "RpcRecvBuffer calzone = 4"));
 
                     // positive test: reconnect and it should be there again (as well as 2 pizzas)
                     target.Disconnect();
                     Assert.IsTrue(target.RunCommand("info", 0, true, null, 0));
-                    Assert.IsTrue(FindInLog(serverRoot + "\\p4d.log", "RpcRecvBuffer pizza = 3", 2));
-                    Assert.IsTrue(FindInLog(serverRoot + "\\p4d.log", "RpcRecvBuffer calzone = 4"));
+                    Assert.IsTrue(FindInLog(logPath, "RpcRecvBuffer pizza = 3", 2));
+                    Assert.IsTrue(FindInLog(logPath, "RpcRecvBuffer calzone = 4"));
                 }
             }
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
             }
         }
     }

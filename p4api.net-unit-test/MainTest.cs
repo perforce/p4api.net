@@ -25,7 +25,7 @@ namespace p4api.net.unit.test
             try
             {
                 // Useful for debugging logging. Note name of config needs to agree with vsixmanifest file which installs it.
-                NLog.LogManager.Configuration = new NLog.Config.XmlLoggingConfiguration(assemblyFolder + "\\NLog.config", true);
+                NLog.LogManager.Configuration = new NLog.Config.XmlLoggingConfiguration(Path.Combine(assemblyFolder, "NLog.config"));
                 LogManager.ThrowExceptions = true;
                 LogManager.EnableLogging();
                 logger = LogManager.GetCurrentClassLogger();
@@ -57,17 +57,8 @@ namespace p4api.net.unit.test
             foreach (var dir in dirsToCleanup)
             {
                 logger.Info("Removing {0}", dir);
-                //test directory exists
-                try
-                {
-                    // try to delete it
-                    Directory.Delete(dir, true);
-                }
-                catch
-                {
-                    // simple delete failed, try to clobber it (can be slow so last resort)
-                    Utilities.ClobberDirectory(dir);
-                }
+                
+                Utilities.DeleteDirectory(dir);
             }
         }
 

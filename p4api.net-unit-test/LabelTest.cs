@@ -51,11 +51,44 @@ namespace p4api.net.unit.test
 			return target;
 		}
 
-        const string TargetSpec = "Label:\tnewLabel\r\n\r\nUpdate:\t2011/03/21 00:00:00\r\n\r\nAccess:\t2011/03/21 00:00:00\r\n\r\nOwner:\tadmin\r\n\r\nDescription:\r\n\tcreated by admin\r\n\r\nOptions:\tlocked\r\n\r\nView:\r\n\t\"//depot/main/... \" \r\n\t\"//depot/rel1/... \" \r\n\t\"//depot/dev/... \"\r\n";
+		private static readonly string TargetSpec = 
+			 "Label:\tnewLabel" + Environment.NewLine + Environment.NewLine
+			 + "Update:\t2011/03/21 00:00:00" + Environment.NewLine + Environment.NewLine
+			 + "Access:\t2011/03/21 00:00:00" + Environment.NewLine + Environment.NewLine
+	         + "Owner:\tadmin" + Environment.NewLine + Environment.NewLine
+	         + "Description:" + Environment.NewLine + "\tcreated by admin" + Environment.NewLine + Environment.NewLine
+	         + "Options:\tlocked" + Environment.NewLine + Environment.NewLine
+	         + "View:" + Environment.NewLine
+	         + "\t\"//depot/main/... \"" + Environment.NewLine
+	         + "\t\"//depot/rel1/... \"" + Environment.NewLine
+	         + "\t\"//depot/dev/... \"" + Environment.NewLine ;
 
-        const string TargetSpec2 = "Label:\tnewLabel\r\n\r\nUpdate:\t2011/03/21 00:00:00\r\n\r\nAccess:\t2011/03/21 00:00:00\r\n\r\nOwner:\tadmin\r\n\r\nDescription:\r\n\tcreated by admin\r\n\r\nOptions:\tlocked autoreload\r\n\r\nView:\r\n\t\"//depot/main/... \" \r\n\t\"//depot/rel1/... \" \r\n\t\"//depot/dev/... \"\r\n";
+		private static readonly string TargetSpec2 = 
+			"Label:\tnewLabel" + Environment.NewLine + Environment.NewLine
+			+ "Update:\t2011/03/21 00:00:00" + Environment.NewLine + Environment.NewLine
+			+ "Access:\t2011/03/21 00:00:00" + Environment.NewLine + Environment.NewLine
+			+ "Owner:\tadmin" + Environment.NewLine + Environment.NewLine
+			+ "Description:" + Environment.NewLine
+			+ "\tcreated by admin" + Environment.NewLine + Environment.NewLine
+			+ "Options:\tlocked autoreload" + Environment.NewLine + Environment.NewLine
+			+ "View:" + Environment.NewLine + "\t\"//depot/main/... \" " + Environment.NewLine
+			+ "\t\"//depot/rel1/... \"" + Environment.NewLine 
+			+ "\t\"//depot/dev/... \"" + Environment.NewLine;
 
-        const string TargetSpec3 = "Label:\tnewLabel\r\n\r\nUpdate:\t2011/03/21 00:00:00\r\n\r\nAccess:\t2011/03/21 00:00:00\r\n\r\nOwner:\tadmin\r\n\r\nDescription:\r\n\tcreated by admin\r\n\r\nOptions:\tlocked autoreload\r\n\r\nRevision:\t2\r\n\r\nServerID:\t1666-master\r\n\r\nView:\r\n\t\"//depot/main/... \" \r\n\t\"//depot/rel1/... \" \r\n\t\"//depot/dev/... \"\r\n";
+		private static readonly string TargetSpec3 =
+			"Label:\tnewLabel" + Environment.NewLine + Environment.NewLine
+			+ "Update:\t2011/03/21 00:00:00" + Environment.NewLine + Environment.NewLine
+			+ "Access:\t2011/03/21 00:00:00" + Environment.NewLine + Environment.NewLine
+			+ "Owner:\tadmin" + Environment.NewLine + Environment.NewLine
+			+ "Description:" + Environment.NewLine
+			+ "\tcreated by admin" + Environment.NewLine + Environment.NewLine
+			+ "Options:\tlocked autoreload" + Environment.NewLine + Environment.NewLine
+			+ "Revision:\t2" + Environment.NewLine + Environment.NewLine
+			+ "ServerID:\t1666-master" + Environment.NewLine + Environment.NewLine
+			+ "View:" + Environment.NewLine
+			+ "\t\"//depot/main/... \"" + Environment.NewLine
+			+ "\t\"//depot/rel1/... \"" + Environment.NewLine
+			+ "\t\"//depot/dev/... \"" + Environment.NewLine;
 
         #region Additional test attributes
         // 

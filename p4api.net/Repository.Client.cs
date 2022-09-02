@@ -281,10 +281,10 @@ namespace Perforce.P4
 			if (client == null)
 			{
 				throw new ArgumentNullException("client");
-
 			}
-			P4Command cmd = new P4Command(this, "client", true);
 
+            using (P4Command cmd = new P4Command(this, "client", true))
+            {
 			cmd.DataSet = client.ToString();
 
 			if (options == null)
@@ -303,8 +303,10 @@ namespace Perforce.P4
 			{
 				P4Exception.Throw(results.ErrorList);
 			}
+
 			return null;
 		}
+        }
 
         /// <summary>
         /// Create a new client in the repository.
@@ -992,10 +994,9 @@ namespace Perforce.P4
 			if (client == null)
 			{
 				throw new ArgumentNullException("client");
-
 			}
-			P4Command cmd = new P4Command(this, "client", true, client);
-
+            using (P4Command cmd = new P4Command(this, "client", true, client))
+            {
 			if (options == null)
 			{
 				options = new Options();
@@ -1010,6 +1011,7 @@ namespace Perforce.P4
 				{
 					return null;
 				}
+
 				Client value = new Client();
 
 				value.FromClientCmdTaggedOutput(results.TaggedOutput[0]);
@@ -1020,8 +1022,10 @@ namespace Perforce.P4
 			{
 				P4Exception.Throw(results.ErrorList);
 			}
+
 			return null;
 		}
+        }
 
         /// <summary>
         /// Get the record for an existing client from the repository.
@@ -1318,8 +1322,8 @@ namespace Perforce.P4
         /// <seealso cref="ClientsCmdOptions"/> 
         public IList<Client> GetClients(Options options)
 		{
-			P4Command cmd = new P4Command(this, "clients", true);
-
+            using (P4Command cmd = new P4Command(this, "clients", true))
+            {
 			P4CommandResult results = cmd.Run(options);
 			if (results.Success)
 			{
@@ -1327,31 +1331,35 @@ namespace Perforce.P4
 				{
 					return null;
 				}
+
 				List<Client> value = new List<Client>();
 				foreach (TaggedObject obj in results.TaggedOutput)
 				{
 					Client client = new Client();
 
-                    bool dst_mismatch = false;
+                        bool dstMismatch = false;
                     string offset = string.Empty;
 
                     if (Server != null && Server.Metadata != null)
                     {
                         offset = Server.Metadata.DateTimeOffset;
-                        dst_mismatch = FormBase.DSTMismatch(Server.Metadata);
+                            dstMismatch = FormBase.DSTMismatch(Server.Metadata);
                     }
 
-					client.FromClientsCmdTaggedOutput(obj, offset,dst_mismatch);
+                        client.FromClientsCmdTaggedOutput(obj, offset, dstMismatch);
 					value.Add(client);
 				}
+
 				return value;
 			}
 			else
 			{
 				P4Exception.Throw(results.ErrorList);
 			}
+
 			return null;
 		}
+        }
 
 		/// <summary>
 		/// Delete a client from the repository
@@ -1580,14 +1588,16 @@ namespace Perforce.P4
 			if (client == null)
 			{
 				throw new ArgumentNullException("client");
+            }
 
-			}
-			P4Command cmd = new P4Command(this, "client", true, client.Name);
+            using (P4Command cmd = new P4Command(this, "client", true, client.Name))
+            {
 
 			if (options == null)
 			{
 				options = new Options();
 			}
+
 			options["-d"] = null;
 
 			P4CommandResult results = cmd.Run(options);
@@ -1597,4 +1607,5 @@ namespace Perforce.P4
 			}
 		}
 	}
+}
 }

@@ -35,176 +35,99 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  ******************************************************************************/
 
+
+#include <csignal>
+#include <stdexcept>
+#include <typeinfo>
+
+using std::exception;
+
 #include "stdafx.h"
 #include "ticket.h"
+#include "p4libs.h"
+#include "signaler.h"
 #include "P4BridgeServer.h"
+
+#include "enviro.h"
+
 #ifdef _DEBUG_VLD
 #include <vld.h> 
 #endif
 
-// If there is a connection error, keep it so the client can fetch it later
-P4ClientError * connectionError = NULL;
+#if defined OS_NT
+# define CONSTRUCTOR
+# define DESTRUCTOR
+#elif defined(__GNUC__)
+# define CONSTRUCTOR __attribute__ ((constructor))
+# define DESTRUCTOR __attribute__ ((destructor))
+#else
+#error Non Gnu Compiler!
+#endif
 
-// #define STACKTRACE  // I don't know if this will work on a 32 bit build
+static bool dll_initialized = false;
 
-#ifdef STACKTRACE
-#include <WinBase.h>
-#include <DbgHelp.h>
-
-#define STACK_SIZE 20
-
-void printStackTrace()
+// Initialize after bridge DLL load
+CONSTRUCTOR void initializer()
 {
-    char *result = "";
-    unsigned int   i;
-    void          *stack[STACK_SIZE];
-    unsigned short frames;
-    SYMBOL_INFO   *symbol;
-    HANDLE         process;
-    process = GetCurrentProcess();
-    SymInitialize( process, NULL, TRUE );
-    frames               = CaptureStackBackTrace( 0, STACK_SIZE, stack, NULL );
-    symbol               = ( SYMBOL_INFO * )calloc( sizeof( SYMBOL_INFO ) + 256 * sizeof( char ), 1 );
-    symbol->MaxNameLen   = 255;
-    symbol->SizeOfStruct = sizeof( SYMBOL_INFO );
-    for( i = 0; i < frames; i++ )
-    {
-        SymFromAddr( process, ( DWORD64 )( stack[ i ] ), 0, symbol );
-        char * symbol_name = "unknown symbol";
-		if (strlen(symbol->Name) > 0)
-		{
-			symbol_name = symbol->Name;
+	Error e;
+	P4Libraries::Initialize(P4LIBRARIES_INIT_P4 | P4LIBRARIES_INIT_OPENSSL, &e);
+
+	signal(SIGINT, SIG_DFL); // unset the default set by global signaler in C++ (which exits)
+	signaler.Disable(); // disable the global signaler at runtime
+	dll_initialized = true;
+}
+
+// Finalize before bridge DLL unload
+DESTRUCTOR void destructor()
+{
+	Error e;
+	P4Libraries::Shutdown(P4LIBRARIES_INIT_P4 | P4LIBRARIES_INIT_OPENSSL, &e);
 		}
 
-        P4BridgeServer::LogMessage(0, __FILE__,__LINE__,"%3d %s %I64x\n", frames - i -1, symbol_name, symbol->Address);
-    }
-    free( symbol );
-}
-
-#endif
-
-#define HANDLE_EXCEPTION() HandleException(__FILE__, __LINE__, __FUNCTION__, GetExceptionCode(), GetExceptionInformation())
-
-/*******************************************************************************
-*
-*  HandleException
-*
-*  Handle any platform exceptions. The Microsoft Structured Exception Handler
-*      allows software to catch platform exceptions such as array overrun. The
-*      exception is logged, but the application will continue to run.
-*
-******************************************************************************/
-
-int HandleException(const char* fname, unsigned int line, const char* func, unsigned int c, struct _EXCEPTION_POINTERS *e)
+#if defined OS_NT
+// attributes work ok on other OS's, but 
+// windows has it's own traditional way...
+BOOL APIENTRY DllMain(HMODULE hModule,
+	DWORD  ul_reason_for_call,
+	LPVOID lpReserved
+)
 {
-	unsigned int code = c;
-	struct _EXCEPTION_POINTERS *ep = e;
-
-	// Log the exception
-	char * exType = "Unknown";
-
-	switch (code)
+	switch (ul_reason_for_call)
 	{
-	case EXCEPTION_ACCESS_VIOLATION:
-		exType = "EXCEPTION_ACCESS_VIOLATION\r\n";
+	case DLL_PROCESS_ATTACH:
+		initializer();
 		break;
-	case EXCEPTION_DATATYPE_MISALIGNMENT:
-		exType = "EXCEPTION_DATATYPE_MISALIGNMENT\r\n";
+	case DLL_THREAD_ATTACH:
+	case DLL_THREAD_DETACH:
 		break;
-	case EXCEPTION_BREAKPOINT:
-		exType = "EXCEPTION_BREAKPOINT\r\n";
-		break;
-	case EXCEPTION_SINGLE_STEP:
-		exType = "EXCEPTION_SINGLE_STEP\r\n";
-		break;
-	case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:
-		exType = "EXCEPTION_ARRAY_BOUNDS_EXCEEDED\r\n";
-		break;
-	case EXCEPTION_FLT_DENORMAL_OPERAND:
-		exType = "EXCEPTION_FLT_DENORMAL_OPERAND\r\n";
-		break;
-	case EXCEPTION_FLT_DIVIDE_BY_ZERO:
-		exType = "EXCEPTION_FLT_DIVIDE_BY_ZERO\r\n";
-		break;
-	case EXCEPTION_FLT_INEXACT_RESULT:
-		exType = "EXCEPTION_FLT_INEXACT_RESULT\r\n";
-		break;
-	case EXCEPTION_FLT_INVALID_OPERATION:
-		exType = "EXCEPTION_FLT_INVALID_OPERATION\r\n";
-		break;
-	case EXCEPTION_FLT_OVERFLOW:
-		exType = "EXCEPTION_FLT_OVERFLOW\r\n";
-		break;
-	case EXCEPTION_FLT_STACK_CHECK:
-		exType = "EXCEPTION_FLT_STACK_CHECK\r\n";
-		break;
-	case EXCEPTION_FLT_UNDERFLOW:
-		exType = "EXCEPTION_FLT_UNDERFLOW\r\n";
-		break;
-	case EXCEPTION_INT_DIVIDE_BY_ZERO:
-		exType = "EXCEPTION_INT_DIVIDE_BY_ZERO\r\n";
-		break;
-	case EXCEPTION_INT_OVERFLOW:
-		exType = "EXCEPTION_INT_OVERFLOW\r\n";
-		break;
-	case EXCEPTION_PRIV_INSTRUCTION:
-		exType = "EXCEPTION_PRIV_INSTRUCTION\r\n";
-		break;
-	case EXCEPTION_IN_PAGE_ERROR:
-		exType = "EXCEPTION_IN_PAGE_ERROR\r\n";
-		break;
-	case EXCEPTION_ILLEGAL_INSTRUCTION:
-		exType = "EXCEPTION_ILLEGAL_INSTRUCTION\r\n";
-		break;
-	case EXCEPTION_NONCONTINUABLE_EXCEPTION:
-		exType = "EXCEPTION_NONCONTINUABLE_EXCEPTION\r\n";
-		break;
-	case EXCEPTION_STACK_OVERFLOW:
-		exType = "EXCEPTION_STACK_OVERFLOW\r\n";
-		break;
-	case EXCEPTION_INVALID_DISPOSITION:
-		exType = "EXCEPTION_INVALID_DISPOSITION\r\n";
-		break;
-	case EXCEPTION_GUARD_PAGE:
-		exType = "EXCEPTION_GUARD_PAGE\r\n";
-		break;
-	case EXCEPTION_INVALID_HANDLE:
-		exType = "EXCEPTION_INVALID_HANDLE\r\n";
-		break;
-	//case EXCEPTION_POSSIBLE_DEADLOCK:
-	//    exType = "EXCEPTION_POSSIBLE_DEADLOCK\r\n");
-	//    break;
-	default:
-		exType = "UNKNOWN EXCEPTION\r\n";
+	case DLL_PROCESS_DETACH:
+		destructor();
 		break;
 	}
-
-	P4BridgeServer::LogMessage(0, fname, line, "Exception Detected (0x%08x) in bridge function %s: %s", code, func, exType);
-
-#ifdef STACKTRACE
-	printStackTrace();
+	return TRUE;
+}
 #endif
 
-	return EXCEPTION_EXECUTE_HANDLER;
-}
+// If there is a connection error, keep a copy so the client can fetch it later
+P4ClientError * connectionError = nullptr;
 
 extern "C"
 {
-	__declspec(dllexport) void ClearConnectionError()
+    EXPORT void ClearConnectionError()
 	{
-		__try
+        try
 		{
-			// free old error string, if any.
+			// free old error, if any.
 			if (connectionError)
 			{
 				delete connectionError;
-				connectionError = NULL;
+				connectionError = nullptr;
 			}
 		}
-		__except (HANDLE_EXCEPTION())
+        catch(exception &e)
 		{
+            P4BridgeServer::ReportException(e,"ClearConnectionError");
 		}
-		return;
 	}
 }
 
@@ -214,7 +137,7 @@ extern "C"
 ******************************************************************************/
 int ServerConnect(P4BridgeServer* pServer)
 {
-	__try
+	try
 	{
 		// free old error string, if any.
 		ClearConnectionError();
@@ -227,8 +150,9 @@ int ServerConnect(P4BridgeServer* pServer)
 
 		return 1;
 	}
-	__except (HANDLE_EXCEPTION())
+	catch (exception& e)
 	{
+		P4BridgeServer::ReportException(e, "ServerConnect");
 		return 0;
 	}
 }
@@ -239,10 +163,8 @@ int ServerConnect(P4BridgeServer* pServer)
 ******************************************************************************/
 int ServerConnectTrust(P4BridgeServer* pServer, char* trust_flag, char* fingerprint)
 {
-	__try
+	try
 	{
-		// dereference old error string, if any. It's not 'our' string, so we can't
-		//  free it.
 		ClearConnectionError();
 
 		// Connect to the server and see if the api returns an error. 
@@ -252,7 +174,6 @@ int ServerConnectTrust(P4BridgeServer* pServer, char* trust_flag, char* fingerpr
 			return 0;
 		}
 
-	
 		if ( pServer )
 		{
 			// Check if the server is Unicode enabled
@@ -260,8 +181,9 @@ int ServerConnectTrust(P4BridgeServer* pServer, char* trust_flag, char* fingerpr
 		}
 		return 1;
 	}
-	__except (HANDLE_EXCEPTION())
+    catch (exception& e)
 	{
+        P4BridgeServer::ReportException(e, "ServerConnectTrust");
 		return 0;
 	}
 }
@@ -272,7 +194,7 @@ int ServerConnectTrust(P4BridgeServer* pServer, char* trust_flag, char* fingerpr
 ******************************************************************************/
 extern "C" 
 {
-	__declspec(dllexport) void SetLogFunction(
+	EXPORT void SetLogFunction(
 		LogCallbackFn *log_fn)
 	{
 		P4BridgeServer::SetLogCallFn(log_fn);
@@ -307,7 +229,7 @@ extern "C"
 		}
 
 		delete pServer;
-		return NULL;
+		return nullptr;
 	}
 
 	/**************************************************************************
@@ -321,21 +243,23 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport) P4BridgeServer* Connect(	const char *server, 
+	EXPORT P4BridgeServer* Connect(	const char *server,
 													const char *user, 
 													const char *pass,
 													const char *ws_client,
 													LogCallbackFn *log_fn)
 	{
 		LOG_ENTRY();
-		__try
+		LOG_DEBUG1(4, "dll_initialized: %d", dll_initialized);
+		try
 		{
-			connectionError = NULL;
+			ClearConnectionError();
 			return Connect_Int(	server, user, pass, ws_client, log_fn);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"Connect");
+			return nullptr;
 		}
 	}
 
@@ -360,9 +284,8 @@ extern "C"
 		{
 			return pServer;
 		}
-		// delete pServer?
 		delete pServer;
-		return NULL;
+		return nullptr;
 	}
 
 	/**************************************************************************
@@ -377,7 +300,7 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport) P4BridgeServer* TrustedConnect(	const char *server, 
+	EXPORT P4BridgeServer* TrustedConnect(	const char *server,
 															const char *user, 
 															const char *pass,
 															const char *ws_client,
@@ -385,14 +308,15 @@ extern "C"
 															char *fingerprint,
 															LogCallbackFn *log_fn)
 	{
-		__try
+		try
 		{
-			connectionError = NULL;
+			ClearConnectionError();
 			return TrustedConnect_Int( server, user, pass, ws_client, trust_flag, fingerprint, log_fn);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"TrustedConnect");
+			return nullptr;
 		}
 	}
 
@@ -400,25 +324,39 @@ extern "C"
 	{
 		// create an un-connected p4bridgeserver based on a path
 		// this is handy if you just want to get the connection info 
-		// from a directory path
-		ClientApi tempApi;
-		tempApi.SetCwd(cwd);
+		// from a directory path using P4CONFIG or environment variables
+		Enviro t_enviro;
 
-		return new P4BridgeServer(
-			tempApi.GetPort().Text(),
-			tempApi.GetUser().Text(),
-			tempApi.GetPassword().Text(),
-			tempApi.GetClient().Text());
+		// Clone the BridgeEnviron to create a temporary enviro to work with.
+		//Enviro t_enviro(*P4BridgeServer::GetEnviro());
+		// The copy constructor crashes on windows, so a work-around follows
+
+		char* p4config = P4BridgeServer::GetEnviro()->Get("P4CONFIG");
+		if (p4config != NULL)
+		{
+			t_enviro.Update("P4CONFIG", p4config);
 	}
-	__declspec(dllexport) P4BridgeServer* ConnectionFromPath(const char* cwd)
+
+		StrBuf t_cwd = cwd;
+		t_enviro.Config(t_cwd);
+		char *t_port = t_enviro.Get("P4PORT");		
+		char* t_user = t_enviro.Get("P4USER");		
+		char* t_client = t_enviro.Get("P4CLIENT");
+		char* t_pass = t_enviro.Get("P4PASSWORD");
+
+		return new P4BridgeServer(t_port, t_user, t_pass, t_client);
+    }
+
+    EXPORT P4BridgeServer* ConnectionFromPath(const char * cwd)
 	{
-		__try
+        try
 		{
 			return _connection_from_path(cwd);
 		}
-		__except (HANDLE_EXCEPTION())
+        catch (exception& e)
 		{
-			return NULL;
+            P4BridgeServer::ReportException(e,"ConnectionFromPath");
+            return nullptr;
 		}
 	}
 	/**************************************************************************
@@ -428,17 +366,10 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport) P4ClientError * GetConnectionError( void )
-	{
-		__try
+	EXPORT P4ClientError * GetConnectionError( void )
 		{
 			return connectionError;
 		}
-		__except (HANDLE_EXCEPTION())
-		{
-			return NULL;
-		}
-	}
 
 	/**************************************************************************
 	*
@@ -448,50 +379,49 @@ extern "C"
 	*    pServer: Pointer to the P4BridgeServer 
 	*
 	**************************************************************************/
-	__declspec(dllexport) int ReleaseConnection( P4BridgeServer* pServer )
+	EXPORT int ReleaseConnection( P4BridgeServer* pServer )
 	{
 		LOG_ENTRY();
 		if (!pServer) 
 		{
 			return 1;
 		}
-		__try
+		try
 		{
 			// if the handle is invalid or freeing it causes an exception, 
 			// just consider it closed so return success
 			if (!VALIDATE_HANDLE(pServer, tP4BridgeServer))
 			{
-				if (pServer) 
-				{
 					delete pServer;
-				}
 				return 1;
 			}
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"ReleaseConnection");
 			return 1;
 		}
 
-		__try
+		try
 		{
-			pServer->SetTaggedOutputCallbackFn(NULL);
-			pServer->SetErrorCallbackFn(NULL);
-			pServer->SetInfoResultsCallbackFn(NULL);
-			pServer->SetTextResultsCallbackFn(NULL);
-			pServer->SetBinaryResultsCallbackFn(NULL);
-			pServer->SetPromptCallbackFn(NULL);
-			pServer->SetParallelTransferCallbackFn(NULL);
-			pServer->SetResolveCallbackFn(NULL);
-			pServer->SetResolveACallbackFn(NULL);
+			pServer->SetTaggedOutputCallbackFn(nullptr);
+			pServer->SetErrorCallbackFn(nullptr);
+			pServer->SetInfoResultsCallbackFn(nullptr);
+			pServer->SetTextResultsCallbackFn(nullptr);
+			pServer->SetBinaryResultsCallbackFn(nullptr);
+			pServer->SetPromptCallbackFn(nullptr);
+			pServer->SetParallelTransferCallbackFn(nullptr);
+			pServer->SetResolveCallbackFn(nullptr);
+			pServer->SetResolveACallbackFn(nullptr);
 
 			LOG_LOC();
 			int ret = pServer->close_connection();
 			delete pServer;
 			return ret;
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"ReleaseConnection1");
 			return 0;
 		}
 	}
@@ -504,15 +434,16 @@ extern "C"
 	*    pServer: Pointer to the P4BridgeServer 
 	*
 	**************************************************************************/
-	__declspec(dllexport) int Disconnect( P4BridgeServer* pServer )
+	EXPORT int Disconnect( P4BridgeServer* pServer )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_B(pServer, tP4BridgeServer)
 			return pServer->disconnect();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"Disconnect");
 			return 0;
 		}
 	}
@@ -526,15 +457,16 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport) int IsUnicode( P4BridgeServer* pServer )
+	EXPORT int IsUnicode( P4BridgeServer* pServer )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_B(pServer, tP4BridgeServer)
 			return pServer->unicodeServer();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"IsUnicode");
 			return 0;
 		}
 	}
@@ -548,15 +480,16 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport) int APILevel( P4BridgeServer* pServer )
+	EXPORT int APILevel( P4BridgeServer* pServer )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_B(pServer, tP4BridgeServer)
 			return pServer->APILevel();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"APILevel");
 			return 0;
 		}
 	}
@@ -570,15 +503,16 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport) int UseLogin( P4BridgeServer* pServer )
+	EXPORT int UseLogin( P4BridgeServer* pServer )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_B(pServer, tP4BridgeServer)
 			return pServer->UseLogin();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"UseLogin");
 			return 0;
 		}
 	}
@@ -593,15 +527,16 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport) int SupportsExtSubmit( P4BridgeServer* pServer )
+	EXPORT int SupportsExtSubmit( P4BridgeServer* pServer )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_B(pServer, tP4BridgeServer)
 			return pServer->SupportsExtSubmit();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"SupportsExtSubmit");
 			return 0;
 		}
 	}
@@ -616,7 +551,7 @@ extern "C"
 	*
 	**************************************************************************/
 	
-	__declspec(dllexport) int UrlLaunched()
+	EXPORT int UrlLaunched()
 	{
 		return handleUrl;
 	}
@@ -641,23 +576,22 @@ extern "C"
 	
 	const char* _SetCharacterSet(P4BridgeServer* pServer,
 		const char * pCharSet,
-		const char * pFileCharSet)
-	{
+                                    const char * pFileCharSet ) {
 		return Utils::AllocString(pServer->set_charset(pCharSet, pFileCharSet));
 	}
 
-	__declspec(dllexport) const char * SetCharacterSet(   P4BridgeServer* pServer, 
+    EXPORT const char * SetCharacterSet( P4BridgeServer* pServer,
 													const char * pCharSet, 
 													const char * pFileCharSet )
+		try
 	{
-		__try
-		{
-			VALIDATE_HANDLE_P(pServer, tP4BridgeServer);
+			VALIDATE_HANDLE_P(pServer, tP4BridgeServer)
  			return _SetCharacterSet(pServer, pCharSet, pFileCharSet);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"SetCharacterSet");
+			return nullptr;
 		}
 	}
 
@@ -675,19 +609,20 @@ extern "C"
 	*  Return: None
 	**************************************************************************/
 
-	__declspec(dllexport) void set_connection(P4BridgeServer* pServer,
+	EXPORT void set_connection( P4BridgeServer* pServer,
 		const char* newPort,
 		const char* newUser,
 		const char* newPassword,
 		const char* newClient)
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_V(pServer, tP4BridgeServer)
 			return pServer->set_connection(newPort, newUser, newPassword, newClient);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"set_connection");
 		}
 	}
 
@@ -702,15 +637,16 @@ extern "C"
 	*  Return: None
 	**************************************************************************/
 
-	__declspec(dllexport) void set_client(P4BridgeServer* pServer, const char* workspace)
+	EXPORT void set_client( P4BridgeServer* pServer, const char* workspace )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_V(pServer, tP4BridgeServer)
 			return pServer->set_client(workspace);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"set_client");
 		}
 	}
 
@@ -729,16 +665,17 @@ extern "C"
 		return Utils::AllocString(pServer->get_client());
 	}
 
-	__declspec(dllexport) const char * get_client(P4BridgeServer* pServer)
+	EXPORT const char * get_client( P4BridgeServer* pServer )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_P(pServer, tP4BridgeServer);
 			return _get_client(pServer);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"get_client");
+			return nullptr;
 		}
 	}
 
@@ -757,16 +694,17 @@ extern "C"
 		return Utils::AllocString(pServer->get_user());
 	}
 
-	__declspec(dllexport) const char * get_user(P4BridgeServer* pServer)
+	EXPORT const char * get_user( P4BridgeServer* pServer )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_P(pServer, tP4BridgeServer);
-			return _get_user(pServer);
+			return Utils::AllocString(pServer->get_user());
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"get_user");
+			return nullptr;
 		}
 	}
 
@@ -781,15 +719,16 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport) void set_user(P4BridgeServer* pServer, char * newValue)
+	EXPORT void set_user( P4BridgeServer* pServer, char * newValue )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_V(pServer, tP4BridgeServer)
 				pServer->set_user(newValue);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"set_user");
 		}
 	}
 
@@ -808,16 +747,17 @@ extern "C"
 		return Utils::AllocString(pServer->get_port());
 	}
 
-	__declspec(dllexport) const char * get_port(P4BridgeServer* pServer)
+    EXPORT const char * get_port( P4BridgeServer* pServer )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_P(pServer, tP4BridgeServer);
 			return _get_port(pServer);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"get_port");
+			return nullptr;
 		}
 	}
 
@@ -832,16 +772,18 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport) void set_port(P4BridgeServer* pServer, char * newValue)
+
+	EXPORT void set_port( P4BridgeServer* pServer, char * newValue )
 
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_V(pServer, tP4BridgeServer)
 				pServer->set_port(newValue);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"set_port");
 		}
 	}
 
@@ -860,16 +802,17 @@ extern "C"
 		return Utils::AllocString(pServer->get_password());
 	}
 
-	__declspec(dllexport) const char * get_password(P4BridgeServer* pServer)
+	EXPORT const char * get_password( P4BridgeServer* pServer )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_P(pServer, tP4BridgeServer);
 			return _get_password(pServer);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"get_password");
+			return nullptr;
 		}
 	}
 
@@ -884,15 +827,16 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport) void set_password(P4BridgeServer* pServer, char * newValue)
+	EXPORT void set_password( P4BridgeServer* pServer, char * newValue )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_V(pServer, tP4BridgeServer)
 				pServer->set_password(newValue);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"set_password");
 		}
 	}
 
@@ -907,15 +851,16 @@ extern "C"
 	*  Return: None
 	**************************************************************************/
 
-	__declspec(dllexport) void set_ticketFile(P4BridgeServer* pServer, const char* ticketFile)
+    EXPORT void set_ticketFile(P4BridgeServer* pServer, const char* ticketFile)
 	{
-		__try
+        try
 		{
 			VALIDATE_HANDLE_V(pServer, tP4BridgeServer)
 				return pServer->set_ticketFile(ticketFile);
 		}
-		__except (HANDLE_EXCEPTION())
+        catch (exception& e)
 		{
+            P4BridgeServer::ReportException(e,"set_ticketFile");
 		}
 	}
 
@@ -934,16 +879,17 @@ extern "C"
 		return Utils::AllocString(pServer->get_ticketFile());
 	}
 
-	__declspec(dllexport) const char * get_ticketFile(P4BridgeServer* pServer)
+    EXPORT const char * get_ticketFile(P4BridgeServer* pServer)
 	{
-		__try
+            try
 		{
 			VALIDATE_HANDLE_P(pServer, tP4BridgeServer);
 			return _get_TicketFile(pServer);
 		}
-		__except (HANDLE_EXCEPTION())
+            catch (exception& e)
 		{
-			return NULL;
+                P4BridgeServer::ReportException(e,"get_ticketFile");
+                return nullptr;
 		}
 	}
 
@@ -968,22 +914,18 @@ extern "C"
 		return Utils::AllocString(ticket.GetTicket(portStr, userStr));
 	}
 
-	__declspec(dllexport) const char * get_ticket(char* path, char* port, char* user)
+	EXPORT const char * get_ticket(char* path, char* port, char* user)
 	{
 		LOG_ENTRY();
-		__try
+		try
 		{
 			return _get_ticket(path, port, user);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"get_ticketFile");
+			return nullptr;
 		}
-	}
-
-	const char* get_cwd_int(P4BridgeServer* pServer)
-	{
-		return Utils::AllocString(pServer->get_cwd());
 	}
 
 	/**************************************************************************
@@ -993,16 +935,23 @@ extern "C"
 	*    pServer: Pointer to the P4BridgeServer
 	*
 	**************************************************************************/
-	__declspec(dllexport) const char * get_cwd(P4BridgeServer* pServer)
+
+	const char* get_cwd_int(P4BridgeServer* pServer)
 	{
-		__try
+		return Utils::AllocString(pServer->get_cwd());
+	}
+
+	EXPORT const char * get_cwd( P4BridgeServer* pServer )
 		{
-			VALIDATE_HANDLE_P(pServer, tP4BridgeServer);
+		try
+		{
+			VALIDATE_HANDLE_P(pServer, tP4BridgeServer)
 			return get_cwd_int(pServer);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"get_cwd");
+			return nullptr;
 		}
 	}
 
@@ -1016,16 +965,17 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport) void set_cwd(P4BridgeServer* pServer,
+	EXPORT void set_cwd( P4BridgeServer* pServer,
 		const char * new_val)
 	{
-		__try
+	    try
 		{
 			VALIDATE_HANDLE_V(pServer, tP4BridgeServer)
 			pServer->set_cwd((const char *)new_val);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"set_cwd");
 		}
 	}
 
@@ -1044,16 +994,17 @@ extern "C"
 		return Utils::AllocString(pServer->get_programName());
 	}
 
-	__declspec(dllexport) const char * get_programName(P4BridgeServer* pServer)
+	EXPORT const char * get_programName( P4BridgeServer* pServer )
 	{
-		__try
+		try
 		{
-			VALIDATE_HANDLE_P(pServer, tP4BridgeServer);
+			VALIDATE_HANDLE_P(pServer, tP4BridgeServer)
 			return _get_programName(pServer);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"get_programName");
+			return nullptr;
 		}
 	}
 
@@ -1068,15 +1019,16 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport) void set_programName(P4BridgeServer* pServer, char * newValue)
+	EXPORT void set_programName( P4BridgeServer* pServer, char * newValue )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_V(pServer, tP4BridgeServer)
 				pServer->set_programName(newValue);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"set_programName");
 		}
 	}
 
@@ -1095,16 +1047,17 @@ extern "C"
 		return Utils::AllocString(pServer->get_programVer());
 	}
 
-	__declspec(dllexport) const char * get_programVer( P4BridgeServer* pServer )
+    EXPORT const char * get_programVer( P4BridgeServer* pServer )
 	{
-		__try
+		try
 		{
-			VALIDATE_HANDLE_P(pServer, tP4BridgeServer);
+			VALIDATE_HANDLE_P(pServer, tP4BridgeServer)
 			return _get_programVer(pServer);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"get_programVer");
+			return nullptr;
 		}
 	}
 
@@ -1119,15 +1072,16 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport) void set_programVer( P4BridgeServer* pServer, char * newValue )
+	EXPORT void set_programVer( P4BridgeServer* pServer, char * newValue )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_V(pServer, tP4BridgeServer)
 			pServer->set_programVer(newValue);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"set_programVer");
 		}
 	}
 
@@ -1146,16 +1100,17 @@ extern "C"
 		return Utils::AllocString(pServer->get_charset());
 	}
 
-	__declspec(dllexport) const char * get_charset( P4BridgeServer* pServer )
+    EXPORT const char * get_charset( P4BridgeServer* pServer )
 	{
-		__try
+		try
 		{
-			VALIDATE_HANDLE_P(pServer, tP4BridgeServer);
+			VALIDATE_HANDLE_P(pServer, tP4BridgeServer)
 			return _get_charset(pServer);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"get_charset");
+			return nullptr;
 		}
 	}
 
@@ -1168,22 +1123,22 @@ extern "C"
 	*  Return: Pointer to access the data.
 	*
 	**************************************************************************/
-
 	const char * _get_config(P4BridgeServer* pServer)
 	{
 		return Utils::AllocString(pServer->get_config());
 	}
 
-	__declspec(dllexport) const char * get_config( P4BridgeServer* pServer )
+	EXPORT const char * get_config( P4BridgeServer* pServer )
 	{
-		__try
+		try
 		{
-			VALIDATE_HANDLE_P(pServer, tP4BridgeServer);
+			VALIDATE_HANDLE_P(pServer, tP4BridgeServer)
 			return _get_config(pServer);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"get_config");
+			return nullptr;
 		}
 	}
 
@@ -1193,16 +1148,16 @@ extern "C"
 		return Utils::AllocString(P4BridgeServer::get_config(cwd));
 	}
 
-	__declspec(dllexport) const char * get_config_cwd( char* cwd )
+    EXPORT const char * get_config_cwd( char* cwd )
 	{
-		LOG_ENTRY();
-		__try
+		try
 		{
 			return _get_config_cwd(cwd);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"get_config_cwd");
+			return nullptr;
 		}
 	}
 
@@ -1211,50 +1166,67 @@ extern "C"
 		return Utils::AllocString(P4BridgeServer::Get(var));
 	}
 
-	__declspec(dllexport) const char* Get( const char *var )
+    EXPORT const char * Get( const char *var )
 	{
-		__try
+		try
 		{
 			return _Get( var );
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"Get");
+			return nullptr;
 		}
 	}
 
-	__declspec(dllexport) void Set( const char *var, const char *val )
+	EXPORT void Set( const char *var, const char *val )
 	{
-		__try
+		try
 		{
 			return P4BridgeServer::Set( var, val );
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"Set");
 		}
 	}
 
-	__declspec(dllexport) void Update( const char *var, const char *val )
+	EXPORT void Update( const char *var, const char *val )
 	{
-		__try
+		try
 		{
 			return P4BridgeServer::Update( var, val );
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"Update");
 		}
 	}
 
-	__declspec(dllexport) void ReloadEnviro()
+	EXPORT void ReloadEnviro()
 	{
-		__try
+		try
 		{
 			return P4BridgeServer::Reload();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"Reload");
 		}
 	}
+
+	EXPORT void ListEnviro()
+	{
+		try
+		{
+			return P4BridgeServer::ListEnviro();
+		}
+		catch (exception& e)
+		{
+			P4BridgeServer::ReportException(e, "ListEnviro");
+		}
+	}
+
 
 	/**************************************************************************
 	*
@@ -1267,15 +1239,16 @@ extern "C"
 		return Utils::AllocString(P4BridgeServer::GetTicketFile());
 	}
 
-	__declspec(dllexport) const char* GetTicketFile(  )
+    EXPORT const char * GetTicketFile(  )
 	{
-		__try
+		try
 		{
 			return _GetTicketFile();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"GetTicketFile");
+			return nullptr;
 		}
 	}
 
@@ -1290,30 +1263,32 @@ extern "C"
 		return Utils::AllocString(P4BridgeServer::GetTicket(port, user));
 	}
 
-	__declspec(dllexport) const char* GetTicket( char* port, char* user )
+	EXPORT const char * GetTicket( char* port, char* user )
 	{
-		__try
+		try
 		{
 			return _GetTicket(port, user);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"GetTicket");
+			return nullptr;
 		}
 	}
 
 	/*
-		Raw SetProtocol - must be called on a disconnected pServer to be effective, or on a pServer that you reconnect on
+    *     Raw SetProtocol - must be called on a disconnected pServer to be effective, or on a pServer that you reconnect on
 	*/
-	__declspec(dllexport) void SetProtocol(P4BridgeServer* pServer, const char* key, const char* val)
+    EXPORT void SetProtocol(P4BridgeServer* pServer, const char* key, const char* val)
 	{
-		__try
+        try
 		{
 			VALIDATE_HANDLE_V(pServer, tP4BridgeServer);
 			pServer->SetProtocol(key, val);
 		}
-		__except (HANDLE_EXCEPTION())
+        catch (exception& e)
 		{
+            P4BridgeServer::ReportException(e,"SetProtocol");
 		}
 	}
 
@@ -1338,14 +1313,14 @@ extern "C"
 	*  Return: Zero if there was an error running the command
 	**************************************************************************/
 
-	__declspec(dllexport) int RunCommand( P4BridgeServer* pServer, 
+	EXPORT int RunCommand( P4BridgeServer* pServer,
 										  const char *cmd, 
 										  int cmdId,
 										  int tagged, 
-										  char **args, 
+										  char * const *args,
 										  int argc )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_I(pServer, tP4BridgeServer)
 			// make sure we're connected to the server
@@ -1353,11 +1328,11 @@ extern "C"
 			{
 				return 0;
 			}
-			LOG_DEBUG2(4, "Running command [%d] %s", cmdId, cmd);
 			return pServer->run_command(cmd, cmdId, tagged, args, argc);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"RunCommand");
 			return 0;
 		}
 	}
@@ -1369,28 +1344,30 @@ extern "C"
 	*  Return: None
 	**************************************************************************/
 
-	__declspec(dllexport) void CancelCommand( P4BridgeServer* pServer, int cmdId ) 
+	EXPORT void CancelCommand( P4BridgeServer* pServer, int cmdId )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_V(pServer, tP4BridgeServer)
 			pServer->cancel_command(cmdId);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"CancelCommand");
 		}
 	}
 
-	__declspec(dllexport) int IsConnected(P4BridgeServer* pServer)
+	EXPORT int IsConnected(P4BridgeServer* pServer)
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_I(pServer, tP4BridgeServer)
 			return pServer->IsConnected();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return -1;
+			P4BridgeServer::ReportException(e,"IsConnected");
+			return 0;
 		}
 	}
 
@@ -1405,15 +1382,16 @@ extern "C"
 	*  Return: None
 	**************************************************************************/
 
-	__declspec(dllexport) void SetTaggedOutputCallbackFn( P4BridgeServer* pServer, IntTextTextCallbackFn* pNew )
+	EXPORT void SetTaggedOutputCallbackFn( P4BridgeServer* pServer, IntTextTextCallbackFn* pNew )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_V(pServer, tP4BridgeServer)
 			pServer->SetTaggedOutputCallbackFn(pNew);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"SetTaggedOutputCallbackFn");
 		}
 	}
 
@@ -1430,18 +1408,19 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport) int GetTaggedOutputCount( P4BridgeServer* pServer, int cmdId )
+	EXPORT int GetTaggedOutputCount( P4BridgeServer* pServer, int cmdId )
 	{
-		__try
+		try
 		{
-			VALIDATE_HANDLE_P(pServer, tP4BridgeServer);
+			VALIDATE_HANDLE_I(pServer, tP4BridgeServer);
 			P4BridgeClient* pUi = pServer->find_ui(cmdId);
 			if (!pUi)
 				return  -1;
 			return pUi->GetTaggedOutputCount();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"GetTaggedOutputCount");
 			return -1;
 		}
 	}
@@ -1459,19 +1438,20 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport) StrDictListIterator * GetTaggedOutput( P4BridgeServer* pServer, int cmdId )
+	EXPORT StrDictListIterator * GetTaggedOutput( P4BridgeServer* pServer, int cmdId )
 	{
-		__try
+		try
 		{
-			VALIDATE_HANDLE_P(pServer, tP4BridgeServer);
+			VALIDATE_HANDLE_P(pServer, tP4BridgeServer)
 			P4BridgeClient* pUi = pServer->find_ui(cmdId);
 			if (!pUi)
-				return  NULL;
+				return  nullptr;
 			return pUi->GetTaggedOutput();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"StrDictListIterator");
+			return(nullptr);
 		}
 	}
 
@@ -1486,15 +1466,16 @@ extern "C"
 	*  Return: None
 	**************************************************************************/
 
-	__declspec(dllexport) void SetErrorCallbackFn( P4BridgeServer* pServer, IntIntIntTextCallbackFn* pNew )
+	EXPORT void SetErrorCallbackFn( P4BridgeServer* pServer, IntIntIntTextCallbackFn* pNew )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_V(pServer, tP4BridgeServer)
 			pServer->SetErrorCallbackFn(pNew);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"SetErrorCallback");
 		}
 	}
 
@@ -1508,19 +1489,20 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport) P4ClientError * GetErrorResults( P4BridgeServer * pServer, int cmdId)
+	EXPORT P4ClientError * GetErrorResults( P4BridgeServer * pServer, int cmdId)
 	{
-		__try
+		try
 		{
-			VALIDATE_HANDLE_P(pServer, tP4BridgeServer);
+			VALIDATE_HANDLE_P(pServer, tP4BridgeServer)
 			P4BridgeClient* pUi = pServer->find_ui(cmdId);
 			if (!pUi)
-				return  NULL;
+				return  nullptr;
 			return pUi->GetErrorResults();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"GetErrorResults");
+			return nullptr;
 		}
 	}
 
@@ -1535,15 +1517,16 @@ extern "C"
 	*  Return: None
 	**************************************************************************/
 
-	__declspec(dllexport) void SetInfoResultsCallbackFn( P4BridgeServer* pServer, IntIntIntTextCallbackFn* pNew )
+	EXPORT void SetInfoResultsCallbackFn( P4BridgeServer* pServer, IntIntIntTextCallbackFn* pNew )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_V(pServer, tP4BridgeServer)
 			pServer->SetInfoResultsCallbackFn(pNew);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"SetInfoResultsCallbackFn");
 		}
 	}
 
@@ -1557,9 +1540,9 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport) int GetInfoResultsCount( P4BridgeServer* pServer, int cmdId)
+	EXPORT int GetInfoResultsCount( P4BridgeServer* pServer, int cmdId)
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_B(pServer, tP4BridgeServer)
 			P4BridgeClient* pUi = pServer->find_ui(cmdId);
@@ -1567,8 +1550,9 @@ extern "C"
 				return  -1;
 			return pUi->GetInfoResultsCount();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"GetInfoResultsCount");
 			return -1;
 		}
 	}
@@ -1583,21 +1567,22 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport) P4ClientInfoMsg * GetInfoResults( P4BridgeServer* pServer, int cmdId)
+	EXPORT P4ClientInfoMsg * GetInfoResults( P4BridgeServer* pServer, int cmdId)
 	{
-		__try
+		try
 		{
-			VALIDATE_HANDLE_B(pServer, tP4BridgeServer)
+			VALIDATE_HANDLE_P(pServer, tP4BridgeServer)
 			P4BridgeClient* pUi = pServer->find_ui(cmdId);
 			if (!pUi)
-				return  NULL;
+				return  nullptr;
 			if (!pUi->GetInfoResults())
-				return  NULL;
+				return  nullptr;
 			return pUi->GetInfoResults();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"GetInfoResults");
+			return nullptr;
 		}
 	}
 
@@ -1612,15 +1597,16 @@ extern "C"
 	*  Return: None
 	**************************************************************************/
 
-	__declspec(dllexport) void SetTextResultsCallbackFn( P4BridgeServer* pServer, TextCallbackFn* pNew )
+	EXPORT void SetTextResultsCallbackFn( P4BridgeServer* pServer, TextCallbackFn* pNew )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_V(pServer, tP4BridgeServer)
 			pServer->SetTextResultsCallbackFn(pNew);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"SetTextResultsCallbackFn");
 		}
 	}
 
@@ -1634,21 +1620,22 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport) const char * GetTextResults( P4BridgeServer* pServer, int cmdId )
+	EXPORT const char * GetTextResults( P4BridgeServer* pServer, int cmdId )
 	{
-		__try
+		try
 		{
-			VALIDATE_HANDLE_B(pServer, tP4BridgeServer)
+			VALIDATE_HANDLE_P(pServer, tP4BridgeServer)
 			P4BridgeClient* pUi = pServer->find_ui(cmdId);
 			if (!pUi)
-				return  NULL;
+				return  nullptr;
 			if (!pUi->GetTextResults())
-				return  NULL;
+				return  nullptr;
 			return pUi->GetTextResults();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"GetTextResults");
+			return nullptr;
 		}
 	}
 
@@ -1663,15 +1650,16 @@ extern "C"
 	*  Return: None
 	**************************************************************************/
 
-	__declspec(dllexport) void SetBinaryResultsCallbackFn( P4BridgeServer* pServer, BinaryCallbackFn* pNew )
+	EXPORT void SetBinaryResultsCallbackFn( P4BridgeServer* pServer, BinaryCallbackFn* pNew )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_V(pServer, tP4BridgeServer)
 			pServer->SetBinaryResultsCallbackFn(pNew);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"SetBinaryResultsCallbackFn");
 		}
 	}
 
@@ -1685,9 +1673,9 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport) size_t GetBinaryResultsCount(  P4BridgeServer* pServer, int cmdId) 
+	EXPORT size_t GetBinaryResultsCount(  P4BridgeServer* pServer, int cmdId)
 	{ 
-		__try
+		try
 		{
 			VALIDATE_HANDLE_I(pServer, tP4BridgeServer)
 			P4BridgeClient* pUi = pServer->find_ui(cmdId);
@@ -1695,8 +1683,9 @@ extern "C"
 				return  0;
 			return pUi->GetBinaryResultsCount( );
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"GetBinaryResultsCount");
 			return 0;
 		}
 	}
@@ -1711,19 +1700,20 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport) const unsigned char* GetBinaryResults( P4BridgeServer* pServer, int cmdId )
+	EXPORT const unsigned char * GetBinaryResults( P4BridgeServer* pServer, int cmdId )
 	{
-		__try
+		try
 		{
-			VALIDATE_HANDLE_P(pServer, tP4BridgeServer);
+			VALIDATE_HANDLE_P(pServer, tP4BridgeServer)
 			P4BridgeClient* pUi = pServer->find_ui(cmdId);
 			if (!pUi)
 				return  NULL;
 			return pUi->GetBinaryResults( );
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"GetBinaryResults");
+			return nullptr;
 		}
 	}
 
@@ -1739,10 +1729,10 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport) void SetDataSet( P4BridgeServer* pServer, int cmdId,
+	EXPORT void SetDataSet( P4BridgeServer* pServer, int cmdId,
 										   const char * data )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_V(pServer, tP4BridgeServer)
 			P4BridgeClient* pUi = pServer->get_ui(cmdId);
@@ -1750,8 +1740,9 @@ extern "C"
 				return;
 			return pUi->SetDataSet(data);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"SetDataSet");
 		}
 	}
 
@@ -1765,19 +1756,20 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport)  char * GetDataSet( P4BridgeServer* pServer, int cmdId )
+	EXPORT  char* GetDataSet(P4BridgeServer* pServer, int cmdId)
 	{
-		__try
+		try
 		{
-			VALIDATE_HANDLE_P(pServer, tP4BridgeServer);
+			VALIDATE_HANDLE_P(pServer, tP4BridgeServer)
 			P4BridgeClient* pUi = pServer->find_ui(cmdId);
 			if (!pUi)
-				return  NULL;
+				return  nullptr;
 			return pUi->GetDataSet()->Text();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e, "GetDataSet");
+			return nullptr;
 		}
 	}
 
@@ -1792,19 +1784,19 @@ extern "C"
 	*  Return: None
 	**************************************************************************/
 
-	__declspec(dllexport) void SetPromptCallbackFn( P4BridgeServer* pServer, 
+	EXPORT void SetPromptCallbackFn( P4BridgeServer* pServer,
 													PromptCallbackFn* pNew )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_V(pServer, tP4BridgeServer)
 			pServer->SetPromptCallbackFn(pNew);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"SetPromptCallbackFn");
 		}
 	}
-
 	/**************************************************************************
 	*
 	*  SetParallelTransferCallbackFn: Set the callback for replying to a server prompt.
@@ -1816,19 +1808,19 @@ extern "C"
 	*  Return: None
 	**************************************************************************/
 
-	__declspec(dllexport) void SetParallelTransferCallbackFn(P4BridgeServer* pServer,
+	EXPORT void SetParallelTransferCallbackFn(P4BridgeServer* pServer,
 		ParallelTransferCallbackFn* pNew)
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_V(pServer, tP4BridgeServer)
 			pServer->SetParallelTransferCallbackFn(pNew);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"SetParallelTransferCallbackFn");
 		}
 	}
-
 	/**************************************************************************
 	*
 	*  IsIgnored: Test to see if a particular file is ignored.
@@ -1840,15 +1832,16 @@ extern "C"
 	*  Return: non zero if file is ignored
 	**************************************************************************/
 
-	__declspec(dllexport) int IsIgnored( const char *pPath )
+	EXPORT int IsIgnored( const char *pPath )
 	{
-		__try
+		try
 		{
 			StrPtr Str = StrRef(pPath);
 			return P4BridgeServer::IsIgnored(Str);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"IsIgnored");
 		}
 		return 0;
 	}
@@ -1877,7 +1870,7 @@ extern "C"
 	*   }
 	*
 	*  NOTE: The iterate as currently implemented, can only iterate through the
-	*    data once, as there is no method to rest it.
+	*    data once, as there is no method to reset it.
 	*
 	**************************************************************************/
 
@@ -1892,16 +1885,17 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport) StrDictList* GetNextItem( StrDictListIterator* pObj )
+	EXPORT StrDictList* GetNextItem( StrDictListIterator* pObj )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_P(pObj, tStrDictListIterator)
 			return pObj->GetNextItem();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"GetNextItem");
+			return nullptr;
 		}
 	}
 
@@ -1916,16 +1910,17 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport) KeyValuePair * GetNextEntry( StrDictListIterator* pObj )
+	EXPORT KeyValuePair * GetNextEntry( StrDictListIterator* pObj )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_P(pObj, tStrDictListIterator)
 			return pObj->GetNextEntry();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"GetNextEntry");
+			return nullptr;
 		}
 	}
 
@@ -1939,17 +1934,18 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport) void Release( void* pObj )
+	EXPORT void Release( void* pObj )
 	{
-		__try
+		try
 		{
 			// make sure to cast to a p4base object first, otherwise
 			// the destructor will not be called and 'bad things will happen'
 			p4base* pBase = static_cast<p4base*>(pObj);
 			delete pBase;
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"Release");
 		}
 	}
 
@@ -1963,14 +1959,15 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport) void ReleaseString( void* pObj )
+	EXPORT void ReleaseString( void* pObj )
 	{
-		__try
+		try
 		{
 			Utils::ReleaseString(pObj);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"ReleaseString");
 		}
 	}
 
@@ -1988,16 +1985,17 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport) const char * GetKey( KeyValuePair* pObj )
+	EXPORT const char * GetKey( KeyValuePair* pObj )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_P(pObj, tKeyValuePair)
 			return pObj->key.c_str();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"GetKey");
+			return nullptr;
 		}
 	}
 	
@@ -2011,16 +2009,17 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport) const char *  GetValue( KeyValuePair* pObj )
+	EXPORT const char *  GetValue( KeyValuePair* pObj )
 	{
-		__try
+	    try
 		{
 			VALIDATE_HANDLE_P(pObj, tKeyValuePair)
 			return pObj->value.c_str();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"GetValue");
+			return nullptr;
 		}
 	}
 
@@ -2038,16 +2037,17 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport) const int Severity( P4ClientError* pObj )
+	EXPORT const int Severity( P4ClientError* pObj )
 	{
-		__try
+		try
 		{
-			VALIDATE_HANDLE_P(pObj, tP4ClientError)
+			VALIDATE_HANDLE_I(pObj, tP4ClientError)
 			return pObj->Severity;
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"Severity");
+			return 0;
 		}
 	}
 
@@ -2061,22 +2061,23 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport) const int ErrorCode( P4ClientError* pObj )
+	EXPORT const int ErrorCode( P4ClientError* pObj )
 	{
-		__try
+		try
 		{
-			VALIDATE_HANDLE_P(pObj, tP4ClientError)
+			VALIDATE_HANDLE_I(pObj, tP4ClientError)
 			return pObj->ErrorCode;
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"ErrorCode");
+			return 0;
 		}
 	}
 
 	/**************************************************************************
 	*
-	*  GetMessage: Get the error message.
+	*  Message: Get the error message.
 	*
 	*    pObj: Pointer to the P4ClientError. 
 	*    
@@ -2084,16 +2085,17 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport) const char * Message( P4ClientError* pObj )
+	EXPORT const char * Message( P4ClientError* pObj )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_P(pObj, tP4ClientError)
 			return pObj->Message.c_str();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"Message");
+			return nullptr;
 		}
 	}
 	
@@ -2107,16 +2109,17 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport) P4ClientError * Next( P4ClientError * pObj )
+	EXPORT P4ClientError * Next( P4ClientError * pObj )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_P(pObj, tP4ClientError)
 			return pObj->Next;
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"Next");
+			return nullptr;
 		}
 	}
 
@@ -2135,16 +2138,17 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport) const char MessageLevel( P4ClientInfoMsg* pObj )
+	EXPORT const char MessageLevel( P4ClientInfoMsg* pObj )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_C(pObj, tP4ClientInfoMsg)
 			return pObj->Level;
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"MessageLevel");
+			return 0;
 		}
 	}
 
@@ -2158,16 +2162,17 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport) const int InfoMsgCode( P4ClientInfoMsg* pObj )
+	EXPORT const int InfoMsgCode( P4ClientInfoMsg* pObj )
 	{
-		__try
+		try
 		{
-			VALIDATE_HANDLE_P(pObj, tP4ClientInfoMsg)
+			VALIDATE_HANDLE_I(pObj, tP4ClientInfoMsg)
 			return pObj->MsgCode;
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"InfoMsgCode");
+			return 0;
 		}
 	}
 
@@ -2181,16 +2186,17 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport) const char * InfoMessage( P4ClientInfoMsg* pObj )
+	EXPORT const char * InfoMessage( P4ClientInfoMsg* pObj )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_P(pObj, tP4ClientInfoMsg)
 			return pObj->Message.c_str();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"InfoMessage");
+			return nullptr;
 		}
 	}
 	
@@ -2204,16 +2210,17 @@ extern "C"
 	*
 	**************************************************************************/
 
-	__declspec(dllexport) P4ClientInfoMsg * NextInfoMsg( P4ClientInfoMsg * pObj )
+	EXPORT P4ClientInfoMsg * NextInfoMsg( P4ClientInfoMsg * pObj )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_P(pObj, tP4ClientInfoMsg)
 			return pObj->Next;
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"NextInfoMsg");
+			return nullptr;
 		}
 	}
 
@@ -2225,225 +2232,241 @@ extern "C"
 	 *
 	 *************************************************************************/
 
-	__declspec(dllexport) int CM_AutoResolve( P4ClientMerge* pObj, MergeForce forceMerge )
+	EXPORT int CM_AutoResolve( P4ClientMerge* pObj, MergeForce forceMerge )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_I(pObj, tP4ClientMerge);
 			return (int) pObj->AutoResolve(forceMerge);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"CM_AutoResolve");
 			return -1;
 		}
 	}
 
-	__declspec(dllexport) int CM_Resolve( P4ClientMerge* pObj )
+	EXPORT int CM_Resolve( P4ClientMerge* pObj )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_I(pObj, tP4ClientMerge);
 			return (int) pObj->Resolve();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"CM_Resolve");
 			return -1;
 		}
 	}
 
-	__declspec(dllexport) int CM_DetectResolve( P4ClientMerge* pObj )
+	EXPORT int CM_DetectResolve( P4ClientMerge* pObj )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_I(pObj, tP4ClientMerge);
 			return (int) pObj->DetectResolve();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"CM_DetectResolve");
 			return -1;
 		}
 	}
 
-	__declspec(dllexport) int CM_IsAcceptable( P4ClientMerge* pObj )
+	EXPORT int CM_IsAcceptable( P4ClientMerge* pObj )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_I(pObj, tP4ClientMerge);
 			return pObj->IsAcceptable();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"CM_IsAcceptable");
 			return -1;
 		}
 	}
 
-	__declspec(dllexport) char *CM_GetBaseFile( P4ClientMerge* pObj )
+	EXPORT char *CM_GetBaseFile( P4ClientMerge* pObj )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_P(pObj, tP4ClientMerge)
 			if (!pObj->GetBaseFile())
-				return NULL;
+				return nullptr;
 			return pObj->GetBaseFile()->Text();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"CM_GetBaseFile");
+			return nullptr;
 		}
 	}
 
-	__declspec(dllexport) char *CM_GetYourFile( P4ClientMerge* pObj )
+	EXPORT char *CM_GetYourFile( P4ClientMerge* pObj )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_P(pObj, tP4ClientMerge)
 			if (!pObj->GetYourFile())
-				return NULL;
+				return nullptr;
 			return pObj->GetYourFile()->Text();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"CM_GetYourFile");
+			return nullptr;
 		}
 	}
 
-	__declspec(dllexport) char *CM_GetTheirFile( P4ClientMerge* pObj )
+	EXPORT char *CM_GetTheirFile( P4ClientMerge* pObj )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_P(pObj, tP4ClientMerge)
 			if (!pObj->GetTheirFile())
-				return NULL;
+				return nullptr;
 			return pObj->GetTheirFile()->Text();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"CM_GetTheirFile");
+			return nullptr;
 		}
 	}
 
-	__declspec(dllexport) char *CM_GetResultFile( P4ClientMerge* pObj )
+	EXPORT char *CM_GetResultFile( P4ClientMerge* pObj )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_P(pObj, tP4ClientMerge)
 			if (!pObj->GetResultFile())
-				return NULL;
+				return nullptr;
 			return pObj->GetResultFile()->Text();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"CM_GetResultFile");
+			return nullptr;
 		}
 	}
 
 
-	__declspec(dllexport) int	CM_GetYourChunks( P4ClientMerge* pObj )
+	EXPORT int	CM_GetYourChunks( P4ClientMerge* pObj )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_I(pObj, tP4ClientMerge);
 			return pObj->GetYourChunks();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"CM_GetYourChunks");
 			return -1;
 		}
 	}
 
-	__declspec(dllexport) int	CM_GetTheirChunks( P4ClientMerge* pObj )
+	EXPORT int	CM_GetTheirChunks( P4ClientMerge* pObj )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_I(pObj, tP4ClientMerge);
 			return pObj->GetTheirChunks();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"CM_GetTheirChunks");
 			return -1;
 		}
 	}
 
-	__declspec(dllexport) int	CM_GetBothChunks( P4ClientMerge* pObj )
+	EXPORT int	CM_GetBothChunks( P4ClientMerge* pObj )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_I(pObj, tP4ClientMerge);
 			return pObj->GetBothChunks();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"CM_GetBothChunks");
 			return -1;
 		}
 	}
 
-	__declspec(dllexport) int	CM_GetConflictChunks( P4ClientMerge* pObj )
+	EXPORT int	CM_GetConflictChunks(P4ClientMerge* pObj)
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_I(pObj, tP4ClientMerge);
 			return pObj->GetConflictChunks();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e, "CM_GetConflictChunks");
 			return -1;
 		}
 	}
 
-	__declspec(dllexport) char *CM_GetMergeDigest( P4ClientMerge* pObj )
+	EXPORT char *CM_GetMergeDigest( P4ClientMerge* pObj )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_P(pObj, tP4ClientMerge)
 			if (!pObj->GetBaseFile())
-				return NULL;
+				return nullptr;
 			return pObj->GetMergeDigest()->Text();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"CM_GetMergeDigest");
+			return nullptr;
 		}
 	}
 
-	__declspec(dllexport) char *CM_GetYourDigest( P4ClientMerge* pObj )
+	EXPORT char *CM_GetYourDigest( P4ClientMerge* pObj )
 	{
-		__try
+		try
 		{
 			if (!pObj->GetBaseFile())
-				return NULL;
+				return nullptr;
 			return pObj->GetYourDigest()->Text();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"CM_GetYourDigest");
+			return nullptr;
 		}	
 	}
 
-	__declspec(dllexport) char *CM_GetTheirDigest( P4ClientMerge* pObj )
+	EXPORT char *CM_GetTheirDigest( P4ClientMerge* pObj )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_P(pObj, tP4ClientMerge)
 			if (!pObj->GetBaseFile())
-				return NULL;
+				return nullptr;
 			return pObj->GetTheirDigest()->Text();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"CM_GetTheirDigest");
+			return nullptr;
 		}
 	}
 
-	__declspec(dllexport) P4ClientError *CM_GetLastClientMergeError(P4ClientMerge* pObj)
+	EXPORT P4ClientError *CM_GetLastClientMergeError(P4ClientMerge* pObj)
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_P(pObj, tP4ClientMerge)
 			return pObj->GetLastError();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"CM_GetLastClientMergeError");
+			return nullptr;
 		}
 	}
 
@@ -2455,265 +2478,285 @@ extern "C"
  *
  ******************************************************************************/
 
-	__declspec(dllexport) int CR_AutoResolve( P4ClientResolve* pObj, MergeForce force )
+	EXPORT int CR_AutoResolve( P4ClientResolve* pObj, MergeForce force )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_I(pObj, tP4ClientResolve);
 			return (int) pObj->AutoResolve(force);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"CR_AutoResolve");
+			return 0;
 		}
 	}
 
-	__declspec(dllexport) int CR_Resolve( P4ClientResolve* pObj, int preview, Error *e )
+	EXPORT int CR_Resolve( P4ClientResolve* pObj, int preview, Error *err )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_I(pObj, tP4ClientResolve);
 			return (int) pObj->Resolve(preview);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"CR_Resolve");
+			return 0;
 		}
 	}
 
-	__declspec(dllexport) char *CR_GetType(P4ClientResolve* pObj)
+	EXPORT char *CR_GetType(P4ClientResolve* pObj)
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_P(pObj, tP4ClientResolve);
 			return pObj->GetType().Text();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"CR_GetType");
+			return nullptr;
 		}
 	}
 
-	__declspec(dllexport) char *CR_GetMergeAction(P4ClientResolve* pObj)
+	EXPORT char *CR_GetMergeAction(P4ClientResolve* pObj)
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_P(pObj, tP4ClientResolve)
 			return pObj->GetMergeAction().Text();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"CR_GetMergeAction");
+			return nullptr;
 		}
 	}
 
-	__declspec(dllexport) char *CR_GetYoursAction(P4ClientResolve* pObj)
+	EXPORT char *CR_GetYoursAction(P4ClientResolve* pObj)
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_P(pObj, tP4ClientResolve)
 			return pObj->GetYoursAction().Text();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"CR_GetYoursAction");
+			return nullptr;
 		}
 	}
 
-	__declspec(dllexport) char *CR_GetTheirAction(P4ClientResolve* pObj)
+	EXPORT char *CR_GetTheirAction(P4ClientResolve* pObj)
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_P(pObj, tP4ClientResolve)
 			return pObj->GetTheirAction().Text();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"CR_GetTheirAction");
+			return nullptr;
 		}
 	}
 
 	// For the CLI interface, probably not of interest to others
 
-	__declspec(dllexport) char *CR_GetMergePrompt(P4ClientResolve* pObj)
+	EXPORT char *CR_GetMergePrompt(P4ClientResolve* pObj)
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_P(pObj, tP4ClientResolve)
 			return pObj->GetMergePrompt().Text();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"CR_GetMergePrompt");
+			return nullptr;
 		}
 	}
 
-	__declspec(dllexport) char *CR_GetYoursPrompt(P4ClientResolve* pObj)
+	EXPORT char *CR_GetYoursPrompt(P4ClientResolve* pObj)
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_P(pObj, tP4ClientResolve)
 			return pObj->GetYoursPrompt().Text();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"CR_GetYoursPrompt");
+			return nullptr;
 		}
 	}
 
-	__declspec(dllexport) char *CR_GetTheirPrompt(P4ClientResolve* pObj)
+	EXPORT char *CR_GetTheirPrompt(P4ClientResolve* pObj)
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_P(pObj, tP4ClientResolve)
 			return pObj->GetTheirPrompt().Text();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"CR_GetTheirPrompt");
+			return nullptr;
 		}
 	}
 
-	__declspec(dllexport) char *CR_GetMergeOpt(P4ClientResolve* pObj)
+	EXPORT char *CR_GetMergeOpt(P4ClientResolve* pObj)
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_P(pObj, tP4ClientResolve)
 			return pObj->GetMergeOpt().Text();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"CR_GetMergeOpt");
+			return nullptr;
 		}
 	}
 
-	__declspec(dllexport) char *CR_GetYoursOpt(P4ClientResolve* pObj)
+	EXPORT char *CR_GetYoursOpt(P4ClientResolve* pObj)
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_P(pObj, tP4ClientResolve)
 			return pObj->GetYoursOpt().Text();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"CR_GetYoursOpt");
+			return nullptr;
 		}
 	}
 
-	__declspec(dllexport) char *CR_GetTheirOpt(P4ClientResolve* pObj)
+	EXPORT char *CR_GetTheirOpt(P4ClientResolve* pObj)
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_P(pObj, tP4ClientResolve)
 			return pObj->GetTheirOpt().Text();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"CR_GetTheirOpt");
+			return nullptr;
 		}
 	}
 
-	__declspec(dllexport) char *CR_GetSkipOpt(P4ClientResolve* pObj) 
+	EXPORT char *CR_GetSkipOpt(P4ClientResolve* pObj)
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_P(pObj, tP4ClientResolve)
 			return pObj->GetSkipOpt().Text();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"CR_GetSkipOpt");
+			return nullptr;
 		}
 	}
 
-	__declspec(dllexport) char *CR_GetHelpOpt(P4ClientResolve* pObj) 
+	EXPORT char *CR_GetHelpOpt(P4ClientResolve* pObj)
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_P(pObj, tP4ClientResolve)
 			return pObj->GetHelpOpt().Text();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"CR_GetHelpOpt");
+			return nullptr;
 		}
 	}
 
-	__declspec(dllexport) char *CR_GetAutoOpt(P4ClientResolve* pObj) 
+	EXPORT char *CR_GetAutoOpt(P4ClientResolve* pObj)
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_P(pObj, tP4ClientResolve)
 			return pObj->GetAutoOpt().Text();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"CR_GetAutoOpt");
+			return nullptr;
 		}
 	}
 
-	__declspec(dllexport) char *CR_GetPrompt(P4ClientResolve* pObj)
+	EXPORT char *CR_GetPrompt(P4ClientResolve* pObj)
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_P(pObj, tP4ClientResolve)
 			return pObj->GetPrompt().Text();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"CR_GetPrompt");
+			return nullptr;
 		}
 	}
 
-	__declspec(dllexport) char *CR_GetTypePrompt(P4ClientResolve* pObj)
+	EXPORT char *CR_GetTypePrompt(P4ClientResolve* pObj)
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_P(pObj, tP4ClientResolve)
 			return pObj->GetTypePrompt().Text();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"CR_GetTypePrompt");
+			return nullptr;
 		}
 	}
 
-	__declspec(dllexport) char *CR_GetUsageError(P4ClientResolve* pObj)
+	EXPORT char *CR_GetUsageError(P4ClientResolve* pObj)
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_P(pObj, tP4ClientResolve)
 			return pObj->GetUsageError().Text();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"CR_GetUsageError");
+			return nullptr;
 		}
 	}
 
-	__declspec(dllexport) char *CR_GetHelp(P4ClientResolve* pObj)
+	EXPORT char *CR_GetHelp(P4ClientResolve* pObj)
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_P(pObj, tP4ClientResolve)
 			return pObj->GetHelp().Text();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"CR_GetHelp");
+			return nullptr;
 		}
 	}
 	
-	__declspec(dllexport) P4ClientError *CR_GetLastError(P4ClientResolve* pObj)
+	EXPORT P4ClientError *CR_GetLastError(P4ClientResolve* pObj)
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_P(pObj, tP4ClientResolve)
 			return pObj->GetLastError();
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
-			return NULL;
+			P4BridgeServer::ReportException(e,"CR_GetLastError");
+			return nullptr;
 		}
 	}
 
@@ -2729,16 +2772,17 @@ extern "C"
 	*  Return: None
 	**************************************************************************/
 
-	__declspec(dllexport) void SetResolveCallbackFn(	P4BridgeServer* pServer, 
+	EXPORT void SetResolveCallbackFn(	P4BridgeServer* pServer,
 														ResolveCallbackFn* pNew )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_V(pServer, tP4BridgeServer)
 			pServer->SetResolveCallbackFn(pNew);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"SetResolveCallbackFn");
 		}
 	}
 
@@ -2754,30 +2798,31 @@ extern "C"
 	*  Return: None
 	**************************************************************************/
 
-	__declspec(dllexport) void SetResolveACallbackFn(	P4BridgeServer* pServer, 
+	EXPORT void SetResolveACallbackFn(	P4BridgeServer* pServer,
 														ResolveACallbackFn* pNew )
 	{
-		__try
+		try
 		{
 			VALIDATE_HANDLE_V(pServer, tP4BridgeServer)
 			pServer->SetResolveACallbackFn(pNew);
 		}
-		__except (HANDLE_EXCEPTION())
+		catch (exception& e)
 		{
+			P4BridgeServer::ReportException(e,"SetResolveACallbackFn");
 		}
 	}
 
 #if defined(_DEBUG)
-	__declspec(dllexport) int GetAllocObjCount()		{ return p4typesCount;  }
-	__declspec(dllexport) int GetAllocObj(int type)		{ return p4base::GetItemCount(type); }
-	__declspec(dllexport) const char* GetAllocObjName(int type) {	return p4base::GetTypeStr(type);	}
-	__declspec(dllexport) long GetStringAllocs()		{ return Utils::AllocCount(); }
-	__declspec(dllexport) long GetStringReleases()		{ return Utils::FreeCount(); }
+        EXPORT int GetAllocObjCount()            { return p4typesCount;  }
+        EXPORT int GetAllocObj(int type)         { return p4base::GetItemCount(type); }
+        EXPORT const char* GetAllocObjName(int type) {   return p4base::GetTypeStr(type);        }
+        EXPORT long GetStringAllocs()            { return Utils::AllocCount(); }
+        EXPORT long GetStringReleases()          { return Utils::FreeCount(); }
 #else
-	__declspec(dllexport) int GetAllocObjCount()		{ return 0; }
-	__declspec(dllexport) int GetAllocObj(int type)		{ return 0; }
-	__declspec(dllexport) const char* GetAllocObjName(int type) { return "only available in _DEBUG builds"; }
-	__declspec(dllexport) long GetStringAllocs()		{ return 0; }
-	__declspec(dllexport) long GetStringReleases()		{ return 0; }
+        EXPORT int GetAllocObjCount()            { return 0; }
+        EXPORT int GetAllocObj(int type)         { return 0; }
+        EXPORT const char* GetAllocObjName(int type) { return "only available in _DEBUG builds"; }
+        EXPORT long GetStringAllocs()            { return 0; }
+        EXPORT long GetStringReleases()          { return 0; }
 #endif
-}
+

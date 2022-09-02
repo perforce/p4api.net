@@ -1,13 +1,27 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "UnitTestFrameWork.h"
+
+#include <exception>
+#include <typeinfo>
+#include <string>
+using namespace std;
+
+#ifdef OS_NT
 #include <excpt.h>
 #include <Shellapi.h>
-
+#else
+#include <unistd.h>
+#include <limits.h>
+#include <sys/wait.h>
+#include <signal.h>
+#include <ftw.h>
+#include <csignal>
+#include <iostream>
+#include <sstream>
 #include <vector>
+#endif
 
-using std::vector;
-
-void UnitTestSuite::RegisterTest(UnitTest * test, char * testName)
+void UnitTestSuite::RegisterTest(UnitTest * test, const char * testName)
 {
 	TestList * newTest = new TestList();
 	newTest->TestName = testName;
@@ -32,6 +46,9 @@ UnitTestSuite::UnitTestSuite()
 	pLastTest = 0;
 
 	pNextTestSuite = 0;
+
+	// save our current directory for further use, before tests start changing it.
+	getCwd(rootbuf,4096);
 }
 
 UnitTestSuite::~UnitTestSuite()
@@ -50,97 +67,24 @@ UnitTestSuite::~UnitTestSuite()
 	pNextTestSuite = 0;
 }
 
-#define HANDLE_EXCEPTION() HandleException(__FILE__, __LINE__, __FUNCTION__, GetExceptionCode(), GetExceptionInformation())
-
-int UnitTestSuite::HandleException(const char* fname, unsigned int line, const char* func, unsigned int c, struct _EXCEPTION_POINTERS *e)
+/*******************************************************************************
+*
+*  UnitTestSuite::ReportException
+*
+*  Report any C++ Exceptions.
+*
+******************************************************************************/
+void UnitTestSuite::ReportException(std::exception& e)
 {
-	unsigned int code = 0;
-	struct _EXCEPTION_POINTERS *ep = NULL;
-	
-	code = c;
-	ep = e;
-
-	printf("\t%s(%d): %s : Exception Detected: ", fname, line, func);
-
-	switch (code)
-	{
-	case EXCEPTION_ACCESS_VIOLATION:
-		printf("EXCEPTION_ACCESS_VIOLATION\r\n");
-		break;
-	case EXCEPTION_DATATYPE_MISALIGNMENT:
-		printf("EXCEPTION_DATATYPE_MISALIGNMENT\r\n");
-		break;
-	case EXCEPTION_BREAKPOINT:
-		printf("EXCEPTION_BREAKPOINT\r\n");
-		break;
-	case EXCEPTION_SINGLE_STEP:
-		printf("EXCEPTION_SINGLE_STEP\r\n");
-		break;
-	case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:
-		printf("EXCEPTION_ARRAY_BOUNDS_EXCEEDED\r\n");
-		break;
-	case EXCEPTION_FLT_DENORMAL_OPERAND:
-		printf("EXCEPTION_FLT_DENORMAL_OPERAND\r\n");
-		break;
-	case EXCEPTION_FLT_DIVIDE_BY_ZERO:
-		printf("EXCEPTION_FLT_DIVIDE_BY_ZERO\r\n");
-		break;
-	case EXCEPTION_FLT_INEXACT_RESULT:
-		printf("EXCEPTION_FLT_INEXACT_RESULT\r\n");
-		break;
-	case EXCEPTION_FLT_INVALID_OPERATION:
-		printf("EXCEPTION_FLT_INVALID_OPERATION\r\n");
-		break;
-	case EXCEPTION_FLT_OVERFLOW:
-		printf("EXCEPTION_FLT_OVERFLOW\r\n");
-		break;
-	case EXCEPTION_FLT_STACK_CHECK:
-		printf("EXCEPTION_FLT_STACK_CHECK\r\n");
-		break;
-	case EXCEPTION_FLT_UNDERFLOW:
-		printf("EXCEPTION_FLT_UNDERFLOW\r\n");
-		break;
-	case EXCEPTION_INT_DIVIDE_BY_ZERO:
-		printf("EXCEPTION_INT_DIVIDE_BY_ZERO\r\n");
-		break;
-	case EXCEPTION_INT_OVERFLOW:
-		printf("EXCEPTION_INT_OVERFLOW\r\n");
-		break;
-	case EXCEPTION_PRIV_INSTRUCTION:
-		printf("EXCEPTION_PRIV_INSTRUCTION\r\n");
-		break;
-	case EXCEPTION_IN_PAGE_ERROR:
-		printf("EXCEPTION_IN_PAGE_ERROR\r\n");
-		break;
-	case EXCEPTION_ILLEGAL_INSTRUCTION:
-		printf("EXCEPTION_ILLEGAL_INSTRUCTION\r\n");
-		break;
-	case EXCEPTION_NONCONTINUABLE_EXCEPTION:
-		printf("EXCEPTION_NONCONTINUABLE_EXCEPTION\r\n");
-		break;
-	case EXCEPTION_STACK_OVERFLOW:
-		printf("EXCEPTION_STACK_OVERFLOW\r\n");
-		break;
-	case EXCEPTION_INVALID_DISPOSITION:
-		printf("EXCEPTION_INVALID_DISPOSITION\r\n");
-		break;
-	case EXCEPTION_GUARD_PAGE:
-		printf("EXCEPTION_GUARD_PAGE\r\n");
-		break;
-	case EXCEPTION_INVALID_HANDLE:
-		printf("EXCEPTION_INVALID_HANDLE\r\n");
-		break;
-	default:
-		printf("UNKNOWN EXCEPTION\r\n");
-		break;
+	// Report the exception	
+	printf("UnitTest Exception Detected %s : %s\n", e.what(), typeid(e).name());
 	}
-	return EXCEPTION_EXECUTE_HANDLER;
-}
 
-LPPROCESS_INFORMATION UnitTestSuite::RunProgram(char * cmdLine, char * cwd, bool newConsole, bool waitForExit)
+#ifdef OS_NT
+LPPROCESS_INFORMATION UnitTestSuite::RunProgram(const char * cmdLine, const char * cwd, bool newConsole, bool waitForExit)
 {
-	LPSTARTUPINFOA si = new STARTUPINFOA;
-	LPPROCESS_INFORMATION pi = new PROCESS_INFORMATION;
+	auto *si = new STARTUPINFOA;
+	auto *pi = new PROCESS_INFORMATION;
 
 	ZeroMemory( si, sizeof(STARTUPINFOA) );
 	si->cb = sizeof(si);
@@ -149,7 +93,7 @@ LPPROCESS_INFORMATION UnitTestSuite::RunProgram(char * cmdLine, char * cwd, bool
 	// Start the child process. 
 	if( !CreateProcessA( 
 		NULL,           // No module name (use command line)
-		cmdLine,        // Command line
+		(LPSTR) cmdLine,        // Command line
 		NULL,           // Process handle not inheritable
 		NULL,           // Thread handle not inheritable
 		FALSE,          // Set handle inheritance to FALSE
@@ -168,9 +112,7 @@ LPPROCESS_INFORMATION UnitTestSuite::RunProgram(char * cmdLine, char * cwd, bool
 		// Wait until child process exits.
 		WaitForSingleObject( pi->hProcess, INFINITE );
 
-		// Close process and thread handles. 
-		CloseHandle( pi->hProcess );
-		CloseHandle( pi->hThread );
+		// Cleanup is done by CleanResults(pi);
 	}
 	delete si;
 
@@ -189,14 +131,107 @@ bool UnitTestSuite::EndProcess(LPPROCESS_INFORMATION pi)
 	CloseHandle( pi->hThread );
 
 	delete pi;
+	pi = nullptr;
 
 	return true;
 }
 
-bool UnitTestSuite::rmDir(char * path)
+#else
+
+int UnitTestSuite::RunProgram(const char *cmdLine, const char *cwd, bool newConsole, bool waitForExit)
 {
+    // in linux we ignore newConsole since it requires a gui
+    if (chdir(cwd))
+    {
+        printf("Error, failed to change directory to %s\n",cwd);
+        return 0;
+    }
+
+    pid_t parent = getpid();
+    pid_t pid = fork();
+
+    if (pid < 0)
+    {
+        printf("Error, failed to fork\n %s",strerror(errno));
+        return 0;
+    }
+    else if (pid > 0)
+    {
+        //  we are the caller, wait for the child?
+        if (waitForExit)
+        {           
+            pid_t w;
+            int status;
+            while((w = waitpid(pid,&status, 0)) == -1){
+                if (errno == EINTR) // ignore interrupts
+                    continue;
+                else {
+                    perror("waitpid");
+                    return 0;
+                }
+            }
+        }
+    }
+    else
+    {
+        // we are the child
+        string line = cmdLine;
+
+        istringstream iss(line);
+        vector<string> args;
+        for(string s; iss >> s;)
+            args.push_back(s);
+        int count = args.size();
+
+        const char * argv[count + 1];
+        for(int i = 0; i < count; i++){
+            argv[i] = args[i].c_str();
+        }
+        argv[count] = nullptr;
+        if (execv(argv[0], (char * const *) argv) < 0)
+            printf("\nexecv %s error %s\n",argv[0], strerror(errno));
+    }
+    return pid;
+}
+
+bool UnitTestSuite::EndProcess(pid_t pi)
+{
+    int rv = kill(pi,SIGKILL);  // do we need to wait for this like in OS_NT?
+    return(! rv);
+}
+#endif
+
+#ifdef OS_NT
+bool directoryExists(const char* dirname)
+{
+	const DWORD attribs = ::GetFileAttributesA(dirname);
+	if (attribs == INVALID_FILE_ATTRIBUTES)
+	{
+		return false;
+	}
+	return (attribs & FILE_ATTRIBUTE_DIRECTORY);
+}
+#endif
+
+#ifndef OS_NT
+// a callback used by rmDir
+int unlink_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
+{
+    return remove(fpath);
+}
+#endif
+
+/*
+ * A cross platform rmDir
+ */
+bool UnitTestSuite::rmDir(const char * path)
+{
+#ifdef OS_NT
 	char szDir[MAX_PATH+1];  // +1 for the double null terminate
 
+	if (!directoryExists(path))
+		return true;
+	
 	SHFILEOPSTRUCTA fos = {0};
 
 	strcpy(szDir, path);
@@ -207,7 +242,121 @@ bool UnitTestSuite::rmDir(char * path)
 	fos.wFunc = FO_DELETE;
 	fos.pFrom = szDir;
 	fos.fFlags = FOF_NO_UI;
-	return (SHFileOperation(&fos) != 0);
+	int rv = SHFileOperation(&fos);
+	if (rv != 0) 
+		printf("delete of %s failed %02x\n", path, rv);
+	return(rv != 0);
+#else
+	struct stat info;
+	if (stat(path,&info) != -1) {
+        if (S_ISDIR(info.st_mode)) {  // is directory
+            nftw(path, unlink_cb, 64, FTW_DEPTH | FTW_PHYS);
+        } else {
+            remove(path); // is file
+        }
+    }
+
+	// Validate it is really gone!
+	sleep(2);
+	if (stat(path, &info) != -1)
+    {
+	    printf("rmDir: Unable to remove %s! \n",path);
+	    return false;
+    }
+#endif
+	return true;
+}
+
+
+
+/*
+ * A cross platform getCwd()
+ */
+bool UnitTestSuite::getCwd(char *buf, int bufsize)
+{
+#ifdef OS_NT
+    GetCurrentDirectory(bufsize, buf);
+#else
+    if (getcwd(buf,bufsize) == nullptr)
+        return false;
+#endif
+    return true;
+}
+
+/*
+ * A cross platform mkDir()
+ *     returns 'true' if successful
+ */
+bool UnitTestSuite::mkDir(const char *path)
+{
+#ifdef OS_NT
+    if (!CreateDirectory( path, NULL ))
+    {
+		DWORD err = GetLastError();
+		if (err == 183) // already exists
+		{
+			return true;
+		} 
+		printf("mkDir: GetLastError returns %ld\n",err);
+		return false;
+    }
+#else
+    int status = mkdir(path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    if (status < 0)
+    {
+        printf("mkDir: %s\n", strerror(errno));
+        return false;
+    }
+#endif
+    return true;
+}
+
+/*
+ * A cross platform chDir()
+ *     returns 'true' if successful
+ */
+bool UnitTestSuite::chDir(const char *path)
+{
+#ifdef OS_NT
+    if (! SetCurrentDirectory(path)){
+       DWORD err = GetLastError();
+       printf("chDir: GetLastError returns %ld\n",err);
+       return false;
+    }
+#else
+    if (chdir(path) < 0){
+        printf("chDir: %s\n",strerror(errno));
+        return false;
+    }
+#endif
+    return true;
+}
+
+
+/*
+ * A simple file copy in ANSI C
+ */
+bool UnitTestSuite::copyFile(const char *source, const char *destination)
+{
+    char buf[8000];
+    FILE *src = fopen(source, "rb");
+    FILE *dest = fopen(destination, "wb");
+    if (src == nullptr || dest == nullptr){
+	char pbuf[100];
+        printf("Error Copying file from %s to %s\n",source, destination);
+	getCwd(pbuf, 100);
+	printf("pwd: %s\n",pbuf);
+        return false;
+    }
+
+    size_t size = fread(buf, 1, sizeof(buf), src);
+    while(size){
+        fwrite(buf,1,size,dest);
+        size = fread(buf, 1, sizeof(buf), src);
+    }
+    fclose(src);
+    fclose(dest);
+    return true;
 }
 
 bool UnitTestFrameWork::isSkipTest(const char* pTestName) {
@@ -230,22 +379,23 @@ void UnitTestSuite::RunTests()
 		}
 
 		unsigned int code = 0;
-		struct _EXCEPTION_POINTERS *ep = NULL;
 
 		int itemCounts[p4typesCount];
-		__try
-		{
-			printf("Test %s:\r\n", pCurrentTest->TestName);
 
+		try 
+		{
+			printf("Test %s:\n", pCurrentTest->TestName);
+
+#ifdef _DEBUG
 			// record the current ItemCounts to make sure that we're freeing everything
 			for (int i = 0; i < p4typesCount; i++)
 				itemCounts[i] = p4base::GetItemCount(i);
 			
 			int iAllocs = Utils::AllocCount(), iFrees = Utils::FreeCount();
-
+#endif
 			if (!Setup())
 			{
-				printf("\tSetup  Failed!!\r\n");
+				printf("\tSetup  Failed!!\n");
 				UnitTestFrameWork::IncrementTestsFailed();
 
 				if (endOnFailure)
@@ -255,15 +405,17 @@ void UnitTestSuite::RunTests()
 			{
 				bool passed = (*pCurrentTest->Test)();
 				bool tearDownPassed = TearDown(pCurrentTest->TestName);
+#ifdef _DEBUG
 				// check that the ItemCounts match
 				int itemMismatch = 0;
 				for (int i = 0; i < p4typesCount; i++)
 				{
 					if (p4base::GetItemCount(i) != itemCounts[i])
 					{
-						printf("\t<<<<*** Item count for %s mismatch: %d/%d\n", p4base::GetTypeStr(i), itemCounts[i], p4base::GetItemCount());
+						printf("\t<<<<*** Item count for %s mismatch: %d/%d\n", p4base::GetTypeStr(i), itemCounts[i], p4base::GetItemCount(i));
 						itemMismatch += p4base::GetItemCount(i) - itemCounts[i];
 					}
+
 				}
 
 				// check the string alloc counts
@@ -272,13 +424,14 @@ void UnitTestSuite::RunTests()
 					printf("\t<<<<*** String alloc count mismatch: %d/%d\n", stringAllocs, stringFrees);
 
 				passed = passed && (itemMismatch == 0) && (stringAllocs == stringFrees);
+#endif
 				if (passed)
-					printf("\tPassed\r\n");
+					printf("\tPassed\n");
 				else 
-					printf("\t<<<<***Failed!!***>>>>\r\n");
+					printf("\t<<<<***Failed!!***>>>>\n");
 
 				if (!tearDownPassed)
-					printf("\tTearDown Failed!!\r\n");
+					printf("\tTearDown Failed!!\n");
 
 				if (!passed || !tearDownPassed)
 				{
@@ -289,8 +442,9 @@ void UnitTestSuite::RunTests()
 				UnitTestFrameWork::IncrementTestsPassed();
 			}
 		} 
-		__except (HANDLE_EXCEPTION())
+		catch (std::exception& e)
 		{
+			ReportException(e);
 			UnitTestFrameWork::IncrementTestsFailed();
 			if (endOnFailure)
 				return;
@@ -302,15 +456,21 @@ void UnitTestSuite::RunTests()
 		pNextTestSuite->RunTests();
 }
 
-bool UnitTestSuite::Assert(bool condition, char* FailStr, int Line, char * FileName)
+bool UnitTestSuite::Assert(bool condition, const char* FailStr, int Line, const char * FileName)
 {
 	if (condition) // It's as expected
 		return true;
 
 	if (breakOnFailure)
+        {
+#ifdef OS_NT
 		__debugbreak();
+#else
+	    raise(SIGTRAP);
+#endif
+        }
 
-	printf("\t%s: Line: %d, %s:\r\n", FailStr, Line, FileName);
+	printf("\t%s: Line: %d, %s:\n", FailStr, Line, FileName);
 	return false;
 }
 
@@ -318,12 +478,36 @@ bool UnitTestSuite::breakOnFailure = false;
 
 bool UnitTestSuite::endOnFailure = false;
 
-UnitTestFrameWork::UnitTestFrameWork(void)
-{
-}
+char UnitTestSuite::rootbuf[4096];
 
 UnitTestSuite * UnitTestFrameWork::pFirstTestSuite = 0;
 UnitTestSuite * UnitTestFrameWork::pLastTestSuite = 0;
+
+/*
+ * UnitTestFramework, provides high level interface to tests
+ */
+
+UnitTestFrameWork::UnitTestFrameWork(void)
+{
+	SetSourceDirectory(".."); // usually overridden by -s argument
+}
+
+// passed from -s argument on command line
+void UnitTestFrameWork::SetSourceDirectory(const char *dir){
+#ifndef OS_NT
+	char resolved_path[PATH_MAX];
+	srcDir = realpath(dir, resolved_path);
+#else
+	srcDir = dir;
+#endif
+}
+
+bool UnitTestFrameWork::getSrcDir(char *dir , int bufsize)
+{
+
+    strncpy(dir, UnitTestFrameWork::srcDir.c_str(), bufsize);
+    return true;
+}
 
 void UnitTestFrameWork::RegisterTestSuite(UnitTestSuite * pSuite)
 {
@@ -342,6 +526,7 @@ void UnitTestFrameWork::RegisterTestSuite(UnitTestSuite * pSuite)
 int UnitTestFrameWork::testsPassed = 0;
 int UnitTestFrameWork::testsFailed = 0;
 std::string UnitTestFrameWork::matchName;
+std::string UnitTestFrameWork::srcDir;
 
 void UnitTestFrameWork::RunTests()
 {
@@ -351,7 +536,7 @@ void UnitTestFrameWork::RunTests()
 	if (pFirstTestSuite)
 		pFirstTestSuite->RunTests();
 
-	printf("Tests Passed %d, TestFailed: %d\r\n", testsPassed, testsFailed);
+	printf("Tests Passed %d, TestFailed: %d\n", testsPassed, testsFailed);
 
 	// delete all the test suites
 	while (pFirstTestSuite)

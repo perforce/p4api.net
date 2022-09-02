@@ -1,18 +1,16 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "UnitTestFrameWork.h"
 #include "TestP4BridgeClient.h"
-#include "..\p4bridge\P4BridgeServer.h"
-#include "..\p4bridge\P4BridgeClient.h"
-#include "..\p4bridge\ClientManager.h"
-#include "..\p4bridge\P4Connection.h"
+#include "../p4bridge/P4BridgeServer.h"
+#include "../p4bridge/P4BridgeClient.h"
+#include "../p4bridge/P4Connection.h"
 
 #include <strtable.h>
 #include <strarray.h>
 
 CREATE_TEST_SUITE(TestP4BridgeClient)
 
-TestP4BridgeClient::TestP4BridgeClient(void)
-{
+TestP4BridgeClient::TestP4BridgeClient(void) {
     UnitTestSuite::RegisterTest(HandleErrorTest, "HandleErrorTest");
     UnitTestSuite::RegisterTest(OutputInfoTest, "OutputInfoTest");
     UnitTestSuite::RegisterTest(OutputTextTest, "OutputTextTest");
@@ -37,15 +35,17 @@ bool TestP4BridgeClient::Setup()
     return true;
 }
 
-bool TestP4BridgeClient::TearDown(char* testName)
+bool TestP4BridgeClient::TearDown(const char *testName) 
 {
+#ifdef _DEBUG_MEMORY
 	p4base::PrintMemoryState(testName);
+#endif
     return true;
 }
 
 bool TestP4BridgeClient::HandleErrorTest()
 {
-	P4BridgeServer* pServer = new P4BridgeServer(NULL, NULL, NULL, NULL);
+    P4BridgeServer *pServer = new P4BridgeServer(nullptr, nullptr, nullptr, nullptr);
 
 	P4Connection* pCon = pServer->getConnection(7);
 	P4BridgeClient * ui = pCon->getUi();
@@ -56,6 +56,7 @@ bool TestP4BridgeClient::HandleErrorTest()
 
     P4ClientError * pFirstErr = ui->GetErrorResults();
 
+    bool rv = [&] {
     ASSERT_NOT_NULL(pFirstErr)
 
     ASSERT_EQUAL(pFirstErr->Severity, -1)
@@ -69,15 +70,16 @@ bool TestP4BridgeClient::HandleErrorTest()
     ASSERT_EQUAL(pNextErr->Severity, 4)
 
     ASSERT_STRING_EQUAL(pNextErr->Message.c_str(), "Failed")
-
+        return true;
+    }();
 	delete pServer;
 
-    return true;
+    return rv;
 }
 
 bool TestP4BridgeClient::OutputInfoTest()
 {
-	P4BridgeServer* pServer = new P4BridgeServer(NULL, NULL, NULL, NULL);
+    P4BridgeServer *pServer = new P4BridgeServer(nullptr, nullptr, nullptr, nullptr);
 
 	P4Connection* pCon = pServer->getConnection(7);
 	P4BridgeClient * ui = pCon->getUi();
@@ -88,13 +90,13 @@ bool TestP4BridgeClient::OutputInfoTest()
 
     P4ClientInfoMsg * pInfo = ui->GetInfoResults();
 
+    bool rv = [=] {
     ASSERT_NOT_NULL(pInfo)
 
     P4ClientInfoMsg * pCur = pInfo;
 
 	int idx = 0;
-	while (pCur != NULL)
-	{
+        while (pCur != nullptr) {
 		ASSERT_TRUE(((char)'0'+idx) == pCur->Level)
 		switch (idx)
 		{
@@ -117,14 +119,17 @@ bool TestP4BridgeClient::OutputInfoTest()
 		pCur = pCur->Next;
 		idx++;
 	}
+        return true;
+    }();
+
 	delete pServer;
 
-    return true;
+    return rv;
 }
 
 bool TestP4BridgeClient::OutputTextTest()
 {
-	P4BridgeServer* pServer = new P4BridgeServer(NULL, NULL, NULL, NULL);
+    P4BridgeServer *pServer = new P4BridgeServer(nullptr, nullptr, nullptr, nullptr);
 
 	P4Connection* pCon = pServer->getConnection(7);
 	P4BridgeClient * ui = pCon->getUi();
@@ -137,6 +142,8 @@ bool TestP4BridgeClient::OutputTextTest()
 
     const char* pStrBuf = ui->GetTextResults();
 
+    bool rv = [&]() -> bool {
+
 	ASSERT_NOT_NULL(pStrBuf)
 
 	vector<char> pText;
@@ -148,17 +155,17 @@ bool TestP4BridgeClient::OutputTextTest()
     int idx = 0;
     char* lines[4];
 
-    lines[0] = NULL;
-    char*token = NULL;
+        lines[0] = nullptr;
+        char *token = nullptr;
      
     token = strtok( pText.data(), seps ); // C4996
-    while( token != NULL )
+        while (token != nullptr) 
     {
         // While there are tokens in "string"
         lines[idx++] = token;
 
         // Get next token: 
-        token = strtok( NULL, seps ); // C4996
+            token = strtok(nullptr, seps); // C4996
     }
     // should have gotten three lines
     ASSERT_EQUAL(idx, 3)
@@ -167,20 +174,23 @@ bool TestP4BridgeClient::OutputTextTest()
     ASSERT_STRING_EQUAL(lines[1], "One")
     ASSERT_STRING_EQUAL(lines[2], "Two")
 
+        return true;
+    }();
+
 	delete pServer;
 
-    return true;
+    return rv;
 }
 
 bool TestP4BridgeClient::OutputBinaryTest()
 {
-	P4BridgeServer* pServer = new P4BridgeServer(NULL, NULL, NULL, NULL);
+    P4BridgeServer *pServer = new P4BridgeServer(nullptr, nullptr, nullptr, nullptr);
 
 	P4Connection* pCon = pServer->getConnection(7);
 	P4BridgeClient * ui = pCon->getUi();
 
   
-    char * StringData = "Zer\0\nOne\nTw\0\n";
+    const char *StringData = "Zer\0\nOne\nTw\0\n";
 
     ui->OutputBinary( StringData, 5 );
 
@@ -190,22 +200,24 @@ bool TestP4BridgeClient::OutputBinaryTest()
 
     const unsigned char* pBinaryData = ui->GetBinaryResults();
 
+    bool rv = [&]() -> bool {
     ASSERT_NOT_NULL(pBinaryData)
 
     for (int idx = 0; idx < 13; idx++)
     {
         ASSERT_EQUAL((((char*)pBinaryData)[idx]), (StringData[idx]))
     }
-	delete pServer;
+        return true;
+    }();
 
-    return true;
+	delete pServer;
+    return rv;
 }
 
 StrBufDict* Objects[2];
 
-bool TestP4BridgeClient::OutputStatTest()
-{
-	P4BridgeServer* pServer = new P4BridgeServer(NULL, NULL, NULL, NULL);
+bool TestP4BridgeClient::OutputStatTest() {
+    P4BridgeServer *pServer = new P4BridgeServer(nullptr, nullptr, nullptr, nullptr);
 
 	P4Connection* pCon = pServer->getConnection(7);
 	P4BridgeClient * ui = pCon->getUi();
@@ -231,16 +243,18 @@ bool TestP4BridgeClient::OutputStatTest()
 
     StrDictListIterator * pTaggedData = ui->GetTaggedOutput();
 
+    bool rv = [&]() -> bool {
+
     ASSERT_NOT_NULL(pTaggedData)
 
     StrDictList * curItem = pTaggedData->GetNextItem();
 
     int objIdx = 0;
-    while (curItem != NULL)
+        while (curItem != nullptr) 
     {
         KeyValuePair * curEntry = pTaggedData->GetNextEntry();
 
-        while (curEntry != NULL)
+            while (curEntry != nullptr) 
         {
 
             ASSERT_STRING_EQUAL( curEntry->value.c_str(), Objects[objIdx]->GetVar(curEntry->key.c_str())->Text() ) 
@@ -251,6 +265,8 @@ bool TestP4BridgeClient::OutputStatTest()
         objIdx++;
         curItem = pTaggedData->GetNextItem();
     }
+        return true;
+    }();
 
     delete pObj1;
     delete pObj2;
@@ -258,12 +274,12 @@ bool TestP4BridgeClient::OutputStatTest()
 
 	delete pServer;
 
-    return true;
+    return rv;
 }
 
 bool bPassedCallbacksTests = true;
 
-void __stdcall ErrorCallbackFn(int cmdId, int severity, int errorId, const char* msg)
+void STDCALL ErrorCallbackFn(int cmdId, int severity, int errorId, const char *msg) 
 {
 	if (cmdId != 7)
 	{
@@ -283,7 +299,7 @@ void __stdcall ErrorCallbackFn(int cmdId, int severity, int errorId, const char*
 
 bool TestP4BridgeClient::HandleErrorCallbackTest()
 {
-	P4BridgeServer* pServer = new P4BridgeServer(NULL, NULL, NULL, NULL);
+    P4BridgeServer *pServer = new P4BridgeServer(nullptr, nullptr, nullptr, nullptr);
 	P4Connection* pCon = pServer->getConnection(7);
 	P4BridgeClient * ui = pCon->getUi();
 
@@ -291,6 +307,8 @@ bool TestP4BridgeClient::HandleErrorCallbackTest()
     pServer->SetErrorCallbackFn(ErrorCallbackFn);
     
     ui->OutputError( "Ouch" ); // For broken servers
+
+    bool rv = [&]() -> bool {
 
     ASSERT_TRUE(bPassedCallbacksTests);
 
@@ -305,19 +323,16 @@ bool TestP4BridgeClient::HandleErrorCallbackTest()
     
     ui->OutputError( "Ouch" ); // For broken servers
 
-    //still alive
+        return true;
+    }();
     
-    pServer->SetErrorCallbackFn((IntIntIntTextCallbackFn *) 0xFFFFFFFF);
-    
-    ui->OutputError( "Ouch" ); // For broken servers
-
     //still alive
 	delete pServer;
 
-    return true;
+    return rv;
 }
 
-void __stdcall InfoOutputCallbackFn(int cmdId, int msgId, int level, const char* msg)
+void STDCALL InfoOutputCallbackFn(int cmdId, int msgId, int level, const char *msg) 
 {
 	if (cmdId != 7)
 	{
@@ -339,12 +354,14 @@ void __stdcall InfoOutputCallbackFn(int cmdId, int msgId, int level, const char*
 
 bool TestP4BridgeClient::OutputInfoCallbackTest()
 {
-	P4BridgeServer* pServer = new P4BridgeServer(NULL, NULL, NULL, NULL);
+    P4BridgeServer *pServer = new P4BridgeServer(nullptr, nullptr, nullptr, nullptr);
 	P4Connection* pCon = pServer->getConnection(7);
 	P4BridgeClient * ui = pCon->getUi();
 
     // Set the call back function to receive the error output
     pServer->SetInfoResultsCallbackFn(InfoOutputCallbackFn);
+
+    bool rv = [&]() -> bool {
 
 	ui->HandleInfoMsg( 0, '0', "Zero" );
 
@@ -365,20 +382,16 @@ bool TestP4BridgeClient::OutputInfoCallbackTest()
     
  	ui->HandleInfoMsg( 1, '1', "One" );
 
-    //still alive
+        return true;
+    }();
     
-    pServer->SetInfoResultsCallbackFn((IntIntIntTextCallbackFn *) 0xFFFFFFFF);
-    
- 	ui->HandleInfoMsg( 1, '1', "One" );
-
     //still alive
 	delete pServer;
 
-    return true;
+    return rv;
 }
 
-void __stdcall TextOutputCallbackFn(int cmdId, const char* msg)
-{
+void STDCALL TextOutputCallbackFn(int cmdId, const char *msg) {
 	if (cmdId != 7)
 	{
 		bPassedCallbacksTests = false;
@@ -399,12 +412,14 @@ void __stdcall TextOutputCallbackFn(int cmdId, const char* msg)
 
 bool TestP4BridgeClient::OutputTextCallbackTest()
 {
-	P4BridgeServer* pServer = new P4BridgeServer(NULL, NULL, NULL, NULL);
+    P4BridgeServer *pServer = new P4BridgeServer(nullptr, nullptr, nullptr, nullptr);
 	P4Connection* pCon = pServer->getConnection(7);
 	P4BridgeClient * ui = pCon->getUi();
 
     // Set the call back function to receive the error output
     pServer->SetTextResultsCallbackFn(TextOutputCallbackFn);
+
+    bool rv = [&]() -> bool {
 
     ui->OutputText( "Zero" , 4 ); 
 
@@ -425,19 +440,16 @@ bool TestP4BridgeClient::OutputTextCallbackTest()
     
     ui->OutputText( "One", 3 );
 
-    //still alive
+        return true;
+    }();
     
-    pServer->SetTextResultsCallbackFn((TextCallbackFn *) 0xFFFFFFFF);
-    
-    ui->OutputText( "One", 3 );
-
     //still alive
 	delete pServer;
 
-    return true;
+    return rv;
 }
 
-void __stdcall BinaryResultsCallbackFn( int cmdId, void* msg, int cnt)
+void STDCALL BinaryResultsCallbackFn(int cmdId, void *msg, int cnt) 
 {
 	if (cmdId != 7)
     {
@@ -458,11 +470,13 @@ void __stdcall BinaryResultsCallbackFn( int cmdId, void* msg, int cnt)
 
 bool TestP4BridgeClient::OutputBinaryCallbackTest()
 {
-	P4BridgeServer* pServer = new P4BridgeServer(NULL, NULL, NULL, NULL);
+    P4BridgeServer *pServer = new P4BridgeServer(nullptr, nullptr, nullptr, nullptr);
 	P4Connection* pCon = pServer->getConnection(7);
 	P4BridgeClient * ui = pCon->getUi();
 
     pServer->SetBinaryResultsCallbackFn(BinaryResultsCallbackFn);
+
+    bool rv = [&]() -> bool {
 
     ui->OutputBinary( "Zero ", 5 );
 
@@ -483,19 +497,16 @@ bool TestP4BridgeClient::OutputBinaryCallbackTest()
     
     ui->OutputBinary( "One ", 4 );
 
-    //still alive
+        return true;
+    }();
     
-    pServer->SetBinaryResultsCallbackFn((BinaryCallbackFn *) 0xFFFFFFFF);
-    
-    ui->OutputBinary( "One ", 4 );
-
     //still alive
 	delete pServer;
 
-    return true;
+    return rv;
 }
 
-void __stdcall TaggedOutputCallbackFn(int cmdId, int objId, const char* key, const char* val)
+void STDCALL TaggedOutputCallbackFn(int cmdId, int objId, const char *key, const char *val) 
 {
 	if (cmdId != 7)
 	{
@@ -503,9 +514,12 @@ void __stdcall TaggedOutputCallbackFn(int cmdId, int objId, const char* key, con
 		return;
 	}
 
+    if (val != nullptr && key != nullptr) {
     if (strcmp(val, Objects[objId]->GetVar(key)->Text() ) == 0)
         return; // correct, so no change
-
+    } else {
+        return;    // normal end of object contains nulls
+    }
     // not valid
 
     bPassedCallbacksTests = false;
@@ -513,7 +527,7 @@ void __stdcall TaggedOutputCallbackFn(int cmdId, int objId, const char* key, con
 
 bool TestP4BridgeClient::OutputStatCallbackTest()
 {
-	P4BridgeServer* pServer = new P4BridgeServer(NULL, NULL, NULL, NULL);
+    P4BridgeServer *pServer = new P4BridgeServer(nullptr, nullptr, nullptr, nullptr);
 	P4Connection* pCon = pServer->getConnection(7);
 	P4BridgeClient * ui = pCon->getUi();
 
@@ -529,6 +543,8 @@ bool TestP4BridgeClient::OutputStatCallbackTest()
     Objects[0] = pObj1;
     ui->OutputStat( pObj1 );
   
+    bool rv = [&]() -> bool {
+
     ASSERT_TRUE(bPassedCallbacksTests);
 
     StrBufDict * pObj2 = new StrBufDict();
@@ -551,12 +567,6 @@ bool TestP4BridgeClient::OutputStatCallbackTest()
     ui->OutputStat( pObj1 );
 
     //still alive
-    
-    pServer->SetTaggedOutputCallbackFn((IntTextTextCallbackFn *) 0xFFFFFFFF);
-    
-    ui->OutputStat( pObj1 );
-
-    //still alive
     // if the callbacks use __stdcall, this will cause the app to have an 
     //  unhandled exception, as it corrupts the stack and the SEH in Windows 
     //  does not catch it. It will be caught if the callbacks use __cdecl,
@@ -571,15 +581,17 @@ bool TestP4BridgeClient::OutputStatCallbackTest()
 
     //still alive
 
-    delete pObj1;
     delete pObj2;
+        return true;
+    }();
+
 
 	delete pServer;
 
-    return true;
+    return rv;
 }
 
-void __stdcall MyPromptCallbackFn(int cmdId, const char * msg, char * rspBuf, 
+void STDCALL MyPromptCallbackFn(int cmdId, const char *msg, char *rspBuf,
 				int bufsz, int noEcho)
 {
 	if (cmdId != 7)
@@ -601,7 +613,7 @@ void __stdcall MyPromptCallbackFn(int cmdId, const char * msg, char * rspBuf,
 
 bool TestP4BridgeClient::PromptCallbackTest()
 {
-	P4BridgeServer* pServer = new P4BridgeServer(NULL, NULL, NULL, NULL);
+    P4BridgeServer *pServer = new P4BridgeServer(nullptr, nullptr, nullptr, nullptr);
 	P4Connection* pCon = pServer->getConnection(7);
 	P4BridgeClient * ui = pCon->getUi();
 
@@ -614,6 +626,7 @@ bool TestP4BridgeClient::PromptCallbackTest()
 
     ui->Prompt( msg, rsp, noEcho, &e );
   
+    bool rv = [&]() -> bool {
     ASSERT_TRUE(bPassedCallbacksTests);
 	ASSERT_STRING_EQUAL(rsp.Text(), "The Sky");
     ASSERT_TRUE(bPassedCallbacksTests);
@@ -622,12 +635,6 @@ bool TestP4BridgeClient::PromptCallbackTest()
     // if we do crash, will be picked up in the unit test framework.
     
     pServer->SetPromptCallbackFn((PromptCallbackFn *) 0x00);
-    
-    ui->Prompt( msg, rsp, noEcho, &e );
-
-    //still alive
-    
-    pServer->SetPromptCallbackFn((PromptCallbackFn *) 0xFFFFFFFF);
     
     ui->Prompt( msg, rsp, noEcho, &e );
 
@@ -646,9 +653,10 @@ bool TestP4BridgeClient::PromptCallbackTest()
 
 
     //still alive
+        return true;
+    }();
 
 	delete pServer;
 
-    return true;
+    return rv;
 }
-

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-Copyright (c) 2010, Perforce Software, Inc.  All rights reserved.
+Copyright (c) 2021, Perforce Software, Inc.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -40,12 +40,88 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.ComponentModel;
+
 namespace Perforce.P4
 {
+#if NET5_0_OR_GREATER
+    public static class DllManager
+    {
+        static DllManager()
+        {
+            ResolverSet = false;
+        }
+
+        const string bridgeDll = "p4bridge";
+
+        public static bool ResolverSet { get; set; }
+
+        public static IntPtr ImportResolver(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
+        {
+            IntPtr libHandle = IntPtr.Zero;
+
+            string assemblyDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+
+            // Look first in the location we expect for the nuget package,
+            // if not found, look within the Assembly runtime directory
+            if (libraryName == bridgeDll)
+            {
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    if (Environment.Is64BitOperatingSystem)
+                    {
+                        var res = NativeLibrary.TryLoad("./runtimes/win-x64/native/p4bridge.dll", out libHandle);
+                        if (!res)
+                        {
+                            res = NativeLibrary.TryLoad(Path.Combine(assemblyDirectory, "x64", "p4bridge.dll"), out libHandle);
+                        }
+                    }
+                    else
+                    {
+                        var res = NativeLibrary.TryLoad("./runtimes/win-x86/native/p4bridge.dll", out libHandle);
+                        if (!res)
+                        {
+                            res = NativeLibrary.TryLoad(Path.Combine(assemblyDirectory, "x86", "p4bridge.dll"), out libHandle);
+                        }
+                    }
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && Environment.Is64BitOperatingSystem)
+                {
+                    var res = NativeLibrary.TryLoad("./runtimes/linux-x64/native/libp4bridge.so", out libHandle);
+                    if (!res)
+                    {
+                        res = NativeLibrary.TryLoad(Path.Combine(assemblyDirectory, "libp4bridge.so"), out libHandle);
+                    }
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) && Environment.Is64BitOperatingSystem)
+                {
+                    var res = NativeLibrary.TryLoad("./runtimes/osx-x64/native/libp4bridge.dylib", out libHandle);
+                    if (!res)
+                    {
+                        res = NativeLibrary.TryLoad(Path.Combine(assemblyDirectory, "libp4bridge.dylib"), out libHandle);
+                    }
+                }
+            }
+
+            return libHandle;
+        }
+    }
+#endif
 
     public class P4Debugging
     {
+
+#if NET5_0_OR_GREATER
+        const string bridgeDll = "p4bridge";
+        static P4Debugging()
+        {
+            if (DllManager.ResolverSet)
+                return;
+            NativeLibrary.SetDllImportResolver(typeof(P4Debugging).Assembly, DllManager.ImportResolver);
+            DllManager.ResolverSet = true;
+        }
+#else
 		const string bridgeDll = "p4bridge.dll";
+
 		static P4Debugging()
 		{
 			Assembly p4apinet = Assembly.GetExecutingAssembly();
@@ -63,6 +139,7 @@ namespace Perforce.P4
 				{
 					currentArchSubPath = "x64";
 				}
+
 				SetDllDirectory(currentArchSubPath);
 			}
 		}
@@ -70,6 +147,7 @@ namespace Perforce.P4
 		[DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
 		static extern bool SetDllDirectory(string lpPathName);
 
+#endif
 		/* object allocation debugging functions, mostly for testing */
 		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl)]
         public static extern int GetAllocObjCount();
@@ -90,32 +168,33 @@ namespace Perforce.P4
         public static extern long GetStringReleases();
 
 
-        static public String GetAllocObjectName(int type)
+        public static String GetAllocObjectName(int type)
         {
             return P4Server.MarshalPtrToStringUtf8_Int(P4Debugging.GetAllocObjName(type));
         }
 
-        static public int GetAllocObjectCount()
+        public static int GetAllocObjectCount()
         {
             return P4Debugging.GetAllocObjCount();
         }
 
-        static public int GetAllocObject(int type)
+        public static int GetAllocObject(int type)
         {
             return P4Debugging.GetAllocObj(type);
         }
 
-        static public void SetBridgeLogFunction(P4CallBacks.LogMessageDelegate logfn)
+        public static void SetBridgeLogFunction(P4CallBacks.LogMessageDelegate logfn)
         {
             P4Debugging.SetLogFunction(logfn);
         }
+
     }
 
     /// <summary>
     /// Class wrapper for the definitions of delegates required to model the 
     /// callbacks from the bridge dll.
     /// </summary>
-    public class P4CallBacks
+    public static class P4CallBacks
 	{
 		/***********************************************************************
 		 * 
@@ -152,7 +231,8 @@ namespace Perforce.P4
 		/// <param name="objID">Object ID for the object</param>
 		/// <param name="key">The Key of this Key:Value pair</param>
 		/// <param name="value">The Key of this Key:Value pair</param>
-		public delegate void TaggedOutputDelegate(uint cmdID, int objID, [MarshalAs(UnmanagedType.LPStr)] String key, IntPtr value);
+        public delegate void TaggedOutputDelegate(uint cmdID, int objID, [MarshalAs(UnmanagedType.LPStr)] String key,
+            IntPtr value);
 
 		/// <summary>
 		/// Delegate definition for the error callback.
@@ -226,7 +306,9 @@ namespace Perforce.P4
 		/// <param name="argCount">number of arguments</param>
 		/// <param name="dictIter">dictionary of variables</param>
 		/// <param name="threads">number of threads to launch</param>
-		public delegate int ParallelTransferDelegate(IntPtr pServer, String cmd, [MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)] String[] args, uint argCount, IntPtr dictIter, uint threads);
+        public delegate int ParallelTransferDelegate(IntPtr pServer, String cmd,
+            [MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)] String[] args, uint argCount, IntPtr dictIter,
+            uint threads);
 
 		/// <summary>
 		/// Delegate definition for the Resolve callback passing a CLientMerge object.
@@ -258,6 +340,17 @@ namespace Perforce.P4
  * 
  **********************************************************************/
 
+#if NET5_0_OR_GREATER
+        const string bridgeDll = "p4bridge";
+
+        static P4Bridge()
+        {
+            if (DllManager.ResolverSet)
+                return;
+            NativeLibrary.SetDllImportResolver(typeof(P4Bridge).Assembly, DllManager.ImportResolver);
+            DllManager.ResolverSet = true;
+        }
+#else
         const string bridgeDll = "p4bridge.dll";
 
 		static P4Bridge()
@@ -270,13 +363,19 @@ namespace Perforce.P4
 			// only set this path if it is Any CPU (ILOnly)
 			if (peKind.ToString()=="ILOnly")
 			{
+               // wchar_t buffer[MAX_PATH];
 				string currentArchSubPath = "x86";
+
+                string dlldir = AppDomain.CurrentDomain.BaseDirectory;
+                string cwd = Directory.GetCurrentDirectory();
+                //GetModuleFileName(null, buffer, MAX_PATH);
 
 				// Is this a 64 bits process?
 				if (IntPtr.Size == 8)
 				{
 					currentArchSubPath = "x64";
 				}
+
 				SetDllDirectory(currentArchSubPath);
 			}
 		}
@@ -284,6 +383,7 @@ namespace Perforce.P4
 		[DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
 		static extern bool SetDllDirectory(string lpPathName);
 
+#endif
 		/// <summary>
 		/// Create a new P4BridgeServer in the DLL and connect to the 
 		///     specified P4 Server.
@@ -1095,6 +1195,7 @@ namespace Perforce.P4
 		/// <param name="pServer">P4BridgeServer Handle</param>
 		/// <param name="cwd">The new working directory</param>
 		[DllImport(bridgeDll, EntryPoint = "set_cwd",
+            ExactSpelling = true,
 				CallingConvention = CallingConvention.Cdecl,
 				CharSet = CharSet.Ansi)]
 		public static extern
@@ -1225,13 +1326,11 @@ namespace Perforce.P4
 		[DllImport(bridgeDll, EntryPoint = "Get",
 				CallingConvention = CallingConvention.Cdecl,
 				CharSet = CharSet.Ansi)]
-		public static extern
-			IntPtr GetA(string var);
+        public static extern string GetA(string var);
 
 		[DllImport(bridgeDll, EntryPoint = "Get",
 				CallingConvention = CallingConvention.Cdecl)]
-		public static extern
-			IntPtr GetW(IntPtr var);
+        public static extern IntPtr GetW(IntPtr var);
 
 		[DllImport(bridgeDll, EntryPoint = "Set",
 				CallingConvention = CallingConvention.Cdecl,
@@ -1253,6 +1352,11 @@ namespace Perforce.P4
                CallingConvention = CallingConvention.Cdecl)]
         public static extern
             void ReloadEnviro();
+
+        [DllImport(bridgeDll, EntryPoint = "ListEnviro",
+            CallingConvention = CallingConvention.Cdecl)]
+        public static extern
+            void ListEnviro();
 
         [DllImport(bridgeDll, EntryPoint = "GetTicketFile",
                 CallingConvention = CallingConvention.Cdecl)]
@@ -1474,9 +1578,19 @@ namespace Perforce.P4
 	/// </summary>
 	internal class P4ClientMergeBridge
 	{
-		const string bridgeDll = "p4bridge.dll";
+#if NET5_0_OR_GREATER
+        const string bridgeDll = "p4bridge";
 		static P4ClientMergeBridge()
 		{
+            if (DllManager.ResolverSet)
+                return;
+            NativeLibrary.SetDllImportResolver(typeof(P4ClientMergeBridge).Assembly, DllManager.ImportResolver);
+            DllManager.ResolverSet = true;
+        }
+#else
+        private const string bridgeDll = "p4bridge.dll";
+        static P4ClientMergeBridge()
+        {
 			Assembly p4apinet = Assembly.GetExecutingAssembly();
 			PortableExecutableKinds peKind;
 			ImageFileMachine machine;
@@ -1498,6 +1612,8 @@ namespace Perforce.P4
 
 		[DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
 		static extern bool SetDllDirectory(string lpPathName);
+#endif
+        public static bool ResolverSet { get; set; }
 
 		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CM_AutoResolve")]
 		public static extern int AutoResolve(IntPtr pObj, int forceMerge);
@@ -1577,9 +1693,19 @@ namespace Perforce.P4
 	/// </summary>
 	internal class P4ClientResolveBridge
 	{
-		const string bridgeDll = "p4bridge.dll";
+#if NET5_0_OR_GREATER
+        const string bridgeDll = "p4bridge";
 		static P4ClientResolveBridge()
 		{
+            if (DllManager.ResolverSet)
+                return;
+            NativeLibrary.SetDllImportResolver(typeof(P4ClientResolveBridge).Assembly, DllManager.ImportResolver);
+            DllManager.ResolverSet = true;
+        }
+#else
+        private const string bridgeDll = "p4bridge.dll";
+        static P4ClientResolveBridge()
+        {
 			Assembly p4apinet = Assembly.GetExecutingAssembly();
 			PortableExecutableKinds peKind;
 			ImageFileMachine machine;
@@ -1601,7 +1727,7 @@ namespace Perforce.P4
 
 		[DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
 		static extern bool SetDllDirectory(string lpPathName);
-
+#endif
 		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_AutoResolve")]
 		public static extern int AutoResolve(IntPtr pObj, int force);
 

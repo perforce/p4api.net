@@ -14,20 +14,23 @@ namespace p4api.net.unit.test
 	public class ServerMetaDataTest
 	{
         private static Logger logger = LogManager.GetCurrentClassLogger();
+        private UnitTestConfiguration configuration;
+        private string TestDir = "";
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
         public void SetupTest()
         {
+            configuration = UnitTestSettings.GetApplicationConfiguration();
+            TestDir = configuration.TestDirectory;
             Utilities.LogTestStart(TestContext);
         }
+
         [TestCleanup]
         public void CleanupTest()
         {
             Utilities.LogTestFinish(TestContext);
         }
-
-        String TestDir = "c:\\MyTestDir";
 
         static string name = "newServer";
         static ServerAddress address = new ServerAddress("perforce:1984");
@@ -181,7 +184,10 @@ namespace p4api.net.unit.test
 		///A test for Uptime
 		///</summary>
 		[TestMethod()]
-		[DeploymentItem("p4api.net.dll")]
+#if NET462
+        [DeploymentItem("x64", "x64")]
+        [DeploymentItem("x86", "x86")]
+#endif
 		public void UptimeTest()
 		{
             int expected = 192455;
@@ -193,7 +199,6 @@ namespace p4api.net.unit.test
 		///A test for Version
 		///</summary>
 		[TestMethod()]
-		[DeploymentItem("p4api.net.dll")]
 		public void VersionTest()
 		{
             setTarget();
@@ -210,28 +215,23 @@ namespace p4api.net.unit.test
 		[TestMethod()]
 		public void ServerInfoTest()
 		{
-			bool unicode = false;
-
-			string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
 
 			for (int i = 0; i < 3; i++) // run once for ascii, once for unicode, once
                 // for the security level 3 server
 			{
-				String zippedFile = "a.exe";
-				if (i == 1)
-				{
-					zippedFile = "u.exe";
-				}
-				if (i == 2)
-				{
-					zippedFile = "s3.exe";
-				}
+                var cptype = (Utilities.CheckpointType)i;
 
-				Process p4d = Utilities.DeployP4TestServer(TestDir, 10, zippedFile, unicode);
-				Server server = new Server(new ServerAddress(uri));
-				try
+                Process p4d = null;
+                Repository rep = null;
+
+                try
 				{
-					Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 10, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+				Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 					using (Connection target = rep.Connection)
 					{
 						Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
@@ -252,8 +252,9 @@ namespace p4api.net.unit.test
 				finally
 				{
 					Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
 				}
-				unicode = !unicode;
 			}
 		}
 	}

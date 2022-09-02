@@ -20,20 +20,23 @@ namespace p4api.net.unit.test
 		[TestMethod()]
 		public void CreateChangelistTest()
 		{
-			bool unicode = false;
-
-			string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
 			string user = "admin";
 			string pass = string.Empty;
 			string ws_client = "admin_space";
 
 			for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
 			{
-				Process p4d = Utilities.DeployP4TestServer(TestDir, 7, unicode);
-				Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
 				try
 				{
-					Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 7, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
 					using (Connection con = rep.Connection)
 					{
@@ -61,8 +64,9 @@ namespace p4api.net.unit.test
 				finally
 				{
 					Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
 				}
-				unicode = !unicode;
 			}
 		}
 
@@ -72,20 +76,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void NewChangelistTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 7, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 7, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -110,8 +117,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -121,20 +129,23 @@ namespace p4api.net.unit.test
 		[TestMethod()]
 		public void UpdateChangelistTest()
 		{
-			bool unicode = false;
-
-			string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
 			string user = "admin";
 			string pass = string.Empty;
 			string ws_client = "admin_space";
 
 			for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
 			{
-				Process p4d = Utilities.DeployP4TestServer(TestDir, 7, unicode);
-				Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
 				try
 				{
-					Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 7, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
 					using (Connection con = rep.Connection)
 					{
@@ -152,14 +163,15 @@ namespace p4api.net.unit.test
 						rep.UpdateChangelist(c);
 
 						Changelist d = rep.GetChangelist(5);
-                        Assert.AreEqual(d.Description, "new desc\r\nline 2\r\nline 3");
+                        Assert.AreEqual(d.Description, $"new desc{Environment.NewLine}line 2{Environment.NewLine}line 3");
 					}
 				}
 				finally
 				{
 					Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
 				}
-				unicode = !unicode;
 			}
 		}
 
@@ -169,20 +181,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void UpdateChangelistOtherUserTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 13, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 13, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -195,7 +210,7 @@ namespace p4api.net.unit.test
 
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
                         int changeID = 120;
-                        if(unicode)
+                        if (cptype == Utilities.CheckpointType.U)
                         {
                             changeID = 87;
                         }
@@ -219,14 +234,15 @@ namespace p4api.net.unit.test
                         rep.UpdateChangelist(c,opts);
 
                         Changelist d = rep.GetChangelist(changeID);
-                        Assert.AreEqual(d.Description, "new desc\r\nline 2\r\nline 3");
+                        Assert.AreEqual(d.Description, $"new desc{Environment.NewLine}line 2{Environment.NewLine}line 3");
                     }
                 }
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -236,20 +252,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void UpdateChangelistWithMultilineDescTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 7, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 7, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -273,8 +292,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -284,20 +304,25 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void SubmitShelvedFromChangelist()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir,13, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 13, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
+
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client, false);
 
                     using (Connection con = rep.Connection)
                     {
@@ -308,7 +333,6 @@ namespace p4api.net.unit.test
                         bool connected = con.Connect(null);
                         Assert.IsTrue(connected);
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
                         Changelist change = new Changelist(5, true);
                         change.initialize(con);
@@ -335,8 +359,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -346,20 +371,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void UpdateSubmittedChangelistTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 7, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 7, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -381,7 +409,7 @@ namespace p4api.net.unit.test
 
                         // on the non-unicode server edit the description
                         // of Alex's changelist 8 as an admin
-                        if (!unicode)
+                        if (cptype != Utilities.CheckpointType.U)
                         {
                             c = rep.GetChangelist(8);
                             c.Description += "\n\tModified!";
@@ -398,8 +426,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -409,20 +438,23 @@ namespace p4api.net.unit.test
 		[TestMethod()]
 		public void DeleteChangelistTest()
 		{
-			bool unicode = false;
-
-			string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
 			string user = "admin";
 			string pass = string.Empty;
 			string ws_client = "admin_space";
 
 			for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
 			{
-				Process p4d = Utilities.DeployP4TestServer(TestDir, 7, unicode);
-				Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
 				try
 				{
-					Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 7, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
 					using (Connection con = rep.Connection)
 					{
@@ -455,8 +487,9 @@ namespace p4api.net.unit.test
 				finally
 				{
 					Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
 				}
-				unicode = !unicode;
 			}
 		}
 
@@ -466,17 +499,21 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetChangelistTestjob080718()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
-            Process p4d = Utilities.DeployP4TestServer(TestDir, 17, unicode);
-            Server server = new Server(new ServerAddress(uri));
+
+            Process p4d = null;
+            Repository rep = null;
+            var cptype = Utilities.CheckpointType.A;
                 try
                 {
-                    Repository rep = new Repository(server);
+                p4d = Utilities.DeployP4TestServer(TestDir, 17, cptype, TestContext.TestName);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+                Server server = new Server(new ServerAddress(uri));
+                rep = new Repository(server);
 
                 using (Connection con = rep.Connection)
                 {
@@ -503,6 +540,8 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
                 }
         }
 
@@ -512,20 +551,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
 		public void GetChangelistTest()
 		{
-			bool unicode = false;
-
-			string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
 			string user = "admin";
 			string pass = string.Empty;
 			string ws_client = "admin_space";
 
 			for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
 			{
-				Process p4d = Utilities.DeployP4TestServer(TestDir, 6, unicode);
-				Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
 				try
 				{
-					Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 6, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
 					using (Connection con = rep.Connection)
 					{
@@ -546,7 +588,7 @@ namespace p4api.net.unit.test
 						Assert.AreEqual(c.Jobs.Count, 1);
 						Assert.IsTrue(c.Files[0].DepotPath.Path.Contains("//depot/MyCode/NewFile.txt"));
 
-						if (unicode == false)
+                        if (cptype == Utilities.CheckpointType.A)
 						{
 							c = rep.GetChangelist(4, null);
 							Assert.AreEqual("admin", c.OwnerName);
@@ -556,14 +598,14 @@ namespace p4api.net.unit.test
 							Assert.AreEqual(c.Files[0].Digest, "C7DECE3DB80A73F3F53AF4BCF6AC0576");
 							Assert.AreEqual(c.Files[0].FileSize, 30);
 						}
-
 					}
 				}
 				finally
 				{
 					Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
 				}
-				unicode = !unicode;
 			}
 		}
 
@@ -573,9 +615,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetChangelistWithUTCConversionTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -583,11 +623,18 @@ namespace p4api.net.unit.test
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 6, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 6, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
+
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client, false);
 
                     using (Connection con = rep.Connection)
                     {
@@ -598,9 +645,10 @@ namespace p4api.net.unit.test
                         bool connected = con.Connect(null);
                         Assert.IsTrue(connected);
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
-                        P4Command cmd = new P4Command(rep, "change", true, "5");
+                        int submitted;
+                        using (P4Command cmd = new P4Command(rep, "change", true, "5"))
+                        {
                         Options opts = new Options();
                         opts["-o"] = null;
                         Changelist fromChangeCommand = new Changelist();
@@ -615,18 +663,21 @@ namespace p4api.net.unit.test
 
                         SubmitResults sr = fromChangeCommand.Submit(null);
                         
-                        int submitted = 17;
-                        if (unicode)
+                            submitted = 17;
+                            if (cptype == Utilities.CheckpointType.U)
                         {
                             submitted = 13;
                         }
+                        }
 
-                        cmd = new P4Command(rep, "change", true, submitted.ToString());
-                        opts = new Options();
+                        using (P4Command cmd1 = new P4Command(rep, "change", true, submitted.ToString()))
+                        {
+                            Options opts = new Options();
                         opts["-o"] = null;
-                        fromChangeCommand = new Changelist();
 
-                        results = cmd.Run(opts);
+                            Changelist fromChangeCommand = new Changelist();
+
+                            P4CommandResult results = cmd1.Run(opts);
                         if (results.Success)
                         {
                             fromChangeCommand.initialize(rep.Connection);
@@ -639,11 +690,13 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(fromDescribeCommand.ModifiedDate, fromChangeCommand.ModifiedDate);
                     }
                 }
+                }
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -653,9 +706,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetChangelistWithUTCConversionNoTZDetailsTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -663,11 +714,16 @@ namespace p4api.net.unit.test
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 6, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 6, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -680,7 +736,8 @@ namespace p4api.net.unit.test
 
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
 
-                        P4Command cmd = new P4Command(rep, "describe", true, "5");
+                        using (P4Command cmd = new P4Command(rep, "describe", true, "5"))
+                        {
                         Changelist fromDescribeCommand = new Changelist();
 
                         P4CommandResult results = cmd.Run(null);
@@ -721,14 +778,15 @@ namespace p4api.net.unit.test
                         }
 
                         Assert.AreEqual(unconverted.AddHours(2), fromDescribeCommand.ModifiedDate);
-
                     }
+                }
                 }
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -738,20 +796,23 @@ namespace p4api.net.unit.test
 		[TestMethod()]
 		public void GetChangelistsTest()
 		{
-			bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
 			string user = "admin";
 			string pass = string.Empty;
             string ws_client = "admin_space";
 
 			for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
 			{
-				Process p4d = Utilities.DeployP4TestServer(TestDir, 6, unicode);
-				Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
 				try
 				{
-					Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 6, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
 					using (Connection con = rep.Connection)
 					{
@@ -770,14 +831,14 @@ namespace p4api.net.unit.test
 						
 						Assert.IsNotNull(u);
 						Assert.AreEqual(3, u.Count);
-
 					}
 				}
 				finally
 				{
 					Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
 				}
-				unicode = !unicode;
 			}
 		}
 
@@ -786,7 +847,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetChangelistsTestjob094473A()
         {
-            GetChangelistsTestjob094473(false);
+            GetChangelistsTestjob094473(Utilities.CheckpointType.A);
         }
 
         ///A test for GetChangelistsjob094473
@@ -794,24 +855,28 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetChangelistsTestjob094473U()
         {
-            GetChangelistsTestjob094473(true);
+            GetChangelistsTestjob094473(Utilities.CheckpointType.U);
         }
 
         ///A test for GetChangelistsjob094473
         ///</summary>
-        public void GetChangelistsTestjob094473(bool unicode)
+        public void GetChangelistsTestjob094473(Utilities.CheckpointType cptype)
         {
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
 
-            Process p4d = Utilities.DeployP4TestServer(TestDir, 13, unicode);
-            Server server = new Server(new ServerAddress(uri));
+            Process p4d = null;
+            Repository rep = null;
             try
             {
-                Repository rep = new Repository(server);
+                p4d = Utilities.DeployP4TestServer(TestDir, 13, cptype);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+                Server server = new Server(new ServerAddress(uri));
+                rep = new Repository(server);
 
                 using (Connection con = rep.Connection)
                 {
@@ -830,7 +895,7 @@ namespace p4api.net.unit.test
 
                     // ascii 122 unicode 126
                     Assert.IsNotNull(changes);
-                    if (unicode)
+                    if (cptype == Utilities.CheckpointType.U)
                     {
                         Assert.AreEqual(126, changes.Count);
                     }
@@ -845,7 +910,7 @@ namespace p4api.net.unit.test
                     // ascii 39 (151->100) unicode 51 (150->100)
                     changes = rep.GetChangelists(opts, null);
                     Assert.IsNotNull(changes);
-                    if (unicode)
+                    if (cptype == Utilities.CheckpointType.U)
                     {
                         Assert.AreEqual(51, changes.Count);
                         Assert.AreEqual(150, changes[0].Id);
@@ -862,7 +927,7 @@ namespace p4api.net.unit.test
                     // ascii 39 (100->151) unicode 51 (100->150)
                     changes = rep.GetChangelists(opts, null);
                     Assert.IsNotNull(changes);
-                    if (unicode)
+                    if (cptype == Utilities.CheckpointType.U)
                     {
                         Assert.AreEqual(51, changes.Count);
                         Assert.AreEqual(100, changes[0].Id);
@@ -877,8 +942,9 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
             }
-
         }
 
         [TestMethod()]
@@ -886,7 +952,7 @@ namespace p4api.net.unit.test
         ///</summary>
         public void GetChangelistsTestjob097882U()
         {
-            GetChangelistsTestjob097882(true);
+            GetChangelistsTestjob097882(Utilities.CheckpointType.U);
         }
 
         [TestMethod()]
@@ -894,24 +960,27 @@ namespace p4api.net.unit.test
         ///</summary>
         public void GetChangelistsTestjob097882A()
         {
-            GetChangelistsTestjob097882(false);
+            GetChangelistsTestjob097882(Utilities.CheckpointType.A);
         }
 
         ///A test for GetChangelistsjob097882
         ///</summary>
-        public void GetChangelistsTestjob097882(bool unicode)
+        public void GetChangelistsTestjob097882(Utilities.CheckpointType cptype)
         {
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = Utilities.DeployP4TestServer(TestDir, 13, unicode);
-
-            Server server = new Server(new ServerAddress(uri));
+            Process p4d = null;
+            Repository rep = null;
             try
             {
-                Repository rep = new Repository(server);
+                p4d = Utilities.DeployP4TestServer(TestDir, 13, cptype);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+            Server server = new Server(new ServerAddress(uri));
+                rep = new Repository(server);
 
                 using (Connection con = rep.Connection)
                 {
@@ -957,8 +1026,9 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
             }
         }
-
     }
 }

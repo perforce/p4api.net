@@ -180,7 +180,9 @@ namespace Perforce.P4
 				throw new ArgumentNullException("label");
 
 			}
-			P4Command cmd = new P4Command(this, "label", true);
+
+            using (P4Command cmd = new P4Command(this, "label", true))
+            {
 
 			cmd.DataSet = label.ToString();
 
@@ -188,6 +190,7 @@ namespace Perforce.P4
 			{
 				options = new Options((LabelCmdFlags.Input), null);
 			}
+
 			if (options.ContainsKey("-i") == false)
 			{
 				options["-i"] = null;
@@ -202,8 +205,10 @@ namespace Perforce.P4
 			{
 				P4Exception.Throw(results.ErrorList);
 			}
+
 			return null;
 		}
+        }
 		/// <summary>
 		/// Create a new label in the repository.
 		/// </summary>
@@ -281,7 +286,9 @@ namespace Perforce.P4
 				throw new ArgumentNullException("label");
 
 			}
-			P4Command cmd = new P4Command(this, "label", true, label);
+
+            using (P4Command cmd = new P4Command(this, "label", true, label))
+            {
 
 			if (options == null)
 			{
@@ -300,6 +307,7 @@ namespace Perforce.P4
 				{
 					return null;
 				}
+
 				Label value = new Label();
 
  				value.FromLabelCmdTaggedOutput(results.TaggedOutput[0]);
@@ -310,8 +318,10 @@ namespace Perforce.P4
 			{
 				P4Exception.Throw(results.ErrorList);
 			}
+
 			return null;
 		}
+        }
 
         /// <summary>
         /// Get the record for an existing label from the repository.
@@ -410,15 +420,10 @@ namespace Perforce.P4
         /// </example>
 		public IList<Label> GetLabels(Options options, params FileSpec[] files)
 		{
-			P4Command cmd = null;
-			if ((files != null) && (files.Length > 0))
+            using (P4Command cmd = (files?.Length ?? 0) > 0
+                ? new P4Command(this, "labels", true, FileSpec.ToEscapedStrings(files))
+                : new P4Command(this, "labels", true))
 			{
-				cmd = new P4Command(this, "labels", true, FileSpec.ToEscapedStrings(files));
-			}
-			else
-			{
-				cmd = new P4Command(this, "labels", true);
-			}
 
 			P4CommandResult results = cmd.Run(options);
 			if (results.Success)
@@ -428,31 +433,33 @@ namespace Perforce.P4
 					return null;
 				}
 
-                bool dst_mismatch = false;
+                    bool dstMismatch = false;
                 string offset = string.Empty;
 
                 if (Server != null && Server.Metadata != null)
                 {
                     offset = Server.Metadata.DateTimeOffset;
-                    dst_mismatch = FormBase.DSTMismatch(Server.Metadata);
-
+                        dstMismatch = FormBase.DSTMismatch(Server.Metadata);
                 }
 
 				List<Label> value = new List<Label>();
 				foreach (TaggedObject obj in results.TaggedOutput)
 				{
 					Label label = new Label();
-					label.FromLabelsCmdTaggedOutput(obj, offset, dst_mismatch);
+                        label.FromLabelsCmdTaggedOutput(obj, offset, dstMismatch);
 					value.Add(label);
 				}
+
 				return value;
 			}
 			else
 			{
 				P4Exception.Throw(results.ErrorList);
 			}
+
 			return null;
 		}
+        }
 
 		/// <summary>
 		/// Delete a label from the repository
@@ -478,9 +485,10 @@ namespace Perforce.P4
 			if (label == null)
 			{
 				throw new ArgumentNullException("label");
+            }
 
-			}
-			P4Command cmd = new P4Command(this, "label", true, label.Id);
+            using (P4Command cmd = new P4Command(this, "label", true, label.Id))
+            {
 
 			if (options == null)
 			{
@@ -499,4 +507,5 @@ namespace Perforce.P4
 			}
 		}
 	}
+}
 }

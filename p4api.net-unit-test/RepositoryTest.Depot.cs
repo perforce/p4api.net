@@ -19,22 +19,23 @@ namespace p4api.net.unit.test
 		[TestMethod()]
 		public void CreateDepotTest()
 		{
-			bool unicode = false;
-
-			string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
 			string user = "admin";
 			string pass = string.Empty;
 			string ws_client = "admin_space";
 
-		    Process p4d = null;
-
 			for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
 			{
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
 				try
 				{
-                    p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     Server server = new Server(new ServerAddress(uri));
-					Repository rep = new Repository(server);
+                    rep = new Repository(server);
 
 					using (Connection con = rep.Connection)
 					{
@@ -63,8 +64,9 @@ namespace p4api.net.unit.test
 				finally
 				{
 					Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
 				}
-				unicode = !unicode;
 			}
 		}
 
@@ -74,22 +76,24 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void CreateInvalidPathDepotTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
+            Process p4d = null;
+                Repository rep = null;
+
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -123,8 +127,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -135,22 +140,24 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void CreateExtraSpecDepotTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
+            Process p4d = null;
+                Repository rep = null;
+
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -184,8 +191,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -196,22 +204,23 @@ namespace p4api.net.unit.test
 		[TestMethod()]
 		public void DeleteDepotTest()
 		{
-			bool unicode = false;
-
-			string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
 			string user = "admin";
 			string pass = string.Empty;
 			string ws_client = "admin_space";
 
-		    Process p4d = null;
-
 			for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
 			{
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
 				try
 				{
-                    p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     Server server = new Server(new ServerAddress(uri));
-					Repository rep = new Repository(server);
+                    rep = new Repository(server);
 
 					using (Connection con = rep.Connection)
 					{
@@ -247,8 +256,9 @@ namespace p4api.net.unit.test
 				finally
 				{
 					Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
 				}
-				unicode = !unicode;
 			}
 		}
 
@@ -259,22 +269,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void DeleteDepotWithFilesTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -310,8 +321,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
       
@@ -322,24 +334,25 @@ namespace p4api.net.unit.test
 		[TestMethod()]
 		public void GetDepotTest()
 		{
-			bool unicode = false;
-
-			string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
 			string user = "admin";
 			string pass = string.Empty;
 			string ws_client = "admin_space";
 
 			string targetDepot = "flow";
 
-            Process p4d = null;
-
 			for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
 			{
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
 				try
 				{
-                    p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     Server server = new Server(new ServerAddress(uri));
-					Repository rep = new Repository(server);
+                    rep = new Repository(server);
 
 					using (Connection con = rep.Connection)
 					{
@@ -361,8 +374,9 @@ namespace p4api.net.unit.test
 				finally
 				{
 					Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
 				}
-				unicode = !unicode;
 			}
 		}
 
@@ -372,22 +386,23 @@ namespace p4api.net.unit.test
 		[TestMethod()]
 		public void GetDepotsTest()
 		{
-			bool unicode = false;
-
-			string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
 			string user = "admin";
 			string pass = string.Empty;
 			string ws_client = "admin_space";
 
-		    Process p4d = null;
-
 			for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
 			{
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
 				try
 				{
-                    p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     Server server = new Server(new ServerAddress(uri));
-					Repository rep = new Repository(server);
+                    rep = new Repository(server);
 
 					using (Connection con = rep.Connection)
 					{
@@ -405,7 +420,12 @@ namespace p4api.net.unit.test
 						Assert.IsTrue(dlist[0].Id.Equals("depot"));
 						Assert.IsTrue(dlist[1].Map.Equals("flow/..."));
 						Assert.IsTrue(dlist[2].Type.Equals(DepotType.Stream));
-						Assert.IsTrue(dlist[3].Description.Equals("Depot For 'Rocket' project\n\nEVENTS/new_stream_events/events0100_create_depots.pl-Event_001-perforce-CREATE_DEPOTS-Creating depots...\n"));
+
+                        string expected = Utilities.FixLineFeeds(
+                            "Depot For 'Rocket' project\n\nEVENTS/new_stream_events/events0100_create_depots.pl-Event_001-perforce-CREATE_DEPOTS-Creating depots...\n");
+                        string actual = Utilities.FixLineFeeds(dlist[3].Description);
+                        Assert.AreEqual(expected, actual);
+
 						//DateTime modified = new DateTime(2010, 10, 19, 10, 40, 3);
 						//Assert.AreEqual(modified, dlist[0].Modified);
 					}
@@ -413,8 +433,9 @@ namespace p4api.net.unit.test
 				finally
 				{
 					Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
 				}
-				unicode = !unicode;
 			}
 		}
 
@@ -424,7 +445,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void CheckDepotTypesTestA()
         {
-            CheckDepotTypesTest(false);
+            CheckDepotTypesTest(Utilities.CheckpointType.A);
         }
 
         /// <summary>
@@ -433,26 +454,29 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void CheckDepotTypesTestU()
         {
-            CheckDepotTypesTest(true);
+            CheckDepotTypesTest(Utilities.CheckpointType.U);
         }
 
         /// <summary>
         ///A test for CheckDepotTypes
         ///</summary>
-        public void CheckDepotTypesTest(bool unicode)
+        public void CheckDepotTypesTest(Utilities.CheckpointType cptype)
         {
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
             Process p4d = null;
+            Repository rep = null;
 
             try
             {
-                p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
+                p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
                 Server server = new Server(new ServerAddress(uri));
-                Repository rep = new Repository(server);
+                rep = new Repository(server);
 
                 using (Connection con = rep.Connection)
                 {
@@ -563,6 +587,8 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
             }
         }
     }

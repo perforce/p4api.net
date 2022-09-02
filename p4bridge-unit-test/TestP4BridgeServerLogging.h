@@ -1,6 +1,12 @@
 #pragma once
 
-#include "unittestframework.h"
+#include "UnitTestFrameWork.h"
+
+#ifdef OS_NT
+#define STDCALL __stdcall
+#else
+#define STDCALL
+#endif
 
 class TestP4BridgeServerLogging :
     public UnitTestSuite
@@ -13,9 +19,9 @@ public:
 
     bool Setup();
 
-    bool TearDown(char* testName);
+    bool TearDown(const char* testName);
 
-    static int _stdcall LogCallback(int level, const char* file, int line, const char* message);
+    static int STDCALL LogCallback(int level, const char* file, int line, const char* message);
 
     static bool LogMessageTest();
     static bool BadLogFnPtrTest();

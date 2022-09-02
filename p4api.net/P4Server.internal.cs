@@ -927,6 +927,9 @@ namespace Perforce.P4
                 p4Server.Dispose();
             }
 
+            if (parallelErrors == null)
+	            return 0;
+            
             return parallelErrors.Count == 0 ? 0 : 1;
         }
 

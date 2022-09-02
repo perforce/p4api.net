@@ -51,7 +51,14 @@ class P4ClientMerge;
 class P4ClientResolve;
 class P4BridgeServer;
 class P4Connection;
-class DoublyLinkedList;
+
+#ifndef STDCALL
+#if defined OS_NT
+#define STDCALL __stdcall
+#else
+#define STDCALL
+#endif
+#endif
 
 /*******************************************************************************
  *
@@ -59,21 +66,21 @@ class DoublyLinkedList;
  *      the client as it is received from the p4api.
  *
  ******************************************************************************/
-typedef void __stdcall BinaryCallbackFn( int, void *, int );
-typedef void __stdcall TextCallbackFn(int, const char*);
-typedef void __stdcall IntIntIntTextCallbackFn(int, int, int, const char*);
-typedef void __stdcall IntIntTextCallbackFn(int, int, const char*);
-typedef void __stdcall IntTextTextCallbackFn(int, int, const char*, const char*);
+typedef void STDCALL BinaryCallbackFn( int, void *, int );
+typedef void STDCALL TextCallbackFn(int, const char*);
+typedef void STDCALL IntIntIntTextCallbackFn(int, int, int, const char*);
+typedef void STDCALL IntIntTextCallbackFn(int, int, const char*);
+typedef void STDCALL IntTextTextCallbackFn(int, int, const char*, const char*);
 
-typedef void _stdcall PromptCallbackFn( int, const char *, char *, int, int);
+typedef void STDCALL PromptCallbackFn( int, const char *, char *, int, int);
 
 // original from the P4 API:
 // ClientApi* client, ClientUser *ui, const char *cmd, StrArray &args, StrDict &pVars, int threads, Error *e
 // current for us: server pointer, cmd, arg list (IntPtr[] + count), dict iterator, thread count
-typedef int _stdcall ParallelTransferCallbackFn(int*, const char*, const char**, int, int*, int);
+typedef int STDCALL ParallelTransferCallbackFn(int*, const char*, const char**, int, int*, int);
 
-typedef int _stdcall ResolveCallbackFn( int, P4ClientMerge *);
-typedef int _stdcall ResolveACallbackFn( int, P4ClientResolve *, int preview);
+typedef int STDCALL ResolveCallbackFn( int, P4ClientMerge *);
+typedef int STDCALL ResolveACallbackFn( int, P4ClientResolve *, int preview);
 /*******************************************************************************
  *
  *  KeyValuePair
@@ -463,7 +470,6 @@ public:
 
 	// Get the error output after a command completes
 	P4ClientError * GetErrorResults();
-	void ClearErrorResults() {pFirstError = NULL; pLastError = NULL;}
 
 	// Set the data for a command. Some commands, such as those which use spec
 	//  data will use this override to obtain the data needed by the command.
@@ -496,5 +502,7 @@ private:
 	int Resolve_int( P4ClientMerge *merger);
 	int Resolve_int( P4ClientResolve *resolver, int preview, Error *e);
 
+	void clear_error_list(P4ClientError* list);
+	void clear_info_list(P4ClientInfoMsg* list);
 };
 

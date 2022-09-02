@@ -56,7 +56,6 @@ namespace p4api.net.unit.test
         #endregion
 
 
-
         /// <summary>
         ///A test for GroupOrUserName
         ///</summary>

@@ -490,24 +490,24 @@ namespace Perforce.P4
 		/// Format of a user specification used to save a user to the server
 		/// </summary>
 		private static String GroupSpecFormat =
-													"Group:\t{0}\r\n" +
-													"\r\n" +
-													"MaxResults:\t{1}\r\n" +
-													"\r\n" +
-													"MaxScanRows:\t{2}\r\n" +
-													"\r\n" +
-													"MaxLockTime:\t{3}\r\n" +
-													"\r\n" +
-													"MaxOpenFiles:\t{4}\r\n" +
-													"\r\n" +
-													"Timeout:\t{5}\r\n" +
-													"\r\n" +
-													"{6}" +
-													"Subgroups:\r\n{7}" +
-													"\r\n" +
-													"Owners:\r\n{8}" +
-													"\r\n" +
-													"Users:\r\n{9}";
+													$"Group:\t{{0}}{Environment.NewLine}" +
+													$"{Environment.NewLine}" +
+													$"MaxResults:\t{{1}}{Environment.NewLine}" +
+													$"{Environment.NewLine}" +
+													$"MaxScanRows:\t{{2}}{Environment.NewLine}" +
+													$"{Environment.NewLine}" +
+													$"MaxLockTime:\t{{3}}{Environment.NewLine}" +
+													$"{Environment.NewLine}" +
+													$"MaxOpenFiles:\t{{4}}{Environment.NewLine}" +
+													$"{Environment.NewLine}" +
+													$"Timeout:\t{{5}}{Environment.NewLine}" +
+													$"{Environment.NewLine}" +
+													$"{{6}}" +
+													$"Subgroups:{Environment.NewLine}{{7}}" +
+													$"{Environment.NewLine}" +
+													$"Owners:{Environment.NewLine}{{8}}" +
+													$"{Environment.NewLine}" +
+													$"Users:{Environment.NewLine}{{9}}";
 
 		/// <summary>
 		/// Convert to specification in server format
@@ -520,7 +520,7 @@ namespace Perforce.P4
 			{
 				for (int idx = 0; idx < SubGroups.Count; idx++)
 				{
-					subgroupsView += String.Format("\t{0}\r\n", SubGroups[idx]);
+					subgroupsView += $"\t{SubGroups[idx]}{Environment.NewLine}";
 				}
 			}
 			String ownersView = String.Empty;
@@ -528,7 +528,7 @@ namespace Perforce.P4
 			{
 				for (int idx = 0; idx < OwnerNames.Count; idx++)
 				{
-					ownersView += String.Format("\t{0}\r\n", OwnerNames[idx]);
+					ownersView += $"\t{OwnerNames[idx]}{Environment.NewLine}";
 				}
 			}
 			String usersView = String.Empty;
@@ -536,7 +536,7 @@ namespace Perforce.P4
 			{
 				for (int idx = 0; idx < UserNames.Count; idx++)
 				{
-					usersView += String.Format("\t{0}\r\n", UserNames[idx]);
+					usersView += $"\t{UserNames[idx]}{Environment.NewLine}";
 				}
 			}
 			String value = String.Format(GroupSpecFormat, Id, 
@@ -545,7 +545,7 @@ namespace Perforce.P4
 				(MaxLockTime > 0) ? MaxLockTime.ToString() : string.Empty,
 				(MaxOpenFiles > 0) ? MaxOpenFiles.ToString() : string.Empty,
 				(TimeOut > 0) ? TimeOut.ToString() : string.Empty,
-                (PasswordTimeout > 0) ? "PasswordTimeout:\t" + PasswordTimeout.ToString() + "\r\n" + "\r\n" : string.Empty,
+                (PasswordTimeout > 0) ? "PasswordTimeout:\t" + PasswordTimeout.ToString() + $"{Environment.NewLine}" + $"{Environment.NewLine}" : string.Empty,
 				subgroupsView, ownersView, usersView);
 
 			return value;

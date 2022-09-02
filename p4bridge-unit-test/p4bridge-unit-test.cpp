@@ -4,29 +4,41 @@
 #include "stdafx.h"
 #include "UnitTestFrameWork.h"
 
-#include <conio.h>
-#include <string.h>
+#include <iostream>
+#include <cstring>
 
 int main(int argc, char* argv[])
 {
-    if (argc > 0)
+    UnitTestFrameWork *frame = new UnitTestFrameWork();
+
+    if (argc > 0){
         for (int idx = 1; idx < argc; idx++)
         {
-            if (strcmp(argv[idx], "-b") == 0) // break on fail
+            if (strcmp(argv[idx],"-s") == 0) // Set source directory (used to find tarballs)
+            {
+                UnitTestFrameWork::SetSourceDirectory(argv[++idx]);
+            }
+            else if (strcmp(argv[idx], "-b") == 0) // break on fail
                 UnitTestSuite::BreakOnFailure(true); 
-            if (strcmp(argv[idx], "-e") == 0) // end on fail
+            else if (strcmp(argv[idx], "-e") == 0) // end on fail
                 UnitTestSuite::EndOnFailure(true); 
+            else
+            {
 			// assume this is a test name to match (don't run tests that do not match)
 			UnitTestFrameWork::AddTestMatch(argv[idx]);
         }
+        }
+    } 
+    
     UnitTestFrameWork::RunTests();
-
+#ifdef _DEBUG_MEMORY
 	p4base::PrintMemoryState("After test complete");
 	p4base::DumpMemoryState("After test complete");
+#endif
+    printf("Hit enter to exit");
+    // std::cin.ignore();
 
-    printf("Hit 'x' to exit");
-    _getch();
-
+    delete frame;
     return 0;
 }
 

@@ -301,7 +301,7 @@ namespace Perforce.P4
                     {
                         if (idx > 0)
                         {
-                            Owner += "\r\n";
+                            Owner += $"{Environment.NewLine}";
                         }
                         Owner += strList[idx];
                     }
@@ -316,7 +316,7 @@ namespace Perforce.P4
                     {
                         if (addCRLF)
                         {
-                            Owner += "\r\n";
+                            Owner += $"{Environment.NewLine}";
                         }
                         else
                         {
@@ -356,7 +356,7 @@ namespace Perforce.P4
                     {
                         if (idx > 0)
                         {
-                            Description += "\r\n";
+                            Description += $"{Environment.NewLine}";
                         }
                         Description += strList[idx];
                     }
@@ -371,7 +371,7 @@ namespace Perforce.P4
                     {
                         if (addCRLF)
                         {
-                            Description += "\r\n";
+                            Description += $"{Environment.NewLine}";
                         }
                         else
                         {
@@ -411,19 +411,19 @@ namespace Perforce.P4
 		/// Format of a branch specification used to save a branch to the server
 		/// </summary>
 		private static String BranchSpecFormat =
-													"Branch:\t{0}\r\n" +
-													"\r\n" +
-													"Update:\t{1}\r\n" +
-													"\r\n" +
-													"Access:\t{2}\r\n" +
-													"\r\n" +
-													"Owner:\t{3}\r\n" +
-													"\r\n" +
-													"Description:\r\n\t{4}\r\n" +
-													"\r\n" +
-													"Options:\t{5}\r\n" +
-													"\r\n" +
-													"View:\r\n\t{6}\r\n";
+      						$"Branch:\t{{0}}{Environment.NewLine}" +
+      						$"{Environment.NewLine}" +
+      						$"Update:\t{{1}}{Environment.NewLine}" +
+      						$"{Environment.NewLine}" +
+      						$"Access:\t{{2}}{Environment.NewLine}" +
+      						$"{Environment.NewLine}" +
+      						$"Owner:\t{{3}}{Environment.NewLine}" +
+      						$"{Environment.NewLine}" +
+      						$"Description:{Environment.NewLine}\t{{4}}{Environment.NewLine}" +
+      						$"{Environment.NewLine}" +
+      						$"Options:\t{{5}}{Environment.NewLine}" +
+      						$"{Environment.NewLine}" +
+      						$"View:{Environment.NewLine}\t{{6}}{Environment.NewLine}";
 
 
 		/// <summary>
@@ -434,7 +434,7 @@ namespace Perforce.P4
 		{
 			String viewStr = String.Empty;
 			if (ViewMap != null)
-				viewStr = ViewMap.ToString().Replace("\r\n", "\r\n\t").Trim();
+				viewStr = ViewMap.ToString().Replace($"{Environment.NewLine}", $"{Environment.NewLine}\t").Trim();
 		    String OptionsStr = string.Empty;
             if (Locked)
             {

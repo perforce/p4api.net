@@ -7,7 +7,6 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using NLog;
-using System.Runtime.Remoting.Messaging;
 
 namespace p4api.net.unit.test
 {
@@ -18,13 +17,17 @@ namespace p4api.net.unit.test
     [TestClass()]
     public class ClientTest
     {
-        String TestDir = "c:\\MyTestDir";
         private static Logger logger = LogManager.GetCurrentClassLogger();
+        private UnitTestConfiguration configuration;
+        private string TestDir = "";
+        
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
         public void SetupTest()
         {
+            configuration = UnitTestSettings.GetApplicationConfiguration();
+            TestDir = configuration.TestDirectory;
             Utilities.LogTestStart(TestContext);
         }
 
@@ -233,7 +236,7 @@ namespace p4api.net.unit.test
             target.AltRoots = new List<string>();
             target.AltRoots.Add("C:\\alt0");
             target.AltRoots.Add("C:\\alt1");
-            target.ServerID = "perforce:1666";
+            target.ServerID = configuration.ServerPort;
             target.Stream = "//Stream/main";
             target.StreamAtChange = "111";
 
@@ -245,7 +248,8 @@ namespace p4api.net.unit.test
             });
 
             string expected =
-                "Client:\tclientName\n\nUpdate:\t2010/01/02 03:04:05\n\nAccess:\t2011/02/03 04:05:06\n\nOwner:\tJoeOwner\n\nHost:\tMissManners\n\nDescription:\n\tMiss Manners client\n\nRoot:\tC:\\clientname\n\nAltRoots:\n\tC:\\alt0\n\tC:\\alt1\n\nOptions:\tnoallwrite noclobber nocompress unlocked nomodtime normdir\n\nSubmitOptions:\tsubmitunchanged\n\nLineEnd:\tLocal\n\nType:\twriteable\n\nStream:\t//Stream/main\n\nStreamAtChange:\t111\n\nServerID:\tperforce:1666\n\nView:\n\t//depot/main/p4/... //dbarbee_win-dbarbee/main/p4/...\n\t-//usr/... //dbarbee_win-dbarbee/usr/...\n\t+//spec/... //dbarbee_win-dbarbee/spec/...\n";
+                "Client:\tclientName\n\nUpdate:\t2010/01/02 03:04:05\n\nAccess:\t2011/02/03 04:05:06\n\nOwner:\tJoeOwner\n\nHost:\tMissManners\n\nDescription:\n\tMiss Manners client\n\nRoot:\tC:\\clientname\n\nAltRoots:\n\tC:\\alt0\n\tC:\\alt1\n\nOptions:\tnoallwrite noclobber nocompress unlocked nomodtime normdir\n\nSubmitOptions:\tsubmitunchanged\n\nLineEnd:\tLocal\n\nType:\twriteable\n\nStream:\t//Stream/main\n\nStreamAtChange:\t111\n\nServerID:\t"+ configuration.ServerPort +"\n\nView:\n\t//depot/main/p4/... //dbarbee_win-dbarbee/main/p4/...\n\t-//usr/... //dbarbee_win-dbarbee/usr/...\n\t+//spec/... //dbarbee_win-dbarbee/spec/...\n";
+            
             string actual;
             actual = target.ToString();
             Assert.AreEqual(expected, actual);
@@ -271,7 +275,7 @@ namespace p4api.net.unit.test
             target.AltRoots = new List<string>();
             target.AltRoots.Add("C:\\alt0");
             target.AltRoots.Add("C:\\alt1");
-            target.ServerID = "perforce:1666";
+            target.ServerID = configuration.ServerPort;
             target.Stream = "//Stream/main";
             target.StreamAtChange = "111";
             target.ChangeView = new List<string>();
@@ -285,7 +289,7 @@ namespace p4api.net.unit.test
             });
 
             string expected =
-                "Client:\tclientName\n\nUpdate:\t2010/01/02 03:04:05\n\nAccess:\t2011/02/03 04:05:06\n\nOwner:\tJoeOwner\n\nHost:\tMissManners\n\nDescription:\n\tMiss Manners client\n\nRoot:\tC:\\clientname\n\nAltRoots:\n\tC:\\alt0\n\tC:\\alt1\n\nOptions:\tallwrite noclobber compress unlocked modtime normdir\n\nSubmitOptions:\trevertunchanged+reopen\n\nLineEnd:\tLocal\n\nType:\twriteable\n\nStream:\t//Stream/main\n\nStreamAtChange:\t111\n\nServerID:\tperforce:1666\n\nChangeView:\t//dbarbee_win-dbarbee/main/p4/test@2\n\nView:\n\t//depot/main/p4/... //dbarbee_win-dbarbee/main/p4/...\n\t-//usr/... //dbarbee_win-dbarbee/usr/...\n\t+//spec/... //dbarbee_win-dbarbee/spec/...\n";
+                "Client:\tclientName\n\nUpdate:\t2010/01/02 03:04:05\n\nAccess:\t2011/02/03 04:05:06\n\nOwner:\tJoeOwner\n\nHost:\tMissManners\n\nDescription:\n\tMiss Manners client\n\nRoot:\tC:\\clientname\n\nAltRoots:\n\tC:\\alt0\n\tC:\\alt1\n\nOptions:\tallwrite noclobber compress unlocked modtime normdir\n\nSubmitOptions:\trevertunchanged+reopen\n\nLineEnd:\tLocal\n\nType:\twriteable\n\nStream:\t//Stream/main\n\nStreamAtChange:\t111\n\nServerID:\t"+ configuration.ServerPort + "\n\nChangeView:\t//dbarbee_win-dbarbee/main/p4/test@2\n\nView:\n\t//depot/main/p4/... //dbarbee_win-dbarbee/main/p4/...\n\t-//usr/... //dbarbee_win-dbarbee/usr/...\n\t+//spec/... //dbarbee_win-dbarbee/spec/...\n";
             string actual;
             actual = target.ToString();
             Assert.AreEqual(expected, actual);
@@ -341,25 +345,26 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void initializeTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
-
-            Process p4d = null;
 
             string dir = Directory.GetCurrentDirectory();
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     Server server = new Server(new ServerAddress(uri));
 
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -367,7 +372,7 @@ namespace p4api.net.unit.test
                         con.Client = new Client();
                         con.Client.Name = ws_client;
 
-                        if (unicode)
+                        if (cptype == Utilities.CheckpointType.U)
                         {
                             con.CharacterSetName = "utf8";
                             Assert.AreEqual("utf8", con.CharacterSetName);
@@ -389,8 +394,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -400,28 +406,30 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void addFilesTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
-
-            Process p4d = null;
 
             string dir = Directory.GetCurrentDirectory();
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
-                    var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
                     var adminSpace = Path.Combine(clientRoot, "admin_space");
                     Directory.CreateDirectory(adminSpace);
 
                     Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
                     using (Connection con = rep.Connection)
                     {
@@ -429,8 +437,7 @@ namespace p4api.net.unit.test
                         con.Client = new Client();
                         con.Client.Name = ws_client;
 
-
-                        if (unicode)
+                        if (cptype == Utilities.CheckpointType.U)
                         {
                             con.CharacterSetName = "utf8";
                             Assert.AreEqual("utf8", con.CharacterSetName);
@@ -447,7 +454,7 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(con.Server.State, ServerState.Online);
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
                         Assert.AreEqual("admin", con.Client.OwnerName);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
+                    
 
                         var codePath = Path.Combine(clientRoot, "admin_space", "MyCode");
                         Directory.CreateDirectory(codePath);
@@ -478,14 +485,15 @@ namespace p4api.net.unit.test
                             Assert.IsNotNull(fileSpec.DepotPath.Path);
                             Assert.IsNotNull(fileSpec.ClientPath.Path);
                             Assert.IsNotNull(fileSpec.LocalPath.Path);
-                        }
                     }
+                }
                 }
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -495,7 +503,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void addFilesTestjob085728U()
         {
-            addFilesTestjob085728(true);
+            addFilesTestjob085728(Utilities.CheckpointType.U);
         }
 
         /// <summary>
@@ -504,32 +512,36 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void addFilesTestjob085728A()
         {
-            addFilesTestjob085728(false);
+            addFilesTestjob085728(Utilities.CheckpointType.A);
         }
+        
         /// <summary>
         ///A test for addFilesjob085728
         ///</summary>
-        public void addFilesTestjob085728(bool unicode)
+        public void addFilesTestjob085728(Utilities.CheckpointType cptype)
         {
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
             string dir = Directory.GetCurrentDirectory();
 
+            Process p4d = null;
+            Repository rep = null;
 
             try
             {
-                p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
-                var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
+                p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+                var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
                 var adminSpace = Path.Combine(clientRoot, "admin_space");
                 Directory.CreateDirectory(adminSpace);
 
                 Server server = new Server(new ServerAddress(uri));
-                Repository rep = new Repository(server);
+                rep = new Repository(server);
+                Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
                 using (Connection con = rep.Connection)
                 {
@@ -538,7 +550,7 @@ namespace p4api.net.unit.test
                     con.Client.Name = ws_client;
 
 
-                    if (unicode)
+                    if (cptype == Utilities.CheckpointType.U)
                     {
                         con.CharacterSetName = "utf8";
                         Assert.AreEqual("utf8", con.CharacterSetName);
@@ -555,7 +567,7 @@ namespace p4api.net.unit.test
                     Assert.AreEqual(con.Server.State, ServerState.Online);
                     Assert.AreEqual(con.Status, ConnectionStatus.Connected);
                     Assert.AreEqual("admin", con.Client.OwnerName);
-                    Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
+                 
 
                     var codePath = Path.Combine(clientRoot, "admin_space", "MyCode");
                     Directory.CreateDirectory(codePath);
@@ -594,6 +606,8 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
             }
         }
         /// <summary>
@@ -602,26 +616,30 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void fstatTest()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
-            Process p4d = null;
+        
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
-                    var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
                     var adminSpace = Path.Combine(clientRoot, "admin_space");
                     Directory.CreateDirectory(adminSpace);
 
                     Server server = new Server(new ServerAddress(uri));
-
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
                     using (Connection con = rep.Connection)
                     {
@@ -635,7 +653,6 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(con.Server.State, ServerState.Online);
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
                         Assert.AreEqual("admin", con.Client.OwnerName);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
                         var codePath = Path.Combine(clientRoot, "admin_space", "MyCode");
                         var newFile = Path.Combine(codePath, "NewFile2.txt");
@@ -663,8 +680,11 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+
+                cptype = Utilities.CheckpointType.U;
             }
         }
 
@@ -674,26 +694,28 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void DeleteFilesTest()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
-            Process p4d = null;
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
 
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
-                    var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
+                    var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
                     var adminSpace = Path.Combine(clientRoot, "admin_space");
                     Directory.CreateDirectory(adminSpace);
                     Server server = new Server(new ServerAddress(uri));
-
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
                     using (Connection con = rep.Connection)
                     {
@@ -707,9 +729,8 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(con.Server.State, ServerState.Online);
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
                         Assert.AreEqual("admin", con.Client.OwnerName);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
-                        FileSpec toFile = new FileSpec(new LocalPath(Path.Combine(adminSpace, "MyCode\\ReadMe.txt")),
+                        FileSpec toFile = new FileSpec(new LocalPath(Path.Combine(adminSpace, "MyCode", "ReadMe.txt")),
                             null);
                         Options options = new Options(DeleteFilesCmdFlags.None, -1);
                         IList<FileSpec> oldfiles = con.Client.DeleteFiles(options, toFile);
@@ -727,8 +748,11 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+
+                cptype = Utilities.CheckpointType.U;
             }
         }
 
@@ -738,26 +762,30 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void DeleteFilesPreviewOnlyTest()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
-            Process p4d = null;
+           
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
-                    var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
                     var adminSpace = Path.Combine(clientRoot, "admin_space");
                     Directory.CreateDirectory(adminSpace);
 
                     Server server = new Server(new ServerAddress(uri));
-
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
                     using (Connection con = rep.Connection)
                     {
@@ -771,7 +799,6 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(con.Server.State, ServerState.Online);
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
                         Assert.AreEqual("admin", con.Client.OwnerName);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
                         String filePath = Path.Combine(adminSpace, "MyCode", "ReadMe.txt");
                         FileSpec toFile = new FileSpec(new LocalPath(filePath), null);
@@ -785,8 +812,11 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+
+                cptype = Utilities.CheckpointType.U;
             }
         }
 
@@ -796,26 +826,29 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void DeleteFilesServerOnlyTest()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
-                    var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
                     var adminSpace = Path.Combine(clientRoot, "admin_space");
                     Directory.CreateDirectory(adminSpace);
 
                     Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
                     using (Connection con = rep.Connection)
                     {
@@ -829,7 +862,6 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(con.Server.State, ServerState.Online);
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
                         Assert.AreEqual("admin", con.Client.OwnerName);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
                         String filePath = Path.Combine(adminSpace, "MyCode", "ReadMe.txt");
                         FileSpec toFile = new FileSpec(new LocalPath(filePath), null);
@@ -849,8 +881,10 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+                cptype = Utilities.CheckpointType.U;
             }
         }
 
@@ -860,26 +894,30 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void DeleteFilesUnsyncedTest()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
-                    var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
                     var adminSpace = Path.Combine(clientRoot, "admin_space");
                     Directory.CreateDirectory(adminSpace);
 
                     Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client, true);
 
                     using (Connection con = rep.Connection)
                     {
@@ -893,7 +931,6 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(con.Server.State, ServerState.Online);
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
                         Assert.AreEqual("admin", con.Client.OwnerName);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
                         String filePath = Path.Combine(adminSpace, "MyCode", "ReadMe.txt");
                         String depotPath = "//depot/MyCode/ReadMe.txt";
@@ -917,8 +954,10 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+                cptype = Utilities.CheckpointType.U;
             }
         }
 
@@ -928,25 +967,29 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void EditFilesTest()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
-                    var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
                     var adminSpace = Path.Combine(clientRoot, "admin_space");
                     Directory.CreateDirectory(adminSpace);
+                    
                     Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
                     using (Connection con = rep.Connection)
                     {
@@ -959,7 +1002,6 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(con.Server.State, ServerState.Online);
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
                         Assert.AreEqual("admin", con.Client.OwnerName);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
                         FileSpec toFile = new FileSpec(new LocalPath(Path.Combine(adminSpace, "MyCode", "ReadMe.txt")),
                             null);
@@ -971,8 +1013,10 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+                cptype = Utilities.CheckpointType.U;
             }
         }
 
@@ -982,25 +1026,29 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetSyncedFilesTest()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
-                    var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
                     var adminSpace = Path.Combine(clientRoot, "admin_space");
                     Directory.CreateDirectory(adminSpace);
+                    
                     Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
                     using (Connection con = rep.Connection)
                     {
@@ -1014,9 +1062,8 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(con.Server.State, ServerState.Online);
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
                         Assert.AreEqual("admin", con.Client.OwnerName);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
-                        FileSpec toFile = new FileSpec(new LocalPath(Path.Combine(adminSpace, "MyCode\\ReadMe.txt")),
+                        FileSpec toFile = new FileSpec(new LocalPath(Path.Combine(adminSpace, "MyCode", "ReadMe.txt")),
                             null);
                         Options options = null;
                         IList<FileSpec> oldfiles = con.Client.GetSyncedFiles(options, toFile);
@@ -1026,8 +1073,10 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+                cptype = Utilities.CheckpointType.U;
             }
         }
 
@@ -1039,25 +1088,29 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void IntegrateFilesTest()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
-                    var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
                     var adminSpace = Path.Combine(clientRoot, "admin_space");
                     Directory.CreateDirectory(adminSpace);
+                    
                     Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
                     using (Connection con = rep.Connection)
                     {
@@ -1071,12 +1124,11 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(con.Server.State, ServerState.Online);
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
                         Assert.AreEqual("admin", con.Client.OwnerName);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
-                        FileSpec fromFile = new FileSpec(new LocalPath(Path.Combine(adminSpace, "MyCode\\ReadMe.txt")),
+                        FileSpec fromFile = new FileSpec(new LocalPath(Path.Combine(adminSpace, "MyCode", "ReadMe.txt")),
                             null);
                         FileSpec toFile =
-                            new FileSpec(new LocalPath(Path.Combine(adminSpace, "branchAlpha\\ReadMe.txt")), null);
+                            new FileSpec(new LocalPath(Path.Combine(adminSpace, "branchAlpha", "ReadMe.txt")), null);
                         Options options = new Options(IntegrateFilesCmdFlags.None,
                             -1,
                             10,
@@ -1103,8 +1155,10 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+                cptype = Utilities.CheckpointType.U;
             }
         }
 
@@ -1116,22 +1170,24 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void IntegrateFilesTest1()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 10, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 10, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -1168,8 +1224,10 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+                cptype = Utilities.CheckpointType.U;
             }
         }
 
@@ -1179,22 +1237,26 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void LabelSyncTest()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
+
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 4, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 4, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -1222,8 +1284,10 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+                cptype = Utilities.CheckpointType.U;
             }
         }
 
@@ -1233,22 +1297,24 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void LockFilesTest()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 5, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 5, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -1286,8 +1352,10 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+                cptype = Utilities.CheckpointType.U;
             }
         }
 
@@ -1297,25 +1365,28 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void MoveFilesTest()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
-                    var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
                     var adminSpace = Path.Combine(clientRoot, "admin_space");
                     Directory.CreateDirectory(adminSpace);
                     Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
                     using (Connection con = rep.Connection)
                     {
@@ -1329,15 +1400,14 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(con.Server.State, ServerState.Online);
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
                         Assert.AreEqual("admin", con.Client.OwnerName);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
-                        FileSpec fromFile = new FileSpec(new LocalPath(Path.Combine(adminSpace, "MyCode\\ReadMe.txt")),
+                        FileSpec fromFile = new FileSpec(new LocalPath(Path.Combine(adminSpace, "MyCode", "ReadMe.txt")),
                             null);
 
                         IList<FileSpec> oldfiles = con.Client.EditFiles(null, fromFile);
                         Assert.AreEqual(1, oldfiles.Count);
 
-                        FileSpec toFile = new FileSpec(new LocalPath(Path.Combine(adminSpace, "MyCode\\ReadMe42.txt")),
+                        FileSpec toFile = new FileSpec(new LocalPath(Path.Combine(adminSpace, "MyCode", "ReadMe42.txt")),
                             null);
                         Options options = new Options(MoveFileCmdFlags.None, -1, null);
                         oldfiles = con.Client.MoveFiles(fromFile, toFile, options);
@@ -1358,8 +1428,10 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+                cptype = Utilities.CheckpointType.U;
             }
         }
 
@@ -1369,25 +1441,28 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void ReopenFilesTest()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
-                    var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
                     var adminSpace = Path.Combine(clientRoot, "admin_space");
                     Directory.CreateDirectory(adminSpace);
                     Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
                     using (Connection con = rep.Connection)
                     {
@@ -1406,9 +1481,8 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
 
                         Assert.AreEqual("admin", con.Client.OwnerName);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
-                        FileSpec fromFile = new FileSpec(new LocalPath(Path.Combine(adminSpace, "MyCode\\ReadMe.txt")),
+                        FileSpec fromFile = new FileSpec(new LocalPath(Path.Combine(adminSpace, "MyCode", "ReadMe.txt")),
                             null);
 
                         IList<FileSpec> oldfiles = con.Client.EditFiles(null, fromFile);
@@ -1424,8 +1498,10 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+                cptype = Utilities.CheckpointType.U;
             }
         }
 
@@ -1435,25 +1511,28 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void ResolveFilesTest()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
             for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
             {
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 2, unicode);
-                    var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 2, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
                     var adminSpace = Path.Combine(clientRoot, "admin_space");
                     Directory.CreateDirectory(adminSpace);
                     Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
                     using (Connection con = rep.Connection)
                     {
@@ -1476,9 +1555,8 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
 
                         Assert.AreEqual("admin", con.Client.OwnerName);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
-                        FileSpec fromFile = new FileSpec(new LocalPath(Path.Combine(adminSpace, "TestData\\*.txt")),
+                        FileSpec fromFile = new FileSpec(new LocalPath(Path.Combine(adminSpace, "TestData", "*.txt")),
                             null);
                         Options sFlags = new Options(
                             SubmitFilesCmdFlags.None,
@@ -1507,7 +1585,7 @@ namespace p4api.net.unit.test
 
                         con.Client.RevertFiles(null, fromFile);
 
-                        fromFile = new FileSpec(new LocalPath(Path.Combine(adminSpace, "TestData\\*.txt")),
+                        fromFile = new FileSpec(new LocalPath(Path.Combine(adminSpace, "TestData", "*.txt")),
                             null);
                         sFlags = new Options(
                             SubmitFilesCmdFlags.None,
@@ -1537,8 +1615,10 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+                cptype = Utilities.CheckpointType.U;
             }
         }
 
@@ -1548,23 +1628,25 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void ResolveFilesTest0()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
-
             for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
             {
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 13, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 13, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
                     using (Connection con = rep.Connection)
                     {
@@ -1587,7 +1669,6 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
 
                         Assert.AreEqual("admin", con.Client.OwnerName);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
                         FileSpec depotFiles = FileSpec.DepotSpec("//depot/MyCode2/...");
                         IList<FileSpec> files = new List<FileSpec>();
@@ -1610,8 +1691,10 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+                cptype = Utilities.CheckpointType.U;
             }
         }
 
@@ -1621,25 +1704,29 @@ namespace p4api.net.unit.test
        // [TestMethod()]      // Disable this test for now, it seems to not work reliably and brings up the editor requiring manual intervention
         public void ResolveFilesTest1()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
             for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
             {
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 2, unicode);
-                    var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 2, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
                     var adminSpace = Path.Combine(clientRoot, "admin_space");
                     Directory.CreateDirectory(adminSpace);
+                    
                     Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
                     using (Connection con = rep.Connection)
                     {
@@ -1662,9 +1749,8 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
 
                         Assert.AreEqual("admin", con.Client.OwnerName);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
-                        FileSpec fromFile = new FileSpec(new LocalPath(Path.Combine(adminSpace, "TestData\\*.txt")),
+                        FileSpec fromFile = new FileSpec(new LocalPath(Path.Combine(adminSpace, "TestData", "*.txt")),
                             null);
                         Options sFlags = new Options(
                             SubmitFilesCmdFlags.None,
@@ -1699,8 +1785,10 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+                cptype = Utilities.CheckpointType.U;
             }
         }
 
@@ -1717,25 +1805,30 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void ResolveFilesTest2()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
+        
 
             for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
             {
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 2, unicode);
-                    var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 2, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
                     var adminSpace = Path.Combine(clientRoot, "admin_space");
                     Directory.CreateDirectory(adminSpace);
                     Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
                     using (Connection con = rep.Connection)
                     {
@@ -1758,9 +1851,8 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
 
                         Assert.AreEqual("admin", con.Client.OwnerName);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
-                        FileSpec fromFile = new FileSpec(new LocalPath(Path.Combine(adminSpace, "TestData\\*.txt")),
+                        FileSpec fromFile = new FileSpec(new LocalPath(Path.Combine(adminSpace, "TestData", "*.txt")),
                             null);
                         Options sFlags = new Options(
                             SubmitFilesCmdFlags.None,
@@ -1792,8 +1884,10 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+                cptype = Utilities.CheckpointType.U;
             }
         }
 
@@ -1819,25 +1913,28 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void ResolveFilesTest3()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
             for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
             {
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 2, unicode);
-                    var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 2, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
                     var adminSpace = Path.Combine(clientRoot, "admin_space");
                     Directory.CreateDirectory(adminSpace);
                     Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
                     using (Connection con = rep.Connection)
                     {
@@ -1860,9 +1957,8 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
 
                         Assert.AreEqual("admin", con.Client.OwnerName);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
-                        FileSpec fromFile = new FileSpec(new LocalPath(Path.Combine(adminSpace, "TestData\\*.txt")),
+                        FileSpec fromFile = new FileSpec(new LocalPath(Path.Combine(adminSpace, "TestData", "*.txt")),
                             null);
                         Options sFlags = new Options(
                             SubmitFilesCmdFlags.None,
@@ -1896,8 +1992,10 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+                cptype = Utilities.CheckpointType.U;
             }
         }
 
@@ -1907,25 +2005,28 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void ResolveFilesTest4()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
             for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
             {
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 2, unicode);
-                    var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 2, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
                     var adminSpace = Path.Combine(clientRoot, "admin_space");
                     Directory.CreateDirectory(adminSpace);
                     Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
                     using (Connection con = rep.Connection)
                     {
@@ -1948,9 +2049,8 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
 
                         Assert.AreEqual("admin", con.Client.OwnerName);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
-                        FileSpec fromFile1 = new FileSpec(new LocalPath(Path.Combine(adminSpace, "TestData\\*.txt")),
+                        FileSpec fromFile1 = new FileSpec(new LocalPath(Path.Combine(adminSpace, "TestData", "*.txt")),
                             null);
 
                         Options sFlags = new Options(
@@ -1980,8 +2080,10 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+                cptype = Utilities.CheckpointType.U;
             }
         }
 
@@ -2011,25 +2113,28 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void ResolveFilesTest6()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
             for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
             {
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 12, unicode);
-                    var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 12, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
                     var adminSpace = Path.Combine(clientRoot, "admin_space");
                     Directory.CreateDirectory(adminSpace);
                     Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
                     using (Connection con = rep.Connection)
                     {
@@ -2052,13 +2157,12 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
 
                         Assert.AreEqual("admin", con.Client.OwnerName);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
                         FileSpec fromFile1 =
-                            new FileSpec(new LocalPath(Path.Combine(adminSpace, "MyCode2\\BranchResolve.txt")), null);
+                            new FileSpec(new LocalPath(Path.Combine(adminSpace, "MyCode2", "BranchResolve.txt")), null);
                         FileSpec fromFile2 =
-                            new FileSpec(new LocalPath(Path.Combine(adminSpace, "MyCode2\\DeleteResolve2.txt")), null);
-                        FileSpec fromFile3 = new FileSpec(new LocalPath(Path.Combine(adminSpace, "TestData\\*.txt")),
+                            new FileSpec(new LocalPath(Path.Combine(adminSpace, "MyCode2", "DeleteResolve2.txt")), null);
+                        FileSpec fromFile3 = new FileSpec(new LocalPath(Path.Combine(adminSpace, "TestData", "*.txt")),
                             null);
 
                         Options rFlags = new Options(ResolveFilesCmdFlags.DisplayBaseFile, -1);
@@ -2076,8 +2180,10 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+                cptype = Utilities.CheckpointType.U;
             }
         }
 
@@ -2087,22 +2193,25 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void SubmitFilesTest()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
             for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
             {
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 3, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 3, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
                     using (Connection con = rep.Connection)
                     {
@@ -2121,10 +2230,9 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
 
                         Assert.AreEqual("admin", con.Client.OwnerName);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
                         FileSpec fromFile = null;
-                        // new FileSpec(new LocalPath(Path.Combine(adminSpace, "TestData\\*.txt"), null);
+                        // new FileSpec(new LocalPath(Path.Combine(adminSpace, "TestData", "*.txt"), null);
                         Options sFlags = new Options(
                             SubmitFilesCmdFlags.None,
                             -1,
@@ -2147,8 +2255,10 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+                cptype = Utilities.CheckpointType.U;
             }
         }
 
@@ -2158,22 +2268,25 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void SubmitFilesTest0()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
             for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
             {
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 3, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 3, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
                     using (Connection con = rep.Connection)
                     {
@@ -2186,7 +2299,6 @@ namespace p4api.net.unit.test
                         Assert.IsTrue(con.Connect(null));
                         Assert.AreEqual(con.Server.State, ServerState.Online);
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
                         FileSpec fileToSubmit = new FileSpec(new DepotPath("//depot/TestData/Letters.txt"),
                             null, null, null);
@@ -2209,8 +2321,10 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+                cptype = Utilities.CheckpointType.U;
             }
         }
 
@@ -2220,22 +2334,25 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void SubmitFilesTest1()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
             for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
             {
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 3, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 3, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
                     using (Connection con = rep.Connection)
                     {
@@ -2254,7 +2371,6 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
 
                         Assert.AreEqual("admin", con.Client.OwnerName);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
                         Changelist change = new Changelist();
                         change.Description = "On the fly built change list";
@@ -2284,8 +2400,10 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+                cptype = Utilities.CheckpointType.U;
             }
         }
 
@@ -2295,22 +2413,25 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void SubmitFilesTest2()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
             for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
             {
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 3, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 3, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
                     using (Connection con = rep.Connection)
                     {
@@ -2329,7 +2450,6 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
 
                         Assert.AreEqual("admin", con.Client.OwnerName);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
                         Options sFlags = new Options(
                             SubmitFilesCmdFlags.None,
@@ -2353,8 +2473,11 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+
+                cptype = Utilities.CheckpointType.U;
             }
         }
 
@@ -2364,22 +2487,26 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void SubmitShelvedFilesTest()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
 
             for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
             {
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 13, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 13, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
                     using (Connection con = rep.Connection)
                     {
@@ -2398,7 +2525,6 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
 
                         Assert.AreEqual("admin", con.Client.OwnerName);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
                         Options sFlags = new Options(
                             ShelveFilesCmdFlags.None,
@@ -2436,32 +2562,36 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+                cptype = Utilities.CheckpointType.U;
             }
         }
 
         public void SubmitFilesTest3()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
             for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
             {
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 3, unicode);
-                    var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 3, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
                     var adminSpace = Path.Combine(clientRoot, "admin_space");
                     Directory.CreateDirectory(adminSpace);
                     Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -2491,7 +2621,7 @@ namespace p4api.net.unit.test
                         SubmitResults sr = null;
                         try
                         {
-                            FileSpec fs = FileSpec.LocalSpec(Path.Combine(adminSpace, "TestData\\Letters.txt"));
+                            FileSpec fs = FileSpec.LocalSpec(Path.Combine(adminSpace, "TestData", "Letters.txt"));
                             sr = con.Client.SubmitFiles(sFlags, fs);
                         }
                         catch
@@ -2504,8 +2634,10 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+                cptype = Utilities.CheckpointType.U;
             }
         }
 
@@ -2515,17 +2647,18 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void ParallelSubmitFilesTestA()
         {
-            ParallelSubmitFilesTest(false);
+            ParallelSubmitFilesTest(Utilities.CheckpointType.A);
         }
 
         [TestMethod()]
         public void ParallelSubmitFilesTestU()
         {
-            ParallelSubmitFilesTest(true);
+            ParallelSubmitFilesTest(Utilities.CheckpointType.U);
         }
-        public void ParallelSubmitFilesTest(bool unicode)
+        
+        public void ParallelSubmitFilesTest(Utilities.CheckpointType cptype)
         {
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -2533,20 +2666,25 @@ namespace p4api.net.unit.test
             int fileCount = 500;  // remember that this is an unlicensed server
 
             Process p4d = null;
+            Repository rep = null;
 
             try
             {
-                p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
-                Server server = new Server(new ServerAddress(uri));
-                Repository rep = new Repository(server);
+                p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                Assert.IsNotNull(p4d, "Setup Failure");
 
-                string clientDir = Path.Combine(TestDir, ws_client);
+                Server server = new Server(new ServerAddress(uri));
+                rep = new Repository(server);
+
+                string clientDir = Path.Combine(TestDir,cptype.ToString().ToLower(), "clients", ws_client);
                 string syncFilesDir = Path.Combine(clientDir, "parallel");
-                FileSpec parallelFileSpec = FileSpec.ClientSpec(syncFilesDir + "\\...");
+                FileSpec parallelFileSpec = FileSpec.ClientSpec(Path.Combine(syncFilesDir, "..."));
 
                 var parallelFileSpecArray = new FileSpec[] { parallelFileSpec };
 
-                FileSpec parallelFileSpecZero = FileSpec.ClientSpec(syncFilesDir + "\\...", VersionSpec.None);
+                FileSpec parallelFileSpecZero = FileSpec.ClientSpec(Path.Combine(syncFilesDir, "..."), VersionSpec.None);
+
+                Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
                 using (Connection con = rep.Connection)
                 {
@@ -2616,6 +2754,8 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
             }
         }
 
@@ -2625,25 +2765,29 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetResolvedFilesTest()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
             for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
             {
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 2, unicode);
-                    var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 2, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
                     var adminSpace = Path.Combine(clientRoot, "admin_space");
                     Directory.CreateDirectory(adminSpace);
+                    
                     Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
                     using (Connection con = rep.Connection)
                     {
@@ -2656,9 +2800,8 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(con.Server.State, ServerState.Online);
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
                         Assert.AreEqual("admin", con.Client.OwnerName);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
-                        FileSpec fromFile = new FileSpec(new LocalPath(Path.Combine(adminSpace, "TestData\\*.txt")),
+                        FileSpec fromFile = new FileSpec(new LocalPath(Path.Combine(adminSpace, "TestData", "*.txt")),
                             null);
                         Options sFlags = new Options(
                             SubmitFilesCmdFlags.None,
@@ -2695,8 +2838,10 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+                cptype = Utilities.CheckpointType.U;
             }
         }
 
@@ -2706,29 +2851,33 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetResolvedFilesTestjob085495A()
         {
-            GetResolvedFilesTestjob085495(false);
+            GetResolvedFilesTestjob085495(Utilities.CheckpointType.A);
         }
 
         /// <summary>
         ///A test for GetResolveFiles
         ///</summary>
-        public void GetResolvedFilesTestjob085495(bool unicode)
+        public void GetResolvedFilesTestjob085495(Utilities.CheckpointType cptype)
         {
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
             Process p4d = null;
+            Repository rep = null;
 
             try
             {
-                p4d = Utilities.DeployP4TestServer(TestDir, 2, unicode);
-                var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
+                p4d = Utilities.DeployP4TestServer(TestDir, 2, cptype);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+                var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
                 var adminSpace = Path.Combine(clientRoot, "admin_space");
                 Directory.CreateDirectory(adminSpace);
                 Server server = new Server(new ServerAddress(uri));
-                Repository rep = new Repository(server);
+                rep = new Repository(server);
+                Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
                 using (Connection con = rep.Connection)
                 {
@@ -2741,9 +2890,8 @@ namespace p4api.net.unit.test
                     Assert.AreEqual(con.Server.State, ServerState.Online);
                     Assert.AreEqual(con.Status, ConnectionStatus.Connected);
                     Assert.AreEqual("admin", con.Client.OwnerName);
-                    Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
-                    FileSpec fromFile = new FileSpec(new LocalPath(Path.Combine(adminSpace, "TestData\\*.txt")),
+                    FileSpec fromFile = new FileSpec(new LocalPath(Path.Combine(adminSpace, "TestData", "*.txt")),
                         null);
                     Options sFlags = new Options(
                         SubmitFilesCmdFlags.None,
@@ -2785,6 +2933,8 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
             }
         }
 
@@ -2795,25 +2945,29 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void ReconcileFilesTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
-            for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
+            for (int i = 0; i < 1; i++) // run only once for ascii
             {
+                var cptype = (Utilities.CheckpointType)i;
+                
+                var adminSpace = Path.Combine(Utilities.TestClientRoot(TestDir, cptype), "admin_space");
+                
+            Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 2, unicode);
-                    var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
-                    var adminSpace = Path.Combine(clientRoot, "admin_space");
+                    p4d = Utilities.DeployP4TestServer(TestDir, 2, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Utilities.DeleteDirectory(adminSpace);  // get rid of workspace cruft
                     Directory.CreateDirectory(adminSpace);
                     Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep,TestDir,cptype,ws_client,false);
 
                     using (Connection con = rep.Connection)
                     {
@@ -2832,38 +2986,38 @@ namespace p4api.net.unit.test
 
                         Assert.AreEqual("admin", con.Client.OwnerName);
 
-                        FileSpec folderRoot = new FileSpec(new LocalPath(@"C:\MyTestDir\admin_space\MyCode\..."),
+                        FileSpec folderRoot = new FileSpec(new LocalPath(Path.Combine(adminSpace, "MyCode", "...")),
                             null);
+                        
                         // force sync files
-
                         Options sFlags = new Options(SyncFilesCmdFlags.Force, -1);
                         IList<FileSpec> syncedFiles = con.Client.SyncFiles(sFlags, folderRoot);
 
                         // touch files under Perforce control without opening for
                         // add, edit or delete
 
-                        System.IO.File.SetAttributes(@"C:\MyTestDir\admin_space\MyCode\pup.txt",
-                            System.IO.File.GetAttributes(@"C:\MyTestDir\admin_space\MyCode\pup.txt")
+                        System.IO.File.SetAttributes(Path.Combine(adminSpace, "MyCode" ,"pup.txt"),
+                            System.IO.File.GetAttributes(Path.Combine(adminSpace, "MyCode", "pup.txt"))
                             & ~FileAttributes.ReadOnly);
-                        System.IO.File.SetAttributes(@"C:\MyTestDir\admin_space\MyCode\ReadMe.txt",
-                            System.IO.File.GetAttributes(@"C:\MyTestDir\admin_space\MyCode\ReadMe.txt")
+                        System.IO.File.SetAttributes(Path.Combine(adminSpace, "MyCode", "ReadMe.txt"),
+                            System.IO.File.GetAttributes(Path.Combine(adminSpace, "MyCode" ,"ReadMe.txt"))
                             & ~FileAttributes.ReadOnly);
-                        System.IO.File.SetAttributes(@"C:\MyTestDir\admin_space\MyCode\Silly.bmp",
-                            System.IO.File.GetAttributes(@"C:\MyTestDir\admin_space\MyCode\Silly.bmp")
+                        System.IO.File.SetAttributes(Path.Combine(adminSpace, "MyCode", "Silly.bmp"),
+                            System.IO.File.GetAttributes(Path.Combine(adminSpace, "MyCode", "Silly.bmp"))
                             & ~FileAttributes.ReadOnly);
 
                         // edit a file
-                        var lines = System.IO.File.ReadAllLines(@"C:\MyTestDir\admin_space\MyCode\pup.txt");
+                        var lines = System.IO.File.ReadAllLines(Path.Combine(adminSpace, "MyCode", "pup.txt"));
                         lines[0] = "some value";
-                        System.IO.File.WriteAllLines(@"C:\MyTestDir\admin_space\MyCode\pup.txt", lines);
+                        System.IO.File.WriteAllLines(Path.Combine(adminSpace, "MyCode", "pup.txt"), lines);
 
                         // do nothing with ReadMe.txt
 
                         // delete a file
-                        System.IO.File.Delete(@"C:\MyTestDir\admin_space\MyCode\Silly.bmp");
+                        System.IO.File.Delete(Path.Combine(adminSpace, "MyCode", "Silly.bmp"));
 
                         // create a file
-                        System.IO.File.Create(@"C:\MyTestDir\admin_space\MyCode\new.txt").Close();
+                        System.IO.File.Create(Path.Combine(adminSpace, "MyCode", "new.txt")).Close();
 
                         // status check for all added files
                         sFlags = new Options(ReconcileFilesCmdFlags.NotControlled, -1);
@@ -2896,7 +3050,7 @@ namespace p4api.net.unit.test
                         rFiles = con.Client.ReconcileFiles(sFlags, folderRoot);
 
                         sFlags = new Options(GetFileMetadataCmdFlags.None, null,null,0,
-                            null,null);
+                            null,null, null);
                         syncedFiles = new List<FileSpec>();
                         syncedFiles.Add(folderRoot);
 
@@ -2922,15 +3076,17 @@ namespace p4api.net.unit.test
                 finally
                 {
                     // delete created file
-                    System.IO.File.Delete(@"C:\MyTestDir\admin_space\MyCode\new.txt");
+                    System.IO.File.Delete(Path.Combine(adminSpace, "MyCode", "new.txt"));
 
                     // set untouched file back to read only
-                    System.IO.File.SetAttributes(@"C:\MyTestDir\admin_space\MyCode\ReadMe.txt",
+                    System.IO.File.SetAttributes(Path.Combine(adminSpace, "MyCode", "ReadMe.txt"),
                         FileAttributes.ReadOnly);
 
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+                cptype = Utilities.CheckpointType.U;
             }
         }
 
@@ -2940,25 +3096,29 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void ReconcileRenamedFilesTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
-            for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
+            for (int i = 0; i < 1; i++) // run only once for ascii
             {
+                var cptype = (Utilities.CheckpointType)i;
+                var adminSpace = Path.Combine(Utilities.TestClientRoot(TestDir, cptype), "admin_space");
+                
+            Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 2, unicode);
-                    var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
-                    var adminSpace = Path.Combine(clientRoot, "admin_space");
+                    p4d = Utilities.DeployP4TestServer(TestDir, 2, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Utilities.DeleteDirectory(adminSpace);  // get rid of workspace cruft
                     Directory.CreateDirectory(adminSpace);
                     Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
+                    
+                    Utilities.SetClientRoot(rep,TestDir,cptype,ws_client,false);
 
                     using (Connection con = rep.Connection)
                     {
@@ -2977,7 +3137,7 @@ namespace p4api.net.unit.test
 
                         Assert.AreEqual("admin", con.Client.OwnerName);
 
-                        FileSpec folderRoot = new FileSpec(new LocalPath(@"C:\MyTestDir\admin_space\MyCode\..."),
+                        FileSpec folderRoot = new FileSpec(new LocalPath(Path.Combine(adminSpace, "MyCode", "...")),
                             null);
                         // force sync files
 
@@ -2986,14 +3146,14 @@ namespace p4api.net.unit.test
 
                         // touch file under Perforce control without opening for
                         // add, edit or delete
-
-                        System.IO.File.SetAttributes(@"C:\MyTestDir\admin_space\MyCode\ReadMe.txt",
-                            System.IO.File.GetAttributes(@"C:\MyTestDir\admin_space\MyCode\ReadMe.txt")
+                        string readme = Path.Combine(adminSpace, "MyCode", "ReadMe.txt");
+                        string renamedreadme = Path.Combine(adminSpace, "MyCode", "RenamedReadMe.txt");
+                        System.IO.File.SetAttributes(readme,
+                            System.IO.File.GetAttributes(readme)
                             & ~FileAttributes.ReadOnly);
 
                         // rename a file
-                        System.IO.File.Move(@"C:\MyTestDir\admin_space\MyCode\ReadMe.txt",
-                            @"C:\MyTestDir\admin_space\MyCode\RenamedReadMe.txt");
+                        System.IO.File.Move(readme, renamedreadme);
 
                         // status check for all added files
                         sFlags = new Options(ReconcileFilesCmdFlags.NotControlled, -1);
@@ -3023,15 +3183,14 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(2, rFiles.Count);
 
                         // change folderRoot to limit to the renamed file
-                        folderRoot = new FileSpec(new LocalPath(@"C:\MyTestDir\admin_space\MyCode\*ReadMe.txt"),
-                            null);
+                        folderRoot = new FileSpec(new LocalPath(Path.Combine(adminSpace, "MyCode", "*ReadMe.txt")), null);
 
                         // reconcile the renamed file
                         sFlags = new Options(ReconcileFilesCmdFlags.None, -1);
                         rFiles = con.Client.ReconcileFiles(sFlags, folderRoot);
 
                         sFlags = new Options(GetFileMetadataCmdFlags.None, null, null, 0,
-                            null, null);
+                            null, null, null);
                         syncedFiles = new List<FileSpec>();
                         syncedFiles.Add(folderRoot);
 
@@ -3054,15 +3213,16 @@ namespace p4api.net.unit.test
                 finally
                 {
                     // set renamed file back to read only and original name
-                    System.IO.File.Move(@"C:\MyTestDir\admin_space\MyCode\RenamedReadMe.txt",
-                        @"C:\MyTestDir\admin_space\MyCode\ReadMe.txt");
+                    System.IO.File.Move(Path.Combine(adminSpace, "MyCode", "RenamedReadMe.txt"),
+                        Path.Combine(adminSpace, "MyCode", "ReadMe.txt"));
 
-                    System.IO.File.SetAttributes(@"C:\MyTestDir\admin_space\MyCode\ReadMe.txt",
+                    System.IO.File.SetAttributes(Path.Combine(adminSpace, "MyCode", "ReadMe.txt"),
                         FileAttributes.ReadOnly);
 
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -3072,25 +3232,27 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void ReconcileCleanTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
-            for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
+            for (int i = 0; i < 1; i++) // run only once for ascii
             {
+                var cptype = (Utilities.CheckpointType)i;
+            Process p4d = null;
+                Repository rep = null;
+                var adminSpace = Path.Combine(Utilities.TestClientRoot(TestDir, cptype), "admin_space");
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 2, unicode);
-                    var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
-                    var adminSpace = Path.Combine(clientRoot, "admin_space");
+                    p4d = Utilities.DeployP4TestServer(TestDir, 2, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Utilities.DeleteDirectory(adminSpace);  // get rid of workspace cruft
                     Directory.CreateDirectory(adminSpace);
                     Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client, false);
 
                     using (Connection con = rep.Connection)
                     {
@@ -3108,9 +3270,9 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
 
                         Assert.AreEqual("admin", con.Client.OwnerName);
-                        // Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
-                        FileSpec folderRoot = new FileSpec(new LocalPath(@"C:\MyTestDir\admin_space\MyCode\..."),
+                        FileSpec folderRoot = new FileSpec(new LocalPath(
+                                Path.Combine(adminSpace, "MyCode", "...")),
                             null);
 
                         // force sync files
@@ -3119,31 +3281,33 @@ namespace p4api.net.unit.test
 
                         // touch files under Perforce control without opening for
                         // add, edit or delete
-
-                        System.IO.File.SetAttributes(@"C:\MyTestDir\admin_space\MyCode\pup.txt",
-                            System.IO.File.GetAttributes(@"C:\MyTestDir\admin_space\MyCode\pup.txt")
+                        string pup = Path.Combine(adminSpace, "MyCode", "pup.txt");
+                        string readme = Path.Combine(adminSpace, "MyCode", "ReadMe.txt");
+                        string silly = Path.Combine(adminSpace, "MyCode", "Silly.bmp");
+                        string renamedreadme = Path.Combine(adminSpace, "MyCode", "RenamedReadMe.txt");
+                        System.IO.File.SetAttributes(pup,
+                            System.IO.File.GetAttributes(pup)
                             & ~FileAttributes.ReadOnly);
-                        System.IO.File.SetAttributes(@"C:\MyTestDir\admin_space\MyCode\ReadMe.txt",
-                            System.IO.File.GetAttributes(@"C:\MyTestDir\admin_space\MyCode\ReadMe.txt")
+                        System.IO.File.SetAttributes(readme,
+                            System.IO.File.GetAttributes(readme)
                             & ~FileAttributes.ReadOnly);
-                        System.IO.File.SetAttributes(@"C:\MyTestDir\admin_space\MyCode\Silly.bmp",
-                            System.IO.File.GetAttributes(@"C:\MyTestDir\admin_space\MyCode\Silly.bmp")
+                        System.IO.File.SetAttributes(silly,
+                            System.IO.File.GetAttributes(silly)
                             & ~FileAttributes.ReadOnly);
 
                         // edit a file
-                        var lines = System.IO.File.ReadAllLines(@"C:\MyTestDir\admin_space\MyCode\pup.txt");
+                        var lines = System.IO.File.ReadAllLines(pup);
                         lines[0] = "some value";
-                        System.IO.File.WriteAllLines(@"C:\MyTestDir\admin_space\MyCode\pup.txt", lines);
+                        System.IO.File.WriteAllLines(pup, lines);
 
                         // rename a file
-                        System.IO.File.Move(@"C:\MyTestDir\admin_space\MyCode\ReadMe.txt",
-                            @"C:\MyTestDir\admin_space\MyCode\RenamedReadMe.txt");
+                        System.IO.File.Move(readme, renamedreadme);
 
                         // delete a file
-                        System.IO.File.Delete(@"C:\MyTestDir\admin_space\MyCode\Silly.bmp");
+                        System.IO.File.Delete(silly);
 
                         // create a file
-                        System.IO.File.Create(@"C:\MyTestDir\admin_space\MyCode\new.txt").Close();
+                        System.IO.File.Create(Path.Combine(adminSpace, "MyCode", "new.txt")).Close();
 
                         // check file differences (there should be some)
                         string[] args = new string[1];
@@ -3151,7 +3315,8 @@ namespace p4api.net.unit.test
                         Options options = new Options();
                         options["-f"] = null;
                         options["-sl"] = null;
-                        P4Command cmd = new P4Command(con, "diff", true, args);
+                        using (P4Command cmd = new P4Command(con, "diff", true, args))
+                        {
                         P4CommandResult results = cmd.Run(options);
 
                         // confirm diffs on edits or deletes
@@ -3202,18 +3367,20 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(1, rFiles.Count);
                     }
                 }
+                }
                 finally
                 {
                     // delete created file
-                    System.IO.File.Delete(@"C:\MyTestDir\admin_space\MyCode\new.txt");
+                    System.IO.File.Delete(Path.Combine(adminSpace, "MyCode", "new.txt"));
 
                     // set renamed file back to read only
-                    System.IO.File.SetAttributes(@"C:\MyTestDir\admin_space\MyCode\ReadMe.txt",
+                    System.IO.File.SetAttributes(Path.Combine(adminSpace, "MyCode", "ReadMe.txt"),
                         FileAttributes.ReadOnly);
 
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -3223,25 +3390,27 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void RevertFilesTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
-            for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
+            for (int i = 0; i < 1; i++) // run once for ascii
             {
+                Utilities.CheckpointType cptype = (Utilities.CheckpointType) i;
+            Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 2, unicode);
-                    var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 2, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
                     var adminSpace = Path.Combine(clientRoot, "admin_space");
                     Directory.CreateDirectory(adminSpace);
                     Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
                     using (Connection con = rep.Connection)
                     {
@@ -3259,10 +3428,9 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
 
                         Assert.AreEqual("admin", con.Client.OwnerName);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
                         // test revert against all .txt files in a directory with no changelist specified
-                        FileSpec fromFile = new FileSpec(new LocalPath(Path.Combine(adminSpace, "TestData\\*.txt")),
+                        FileSpec fromFile = new FileSpec(new LocalPath(Path.Combine(adminSpace, "TestData", "*.txt")),
                             null);
                         Options sFlags = new Options(
                             RevertFilesCmdFlags.Preview,
@@ -3304,8 +3472,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -3315,22 +3484,25 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void ShelveFilesTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
             for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
             {
+                Utilities.CheckpointType cptype = (Utilities.CheckpointType) i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 2, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 2, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
+                    
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
                     using (Connection con = rep.Connection)
                     {
@@ -3348,7 +3520,6 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
 
                         Assert.AreEqual("admin", con.Client.OwnerName);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
                         Changelist change = new Changelist();
                         change.Description = "On the fly built change list";
@@ -3386,8 +3557,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -3397,22 +3569,26 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void ShelveFilesTest2()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
 
             for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
             {
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 2, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 2, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
                     using (Connection con = rep.Connection)
                     {
@@ -3430,7 +3606,6 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
 
                         Assert.AreEqual("admin", con.Client.OwnerName);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
                         Changelist change = new Changelist();
                         change.Description = "On the fly built change list";
@@ -3480,8 +3655,10 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+                cptype = Utilities.CheckpointType.U;
             }
         }
 
@@ -3491,18 +3668,18 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void ParallelShelveFilesTestA()
         {
-            ParallelShelveFilesTest(true);
+            ParallelShelveFilesTest(Utilities.CheckpointType.A);
         }
 
         [TestMethod()]
         public void ParallelShelveFilesTestU()
         {
-            ParallelShelveFilesTest(false);
+            ParallelShelveFilesTest(Utilities.CheckpointType.U);
         }
 
-        public void ParallelShelveFilesTest(bool unicode)
+        public void ParallelShelveFilesTest(Utilities.CheckpointType cptype)
         {
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -3510,23 +3687,29 @@ namespace p4api.net.unit.test
             int fileCount = 500;  // remember that this is an unlicensed server
 
             Process p4d = null;
+            Repository rep = null;
 
             try
             {
-                p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
-                Server server = new Server(new ServerAddress(uri));
-                Repository rep = new Repository(server);
+                p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                Assert.IsNotNull(p4d, "Setup Failure");
 
-                string clientDir = Path.Combine(TestDir, ws_client);
+                Server server = new Server(new ServerAddress(uri));
+                rep = new Repository(server);
+
+                string clientDir = Path.Combine(Utilities.TestClientRoot(TestDir, cptype), ws_client);
                 string syncFilesDir = Path.Combine(clientDir, "parallel");
-                FileSpec parallelFileSpec = FileSpec.ClientSpec(syncFilesDir + "\\...");
+                FileSpec parallelFileSpec = FileSpec.ClientSpec(Path.Combine(syncFilesDir, "..."));
 
                 var parallelFileSpecArray = new FileSpec[] { parallelFileSpec };
 
-                FileSpec parallelFileSpecZero = FileSpec.ClientSpec(syncFilesDir + "\\...", VersionSpec.None);
+                FileSpec parallelFileSpecZero = FileSpec.ClientSpec(Path.Combine(syncFilesDir, "..."), VersionSpec.None);
+
+                Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
                 using (Connection con = rep.Connection)
                 {
+                    
                     con.UserName = user;
                     con.Client = new Client();
                     con.Client.Name = ws_client;
@@ -3592,6 +3775,8 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
             }
         }
 
@@ -3601,22 +3786,26 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void SyncFilesTest()
         {
-            bool unicode = false;
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "Alex";
             string pass = string.Empty;
             string ws_client = "alex_space";
 
-            Process p4d = null;
-
             for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
             {
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-				    p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
+    		    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
 				    Server server = new Server(new ServerAddress(uri));
-					Repository rep = new Repository(server);
+                    rep = new Repository(server);
+                    
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client, false);
 
 					using (Connection con = rep.Connection)
 					{
@@ -3663,8 +3852,10 @@ namespace p4api.net.unit.test
 				finally
 				{
 					Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
 				}
-				unicode = !unicode;
+                cptype = Utilities.CheckpointType.U;
 			}
 		}
 
@@ -3674,7 +3865,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void ParallelSyncFilesTestA()
         {
-            ParallelSyncFilesTest(false);
+            ParallelSyncFilesTest(Utilities.CheckpointType.A);
         }
 
         /// <summary>
@@ -3683,12 +3874,12 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void ParallelSyncFilesTestU()
         {
-            ParallelSyncFilesTest(true);
+            ParallelSyncFilesTest(Utilities.CheckpointType.U);
         }
 
-        public void ParallelSyncFilesTest(bool unicode)
+        public void ParallelSyncFilesTest(Utilities.CheckpointType cptype)
         {
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "Alex";
             string pass = string.Empty;
             string ws_client = "alex_space";
@@ -3696,75 +3887,101 @@ namespace p4api.net.unit.test
             int fileCount = 500;  // remember that this is an unlicensed server
 
             Process p4d = null;
+            Repository rep = null;
 
-            try
-            {
-                p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
-                Server server = new Server(new ServerAddress(uri));
-                Repository rep = new Repository(server);
-
-                string clientDir = Path.Combine(TestDir, ws_client);
-                string syncFilesDir = Path.Combine(clientDir, "parallel");
-                FileSpec parallelFileSpec = FileSpec.ClientSpec(syncFilesDir + "\\...");
-
-                var parallelFileSpecArray = new FileSpec[] { parallelFileSpec };
-
-                FileSpec parallelFileSpecZero = FileSpec.ClientSpec(syncFilesDir + "\\...", VersionSpec.None);
-                  
-
-                using (Connection con = rep.Connection)
+                try
                 {
-                    con.UserName = user;
-                    con.Client = new Client();
-                    con.Client.Name = ws_client;
+#if ! _WINDOWS
+                // Avoid something bad going on with GetCharSet()
+                if (cptype == Utilities.CheckpointType.U)
+                    P4Server.Update("P4CHARSET", "utf8");
+#endif 
+                p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                Assert.IsNotNull(p4d, "Setup Failure");
 
-                    Assert.AreEqual(con.Status, ConnectionStatus.Disconnected);
+                    Server server = new Server(new ServerAddress(uri));
+                rep = new Repository(server);
 
-                    Assert.AreEqual(con.Server.State, ServerState.Unknown);
+                string clientDir = Path.Combine(Utilities.TestClientRoot(TestDir, cptype), ws_client);
+                    string syncFilesDir = Path.Combine(clientDir, "parallel");
+                FileSpec parallelFileSpec = FileSpec.ClientSpec(Path.Combine(syncFilesDir, "..."));
 
-                    Assert.IsTrue(con.Connect(null));
+                    var parallelFileSpecArray = new FileSpec[] { parallelFileSpec };
 
-                    Assert.AreEqual(con.Server.State, ServerState.Online);
+                FileSpec parallelFileSpecZero = FileSpec.ClientSpec(Path.Combine(syncFilesDir, "..."), VersionSpec.None);
+                Client c;
+                  
+               // Create / Update client 
+               using (Connection con1 = rep.Connection)
+               {
+                   con1.UserName = "admin";
+                   con1.Connect(null);
 
-                    Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+                   c = rep.GetClient(ws_client, null);
+                   c.Root = clientDir;
+                   c.OwnerName = user;
+                   c.ViewMap = new ViewMap(new string[]
+                   {
+                       "	//depot/parallel/... //alex_space/parallel/..."
+                   });
+                   rep.UpdateClient(c);
+                   rep.Connection.Server.SetState(ServerState.Unknown);
+               }
 
-                    Assert.AreEqual("Alex", con.Client.OwnerName);
+                    using (Connection con = rep.Connection)
+                    {
+                        con.UserName = user;
+                    con.Client = c;
 
-                    // Set up a bunch of files in the workspace
-                    PrepSyncFiles(syncFilesDir);
-                    CreateSyncFiles(syncFilesDir, fileCount);
+                        Assert.AreEqual(con.Status, ConnectionStatus.Disconnected);
 
-                    // Add them to the server
-                    Options addFlags = new Options(AddFilesCmdFlags.None, -1, null);
-                    IList<FileSpec> addFiles = con.Client.AddFiles(addFlags, parallelFileSpecArray);
+                        Assert.AreEqual(con.Server.State, ServerState.Unknown);
 
-                    // Submit them
-                    Options submitFlags = new Options(SubmitFilesCmdFlags.None,-1, null,"initial submit test files", null);
-                    con.Client.SubmitFiles(submitFlags, parallelFileSpec);
+                        Assert.IsTrue(con.Connect(null));
 
-                    // Now Sync them all to NONE
-                    Options syncFlags = new Options(SyncFilesCmdFlags.Quiet);
-                    IList<FileSpec> syncFiles = con.Client.SyncFiles(syncFlags, parallelFileSpecZero);
+                        Assert.AreEqual(con.Server.State, ServerState.Online);
 
-                    bool setRv = P4ConfigureSetParallel(con, 4);
-                    Assert.IsTrue(setRv);
+                        Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+
+                        Assert.AreEqual("Alex", con.Client.OwnerName);
+
+                        // Set up a bunch of files in the workspace
+                        PrepSyncFiles(syncFilesDir);
+                        CreateSyncFiles(syncFilesDir, fileCount);
+
+                        // Add them to the server
+                        Options addFlags = new Options(AddFilesCmdFlags.None, -1, null);
+                        IList<FileSpec> addFiles = con.Client.AddFiles(addFlags, parallelFileSpecArray);
+
+                        // Submit them
+                        Options submitFlags = new Options(SubmitFilesCmdFlags.None,-1, null,"initial submit test files", null);
+                        con.Client.SubmitFiles(submitFlags, parallelFileSpec);
+
+                        // Now Sync them all to NONE
+                        Options syncFlags = new Options(SyncFilesCmdFlags.Quiet);
+                        IList<FileSpec> syncFiles = con.Client.SyncFiles(syncFlags, parallelFileSpecZero);
+
+                        bool setRv = P4ConfigureSetParallel(con, 4);
+                        Assert.IsTrue(setRv);
 			           
-                    // Finally, we Sync them again using parallel.
-                    Options pFlags = new SyncFilesCmdOptions(SyncFilesCmdFlags.None, 0, 4, 10, 0, 100);
-                    IList<FileSpec> pFiles = con.Client.SyncFiles(pFlags, parallelFileSpecArray);
+                        // Finally, we Sync them again using parallel.
+                        Options pFlags = new SyncFilesCmdOptions(SyncFilesCmdFlags.None, 0, 4, 10, 0, 100);
+                        IList<FileSpec> pFiles = con.Client.SyncFiles(pFlags, parallelFileSpecArray);
 
-                    Assert.IsNotNull(pFiles);
-                    Assert.AreEqual(fileCount, pFiles.Count);
+                        Assert.IsNotNull(pFiles);
+                        Assert.AreEqual(fileCount, pFiles.Count);
+                    }
                 }
-            }
-            catch (P4Exception ex)
-            {
-                logger.Error("ParallelSyncFilesTest " + ex.Message, ex);
-            }
-            finally
-            {
-                Utilities.RemoveTestServer(p4d, TestDir);
-            }
+                catch (P4Exception ex)
+                {
+                    logger.Error("ParallelSyncFilesTest " + ex.Message, ex);
+                }
+                finally
+                {
+                    Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
+                }
         }
 
         /// <summary>
@@ -3827,14 +4044,15 @@ namespace p4api.net.unit.test
 
             // Tell the server to support parallel
             string[] args = {"set", "net.parallel.max=" + threads };
-            var cmd = new P4Command(con, "configure", false, args);
-
+            using (var cmd = new P4Command(con, "configure", false, args))
+            {
 			var cmdr = cmd.Run(new Options());
             // now force a reconnect, or p4d might not use the new config
             con.getP4Server().Reconnect();
 
             con.UserName = oldUser;
             return cmdr.Success;
+        }
         }
 
         private bool P4Configure(Connection con, string[] args)
@@ -3843,11 +4061,13 @@ namespace p4api.net.unit.test
             con.UserName = "admin";
             con.Login("");
 
-            var cmd = new P4Command(con, "configure", false, args);
+            using (var cmd = new P4Command(con, "configure", false, args))
+            {
             var cmdr = cmd.Run(new Options());
 
             con.UserName = oldUser;
             return cmdr.Success;
+        }
         }
 
         /// <summary>
@@ -3857,24 +4077,24 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void ParallelSyncJob085941A()
         {
-            ParallelSyncJob085941(false);
+            ParallelSyncJob085941(Utilities.CheckpointType.A);
         }
 
         /// <summary>
-        /// A test for Parallel Sync error handling (don't run for unicode, u.exe lacks an alex_space that the test depends on)
+        /// A test for Parallel Sync error handling (don't run for unicode, u.tar lacks an alex_space that the test depends on)
         /// Job085941
         ///</summary>
         /*
         [TestMethod()]
         public void ParallelSyncJob085941U()
         {
-            // ParallelSyncJob085941(true);
+            // ParallelSyncJob085941(Utilities.CheckpointType.U);
         }
         */
 
-        public void ParallelSyncJob085941(bool unicode)
+        public void ParallelSyncJob085941(Utilities.CheckpointType cptype)
         {
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user1 = "Alex";
             string pass = string.Empty;
             string ws_client1 = "alex_space";
@@ -3886,117 +4106,125 @@ namespace p4api.net.unit.test
             int fileCount = 500;  // remember that this is an unlicensed server
 
             Process p4d = null;
-
+            Repository rep = null;
             Connection con = null;
             P4CommandResult cmdResult;
 
-            try
-            {
-                p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
-                Server server = new Server(new ServerAddress(uri));
-                Repository rep = new Repository(server);
-
-                // Information about Alex's workspace
-                string clientDir1 = Path.Combine(TestDir, ws_client1);
-                string syncFilesDir1 = Path.Combine(clientDir1, "parallel");
-                string testFile1 = Path.Combine(syncFilesDir1, targetFile);
-                FileSpec parallelFileSpec1 = FileSpec.ClientSpec(syncFilesDir1 + "\\...");
-                var parallelFileSpecArray1 = new FileSpec[] { parallelFileSpec1 };
-                FileSpec parallelFileSpecZero1 = FileSpec.ClientSpec(syncFilesDir1 + "\\...", VersionSpec.None);
-                FileSpec testFileSpec1 = FileSpec.ClientSpec(testFile1);
-                var testFileSpecArray1 = new FileSpec[] { testFileSpec1 };
-
-                // Information about Alice's workspace
-                string clientDir2 = Path.Combine(TestDir, ws_client2);
-                string syncFilesDir2 = Path.Combine(clientDir2, "parallel");
-                string testFile2 = Path.Combine(syncFilesDir2, targetFile);
-                FileSpec parallelFileSpec2 = FileSpec.ClientSpec(syncFilesDir2 + "\\...");
-                FileSpec testFileSpec2 = FileSpec.ClientSpec(testFile2);
-                var testFileSpecArray2 = new FileSpec[] { testFileSpec2 };
-
-                using (con = rep.Connection)
+                try
                 {
-                    con.UserName = user1;
-                    con.Client = new Client {Name = ws_client1};
+                string clientRoot = Utilities.TestClientRoot(TestDir, cptype);
+                
+                p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                Assert.IsNotNull(p4d, "Setup Failure");
+                
+                    Server server = new Server(new ServerAddress(uri));
+                rep = new Repository(server);
 
-                    Assert.AreEqual(con.Status, ConnectionStatus.Disconnected);
-                    Assert.AreEqual(con.Server.State, ServerState.Unknown);
-                    Assert.IsTrue(con.Connect(null));
-                    Assert.AreEqual(con.Server.State, ServerState.Online);
-                    Assert.AreEqual(con.Status, ConnectionStatus.Connected);
-                    Assert.AreEqual("Alex", con.Client.OwnerName);
+                    // Information about Alex's workspace
+                Utilities.SetClientRoot(rep, TestDir, cptype, ws_client1, false);
+                string clientDir1 = Path.Combine(clientRoot, ws_client1);
+                    string syncFilesDir1 = Path.Combine(clientDir1, "parallel");
+                    string testFile1 = Path.Combine(syncFilesDir1, targetFile);
+                FileSpec parallelFileSpec1 = FileSpec.ClientSpec(Path.Combine(syncFilesDir1, "..."));
+                    var parallelFileSpecArray1 = new FileSpec[] { parallelFileSpec1 };
+                FileSpec parallelFileSpecZero1 = FileSpec.ClientSpec(Path.Combine(syncFilesDir1, "..."), VersionSpec.None);
+                    FileSpec testFileSpec1 = FileSpec.ClientSpec(testFile1);
+                    var testFileSpecArray1 = new FileSpec[] { testFileSpec1 };
 
-                    // Set up a bunch of files in the workspace
-                    PrepSyncFiles(syncFilesDir1);
-                    CreateSyncFiles(syncFilesDir1, fileCount);
+                    // Information about Alice's workspace
+                Utilities.SetClientRoot(rep, TestDir, cptype, ws_client2, false);
+                string clientDir2 = Path.Combine(clientRoot, ws_client2);
+                    string syncFilesDir2 = Path.Combine(clientDir2, "parallel");
+                    string testFile2 = Path.Combine(syncFilesDir2, targetFile);
+                FileSpec parallelFileSpec2 = FileSpec.ClientSpec(Path.Combine(syncFilesDir2, "..."));
+                    FileSpec testFileSpec2 = FileSpec.ClientSpec(testFile2);
+                    var testFileSpecArray2 = new FileSpec[] { testFileSpec2 };
 
-                    // Add them to the server
-                    Options addFlags = new Options(AddFilesCmdFlags.None, -1, null);
-                    IList<FileSpec> addFiles = con.Client.AddFiles(addFlags, parallelFileSpecArray1);
+                    using (con = rep.Connection)
+                    {
+                        con.UserName = user1;
+                        con.Client = new Client {Name = ws_client1};
 
-                    // Submit them
-                    Options submitFlags = new Options(SubmitFilesCmdFlags.None, -1, null, "initial submit test files", null);
-                    con.Client.SubmitFiles(submitFlags, parallelFileSpec1);
+                        Assert.AreEqual(con.Status, ConnectionStatus.Disconnected);
+                        Assert.AreEqual(con.Server.State, ServerState.Unknown);
+                        Assert.IsTrue(con.Connect(null));
+                        Assert.AreEqual(con.Server.State, ServerState.Online);
+                        Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+                        Assert.AreEqual("Alex", con.Client.OwnerName);
 
-                    // Remove all Workspace Files (Sync to NONE)
-                    Options syncFlags = new Options(SyncFilesCmdFlags.Quiet);
-                    IList<FileSpec> syncFiles = con.Client.SyncFiles(syncFlags, parallelFileSpecZero1);
+                        // Set up a bunch of files in the workspace
+                        PrepSyncFiles(syncFilesDir1);
+                        CreateSyncFiles(syncFilesDir1, fileCount);
 
-                    // Sync just the target file
-                    syncFlags = new Options(SyncFilesCmdFlags.Quiet | SyncFilesCmdFlags.Force);
-                    IList<FileSpec> syncOneFile = con.Client.SyncFiles(syncFlags, testFileSpecArray1);
+                        // Add them to the server
+                        Options addFlags = new Options(AddFilesCmdFlags.None, -1, null);
+                        IList<FileSpec> addFiles = con.Client.AddFiles(addFlags, parallelFileSpecArray1);
 
-                    // Change Target file to Read Only
-                    var fileInfo = new System.IO.FileInfo(testFile1){ IsReadOnly = false };
+                        // Submit them
+                        Options submitFlags = new Options(SubmitFilesCmdFlags.None, -1, null, "initial submit test files", null);
+                        con.Client.SubmitFiles(submitFlags, parallelFileSpec1);
+
+                        // Remove all Workspace Files (Sync to NONE)
+                        Options syncFlags = new Options(SyncFilesCmdFlags.Quiet);
+                        IList<FileSpec> syncFiles = con.Client.SyncFiles(syncFlags, parallelFileSpecZero1);
+
+                        // Sync just the target file
+                        syncFlags = new Options(SyncFilesCmdFlags.Quiet | SyncFilesCmdFlags.Force);
+                        IList<FileSpec> syncOneFile = con.Client.SyncFiles(syncFlags, testFileSpecArray1);
+
+                        // Change Target file to Read Only
+                        var fileInfo = new System.IO.FileInfo(testFile1){ IsReadOnly = false };
                        
-                    // Now set up the other user / client
-                    con.UserName = user2;
-                    con.Client = new Client { Name = ws_client2 };
+                        // Now set up the other user / client
+                        con.UserName = user2;
+                        con.Client = new Client { Name = ws_client2 };
 
-                    // Sync just the target file
-                    syncFlags = new Options(SyncFilesCmdFlags.Quiet | SyncFilesCmdFlags.Force);
-                    IList<FileSpec> syncOneFile2 = con.Client.SyncFiles(syncFlags, testFileSpecArray2);
+                        // Sync just the target file
+                        syncFlags = new Options(SyncFilesCmdFlags.Quiet | SyncFilesCmdFlags.Force);
+                        IList<FileSpec> syncOneFile2 = con.Client.SyncFiles(syncFlags, testFileSpecArray2);
 
-                    // Edit the TargetFile
-                    Options editFlags = new Options();
-                    IList<FileSpec> editFiles = con.Client.EditFiles(editFlags, testFileSpecArray2 );
-                    System.IO.File.WriteAllBytes(testFile2, GetFileContent(99));
+                        // Edit the TargetFile
+                        Options editFlags = new Options();
+                        IList<FileSpec> editFiles = con.Client.EditFiles(editFlags, testFileSpecArray2 );
+                        System.IO.File.WriteAllBytes(testFile2, GetFileContent(99));
 
-                    // Submit the targetfile2
-                    submitFlags = new Options(SubmitFilesCmdFlags.None, -1, null, "update test file", null);
-                    con.Client.SubmitFiles(submitFlags, parallelFileSpec2);
+                        // Submit the targetfile2
+                        submitFlags = new Options(SubmitFilesCmdFlags.None, -1, null, "update test file", null);
+                        con.Client.SubmitFiles(submitFlags, parallelFileSpec2);
 
-                    // Back to the original user / workspace
-                    con.UserName = user1;
-                    con.Client = new Client { Name = ws_client1 };
+                        // Back to the original user / workspace
+                        con.UserName = user1;
+                        con.Client = new Client { Name = ws_client1 };
 
-                        // Add debugging to server log
-                        string[] cargs = new string[]{"set", "dmc=3"};
-                        P4Configure(con, cargs);
+                         // Add debugging to server log
+                         string[] cargs = new string[]{"set", "dmc=3"};
+                         P4Configure(con, cargs);
 
-                        bool setRv = P4ConfigureSetParallel(con, 4);
-                        Assert.IsTrue(setRv);
+                         bool setRv = P4ConfigureSetParallel(con, 4);
+                         Assert.IsTrue(setRv);
 
-                    // Finally, we Sync them again using parallel.
-                    Options pFlags = new SyncFilesCmdOptions(SyncFilesCmdFlags.None, 0, 4, 8, 2000, 9, 2000);
-                    IList<FileSpec> pFiles = con.Client.SyncFiles(pFlags, parallelFileSpecArray1);
+                        // Finally, we Sync them again using parallel.
+                        Options pFlags = new SyncFilesCmdOptions(SyncFilesCmdFlags.None, 0, 4, 8, 2000, 9, 2000);
+                        IList<FileSpec> pFiles = con.Client.SyncFiles(pFlags, parallelFileSpecArray1);
 
-                    cmdResult = con.LastResults;
+                        cmdResult = con.LastResults;
 
-                    Assert.IsNotNull(pFiles);
-                    Assert.AreEqual(fileCount, pFiles.Count);
+                        Assert.IsNotNull(pFiles);
+                        Assert.AreEqual(fileCount, pFiles.Count);
+                    }
+                }
+                catch (P4Exception ex)
+                {
+                    logger.Error("ParallelSyncJob085941: " + ex.Message, ex);
+                    Assert.AreEqual(0, ex.ErrorCode, "Error undetected during parallel sync\n");
+                }
+                finally
+                {
+                    Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
                 }
             }
-            catch (P4Exception ex)
-            {
-                logger.Error("ParallelSyncJob085941: " + ex.Message, ex);
-                Assert.AreEqual(0, ex.ErrorCode, "Error undetected during parallel sync\n");
-            }
-            finally
-            {
-                Utilities.RemoveTestServer(p4d, TestDir);
-            }
-        }
 
         /// <summary>
         ///A test for SyncFiles using a label
@@ -4004,22 +4232,24 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void SyncToLabelTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+            Process p4d = null;
+                Repository rep = null;
+                Utilities.CheckpointType cptype = (Utilities.CheckpointType) i;
+
                 try 
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
                     Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -4062,8 +4292,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -4073,23 +4304,28 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void SyncParallelErrorTestjob095320()
         {
-            bool unicode = false;
+            var cptype = Utilities.CheckpointType.A;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
             Process p4d = null;
+            Repository rep = null;
 
             try
             {
-                p4d = Utilities.DeployP4TestServer(TestDir, 13, unicode);
+                p4d = Utilities.DeployP4TestServer(TestDir, 13, cptype);
+                Assert.IsNotNull(p4d, "Setup Failure");
 
                 Server server = new Server(new ServerAddress(uri));
-                Repository rep = new Repository(server);
-                Connection con = rep.Connection;
+                rep = new Repository(server);
 
+                Utilities.SetClientRoot(rep, TestDir, cptype, ws_client,false);
+
+                using (Connection con = rep.Connection)
+                {
                 con.UserName = user;
                 con.Client = new Client();
                 con.Client.Name = ws_client;
@@ -4126,7 +4362,7 @@ namespace p4api.net.unit.test
 
                 // Confirm the other reverted file to still be at rev 1
                 IList<FileMetaData> fmd = rep.GetFileMetaData(null, new FileSpec(new DepotPath(@"//depot/TestData/WingDings.txt")));
-                Assert.AreEqual(fmd[0].HaveRev.ToString(), "1");
+                    Assert.AreEqual("1",fmd[0].HaveRev.ToString());
 
                 try
                 {
@@ -4136,20 +4372,23 @@ namespace p4api.net.unit.test
                 {
                     if (e.Message.Contains("parallel"))
                     {
-                        throw e;
+                            throw;
                     }
                 }
 
                 // Confirm the other reverted file to be at rev 2 (sync succeeded)
                 fmd = rep.GetFileMetaData(null, new FileSpec(new DepotPath(@"//depot/TestData/WingDings.txt")));
-                Assert.AreEqual(fmd[0].HaveRev.ToString(),"2");
+                    Assert.AreEqual("2",fmd[0].HaveRev.ToString());
 
                 // now disconnect since this is not wrapped in a using statement
                 con.Disconnect();
             }
+            }
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
             }
         }
 
@@ -4159,25 +4398,28 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void SyncDeletedFileTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = null;
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
+                var cptype = (Utilities.CheckpointType)i;
+            Process p4d = null;
+                Repository rep = null;
+
                 try
                 {
-                    p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);               
-                    var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);  
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
                     var adminSpace = Path.Combine(clientRoot, "admin_space");
                     Directory.CreateDirectory(adminSpace);
                     Server server = new Server(new ServerAddress(uri));
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
                     using (Connection con = rep.Connection)
                     {
@@ -4190,7 +4432,6 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(con.Server.State, ServerState.Online);
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
                         Assert.AreEqual(user, con.Client.OwnerName);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
                         // mark the file for delete and submit the change
                         FileSpec fromFile = new FileSpec(new DepotPath("//depot/Modifiers/Silly.bmp"), null);
@@ -4213,14 +4454,15 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(1, rFiles.Count);
 
                         // make sure the file was removed from the workspace
-                        Assert.IsFalse(System.IO.File.Exists(Path.Combine(adminSpace, "Modifiers\\Silly.bmp")));
+                        Assert.IsFalse(System.IO.File.Exists(Path.Combine(adminSpace, "Modifiers", "Silly.bmp")));
                     }
                 }
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -4230,24 +4472,26 @@ namespace p4api.net.unit.test
         [TestMethod()]
 		public void UnlockFilesTest()
 		{
-			bool unicode = false;
-
-			string uri = "localhost:6666";
+                string uri = configuration.ServerPort;
 			string user = "admin";
 			string pass = string.Empty;
 			string ws_client = "admin_space";
 
+                for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
+                {
+                    var cptype = (Utilities.CheckpointType)i;
 		    Process p4d = null;
+                    Repository rep = null;
 
-			for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
-			{
                 try {
-				    p4d = Utilities.DeployP4TestServer(TestDir, 5, unicode);
-                    var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
+			p4d = Utilities.DeployP4TestServer(TestDir, 5, cptype);
+                        Assert.IsNotNull(p4d, "Setup Failure");
+                        
+                        var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
                     var adminSpace = Path.Combine(clientRoot, "admin_space");
                     Directory.CreateDirectory(adminSpace);
 				    Server server = new Server(new ServerAddress(uri));
-					Repository rep = new Repository(server);
+                        rep = new Repository(server);
 
 					using (Connection con = rep.Connection)
 					{
@@ -4279,8 +4523,9 @@ namespace p4api.net.unit.test
 				finally
 				{
 					Utilities.RemoveTestServer(p4d, TestDir);
+                        p4d?.Dispose();
+                        rep?.Dispose();
 				}
-				unicode = !unicode;
 			}
 		}
 
@@ -4290,25 +4535,29 @@ namespace p4api.net.unit.test
 		[TestMethod()]
 		public void UnshelveFilesTest()
 		{
-			bool unicode = false;
-
-			string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
 			string user = "admin";
 			string pass = string.Empty;
 			string ws_client = "admin_space";
 
+            for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
+            {
+                var cptype = (Utilities.CheckpointType)i;
 		    Process p4d = null;
+                Repository rep = null;
 
-			for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
-			{
 			    try
 			    {
-			        p4d = Utilities.DeployP4TestServer(TestDir, 2, unicode);    
-                    var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 2, cptype); 
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
                     var adminSpace = Path.Combine(clientRoot, "admin_space");
                     Directory.CreateDirectory(adminSpace);
+                    
 				    Server server = new Server(new ServerAddress(uri));
-					Repository rep = new Repository(server);
+		    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
 
 					using (Connection con = rep.Connection)
 					{
@@ -4326,7 +4575,6 @@ namespace p4api.net.unit.test
 						Assert.AreEqual(con.Status, ConnectionStatus.Connected);
 
 						Assert.AreEqual("admin", con.Client.OwnerName);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
 						Changelist change = new Changelist();
 						change.Description = "On the fly built change list";
@@ -4360,7 +4608,7 @@ namespace p4api.net.unit.test
 						Assert.IsNotNull(rFiles);
 						Assert.AreEqual(1, rFiles.Count);
 
-						FileSpec revertFiles = new FileSpec(new LocalPath(Path.Combine(adminSpace, "TestData\\*")), null);
+    			FileSpec revertFiles = new FileSpec(new LocalPath(Path.Combine(adminSpace, "TestData", "*")), null);
 						Options rFlags = new Options(
 							RevertFilesCmdFlags.None,
 							9
@@ -4384,8 +4632,9 @@ namespace p4api.net.unit.test
 				finally
 				{
 					Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
 				}
-				unicode = !unicode;
 			}
 		}
 
@@ -4395,22 +4644,24 @@ namespace p4api.net.unit.test
 		[TestMethod()]
 		public void GetClientFileMappingsTest()
 		{
-			bool unicode = false;
-
-			string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
 			string user = "admin";
 			string pass = string.Empty;
 			string ws_client = "admin_space";
 
+            for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
+            {
 		    Process p4d = null;
+                Repository rep = null;
+                var cptype = (Utilities.CheckpointType) i;
 
-			for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
-			{
                 try 
                 {
-				    p4d = Utilities.DeployP4TestServer(TestDir, 2, unicode);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 2, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
 				    Server server = new Server(new ServerAddress(uri));
-					Repository rep = new Repository(server);
+                    rep = new Repository(server);
 
 					using (Connection con = rep.Connection)
 					{
@@ -4440,8 +4691,9 @@ namespace p4api.net.unit.test
 				finally
 				{
 					Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
 				}
-				unicode = !unicode;
 			}
 		}
 
@@ -4451,23 +4703,28 @@ namespace p4api.net.unit.test
 		[TestMethod()]
 		public void CopyFilesTest()
 		{
-			bool unicode = false;
-
-			string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
 			string user = "admin";
 			string pass = string.Empty;
 			string ws_client = "admin_space";
 
-		    Process p4d = null;
 
 			for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
 			{
+                Process p4d = null;
+                Repository rep = null;
+                Utilities.CheckpointType cptype = (Utilities.CheckpointType) i;
+                
                 try
                 {
-				    p4d = Utilities.DeployP4TestServer(TestDir, 2, unicode);
-				    Server server = new Server(new ServerAddress(uri));
-					Repository rep = new Repository(server);
+		    p4d = Utilities.DeployP4TestServer(TestDir, 2, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
 
+				    Server server = new Server(new ServerAddress(uri));
+		    rep = new Repository(server);
+
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
+                    
 					using (Connection con = rep.Connection)
 					{
 						con.UserName = user;
@@ -4508,8 +4765,9 @@ namespace p4api.net.unit.test
 				finally
 				{
 					Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
 				}
-				unicode = !unicode;
 			}
 		}
 
@@ -4519,22 +4777,23 @@ namespace p4api.net.unit.test
 		[TestMethod()]
 		public void MergeFilesTest()
 		{
-			bool unicode = false;
-
-			string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
 			string user = "admin";
 			string pass = string.Empty;
 			string ws_client = "admin_space";
 
-		    Process p4d = null;
-
 			for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
 			{
+                Utilities.CheckpointType cptype = (Utilities.CheckpointType) i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-				    p4d = Utilities.DeployP4TestServer(TestDir, 2, unicode);
+		    p4d = Utilities.DeployP4TestServer(TestDir, 2, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
 				    Server server = new Server(new ServerAddress(uri));
-					Repository rep = new Repository(server);
+                    rep = new Repository(server);
 
 					using (Connection con = rep.Connection)
 					{
@@ -4576,8 +4835,9 @@ namespace p4api.net.unit.test
 				finally
 				{
 					Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
 				}
-				unicode = !unicode;
 			}
 		}
 	}

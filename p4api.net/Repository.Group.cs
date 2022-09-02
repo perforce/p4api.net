@@ -154,16 +154,17 @@ namespace Perforce.P4
 			if (group == null)
 			{
 				throw new ArgumentNullException("group");
-
 			}
-			P4Command cmd = new P4Command(this, "group", true);
 
+            using (P4Command cmd = new P4Command(this, "group", true))
+            {
 			cmd.DataSet = group.ToString();
 
 			if (options == null)
 			{
 				options = new Options();
 			}
+
 			options["-i"] = null;
 
 			P4CommandResult results = cmd.Run(options);
@@ -175,8 +176,10 @@ namespace Perforce.P4
 			{
 				P4Exception.Throw(results.ErrorList);
 			}
+
 			return null;
 		}
+        }
 		/// <summary>
 		/// Create a new group in the repository.
 		/// </summary>
@@ -271,14 +274,15 @@ namespace Perforce.P4
 			if (group == null)
 			{
 				throw new ArgumentNullException("group");
-
 			}
-			P4Command cmd = new P4Command(this, "group", true, group);
 
+            using (P4Command cmd = new P4Command(this, "group", true, group))
+            {
 			if (options == null)
 			{
 				options = new Options();
 			}
+
 			options["-o"] = null;
 
 			P4CommandResult results = cmd.Run(options);
@@ -288,6 +292,7 @@ namespace Perforce.P4
 				{
 					return null;
 				}
+
 				Group value = new Group();
 				value.FromGroupCmdTaggedOutput((results.TaggedOutput[0]));
 
@@ -297,8 +302,10 @@ namespace Perforce.P4
 			{
 				P4Exception.Throw(results.ErrorList);
 			}
+
 			return null;
 		}
+        }
         /// <summary>
         /// Get the record for an existing group from the repository.
         /// </summary>
@@ -385,16 +392,10 @@ namespace Perforce.P4
         /// <seealso cref="GroupsCmdFlags"/> 
         public IList<Group> GetGroups(Options options, params string[] groups)
 		{
-			P4Command cmd = null;
-			if ((groups != null) && (groups.Length > 0))
+            using (P4Command cmd = (groups?.Length ?? 0) > 0
+                ? new P4Command(this, "groups", true, groups)
+                : new P4Command(this, "groups", true))
 			{
-				cmd = new P4Command(this, "groups", true, groups);
-			}
-			else
-			{
-				cmd = new P4Command(this, "groups", true);
-			}
-
 			P4CommandResult results = cmd.Run(options);
 			if (results.Success)
 			{
@@ -402,6 +403,7 @@ namespace Perforce.P4
 				{
 					return null;
 				}
+
 				List<Group> value = new List<Group>();
 				Dictionary<string, Group> map = new Dictionary<string, Group>();
 				foreach (TaggedObject obj in results.TaggedOutput)
@@ -421,6 +423,7 @@ namespace Perforce.P4
 						{
 							int.TryParse(obj["maxResults"], out v);
 						}
+
 						group.MaxResults = v;
 
 						v = -1;
@@ -428,6 +431,7 @@ namespace Perforce.P4
 						{
 							int.TryParse(obj["maxScanRows"], out v);
 						}
+
 						group.MaxScanRows = v;
 
 						v = -1;
@@ -435,6 +439,7 @@ namespace Perforce.P4
 						{
 							int.TryParse(obj["maxLockTime"], out v);
 						}
+
 						group.MaxLockTime = v;
 
 						v = -1;
@@ -442,6 +447,7 @@ namespace Perforce.P4
 						{
 							int.TryParse(obj["timeout"], out v);
 						}
+
 						group.TimeOut = v;
 
 						v = -1;
@@ -449,11 +455,13 @@ namespace Perforce.P4
 						{
 							int.TryParse(obj["passTimeout"], out v);
 						}
+
 						group.MaxResults = v;
 
 						map[groupName] = group;
 						value.Add(group);
 					}
+
 					string user = null;
 					if (obj.ContainsKey("user"))
 					{
@@ -463,39 +471,47 @@ namespace Perforce.P4
 					{
 						// no user name, can't continue
 					}
+
 					if ((obj.ContainsKey("isUser")) && (obj["isUser"] == "1"))
 					{
 						if (group.UserNames == null)
 						{
 							group.UserNames = new List<string>();
 						}
+
 						group.UserNames.Add(user);
 					}
+
 					if ((obj.ContainsKey("isOwner")) && (obj["isOwner"] == "1"))
 					{
 						if (group.OwnerNames == null)
 						{
 							group.OwnerNames = new List<string>();
 						}
+
 						group.OwnerNames.Add(user);
 					}
+
 					if ((obj.ContainsKey("isSubGroup")) && (obj["isSubGroup"] == "1"))
 					{
 						if (group.SubGroups == null)
 						{
 							group.SubGroups = new List<string>();
 						}
+
 						group.SubGroups.Add(user);
 					}
 				}
+
 				return value;
 			}
-			else
-			{
+               
 				P4Exception.Throw(results.ErrorList);
+
+                return null;
 			}
-			return null;
 		}
+
 		/// <summary>
 		/// Delete a group from the repository
 		/// </summary>
@@ -529,12 +545,15 @@ namespace Perforce.P4
 			{
 				throw new ArgumentNullException("group");
 			}
-			P4Command cmd = new P4Command(this, "group", true, group.Id);
+
+            using (P4Command cmd = new P4Command(this, "group", true, group.Id))
+            {
 
 			if (options == null)
 			{
 				options = new Options();
 			}
+
 			options["-d"] = null;
 
 			P4CommandResult results = cmd.Run(options);
@@ -544,4 +563,5 @@ namespace Perforce.P4
 			}
 		}
 	}
+}
 }

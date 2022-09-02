@@ -83,7 +83,7 @@ namespace Perforce.P4
 
         /// <summary>
         /// Normalize a Local Path
-        /// Remove quotes, insure backslashes instead of forward slashes
+        /// Remove quotes, insure proper OS path separators
         /// </summary>
         /// <param name="path">path to normalize</param>
         /// <returns>normalized path</returns>
@@ -93,7 +93,11 @@ namespace Perforce.P4
 			if (path != null)
 			{
 				val = path.Trim('"', ' ');
+#if _WINDOWS
 				val = val.Replace('/', '\\');
+#else
+				val = val.Replace('\\', '/');
+#endif
 			}		
 			return val;
 		}

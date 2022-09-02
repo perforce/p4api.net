@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Perforce.P4
@@ -104,7 +105,7 @@ namespace Perforce.P4
 					}
 					else
 					{
-						Comments += "\r\n";
+                        Comments += $"{Environment.NewLine}";
 						Comments += lines[idx];
 					}
 					continue;
@@ -205,7 +206,7 @@ namespace Perforce.P4
 		/// <returns></returns>
 		public static String FormatDateTime(DateTime dt)
 		{
-		    if ((dt != null) && (DateTime.MinValue != dt))
+            if (DateTime.MinValue != dt)
                return dt.ToString("yyyy|MM|dd HH:mm:ss").Replace('|','/');
 			return string.Empty;
 		}
@@ -238,10 +239,18 @@ namespace Perforce.P4
         public static bool DSTMismatch(ServerMetaData smd)
         {
             DateTime serverDate = smd.Date;
-            bool UTC_dst =
-                TimeZoneInfo.FindSystemTimeZoneById("GMT Standard Time").IsDaylightSavingTime(serverDate);
-            bool server_dst = serverDate.IsDaylightSavingTime();
-            if (server_dst && !UTC_dst)
+
+            string tzone = "GMT Standard Time";
+#if NET5_0_OR_GREATER
+            if (! RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                tzone = "GMT";   // non windows platforms use IANA time zones
+            }
+#endif
+            bool utcDst =
+                TimeZoneInfo.FindSystemTimeZoneById(tzone).IsDaylightSavingTime(serverDate);
+            bool serverDst = serverDate.IsDaylightSavingTime();
+            if (serverDst && !utcDst)
             {
                 return true;
             }

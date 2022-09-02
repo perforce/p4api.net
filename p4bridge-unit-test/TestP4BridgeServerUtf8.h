@@ -1,6 +1,7 @@
 #pragma once
 
-//#include "unittestframework.h"
+#include "UnitTestFrameWork.h"
+#include "../p4bridge/P4BridgeServer.h"
 
 class TestP4BridgeServerUtf8 :
     public UnitTestSuite
@@ -13,7 +14,9 @@ public:
 
     bool Setup();
 
-    bool TearDown(char* testName);
+    bool TearDown(const char* testName);
+
+    static bool CheckConnection(P4BridgeServer* ps, P4ClientError* connectionError);
 
     static bool ServerConnectionTest();
     static bool TestUntaggedCommand();

@@ -3,7 +3,9 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using NLog;
+using File = Perforce.P4.File;
 
 namespace p4api.net.unit.test
 {
@@ -12,14 +14,23 @@ namespace p4api.net.unit.test
     ///to contain all RepositoryTest Unit Tests
     ///</summary>
     [TestClass()]
+#if NET462
+    [DeploymentItem("x64", "x64")]
+    [DeploymentItem("x86", "x86")]
+#endif
     public partial class RepositoryTest
     {
         private static Logger logger = LogManager.GetCurrentClassLogger();
+        private UnitTestConfiguration configuration;
+        private string TestDir = "";
+       
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
         public void SetupTest()
         {
+            configuration = UnitTestSettings.GetApplicationConfiguration();
+            TestDir = configuration.TestDirectory;
             Utilities.LogTestStart(TestContext);
         }
         [TestCleanup]
@@ -27,8 +38,6 @@ namespace p4api.net.unit.test
         {
             Utilities.LogTestFinish(TestContext);
         }
-
-        String TestDir = "c:\\MyTestDir";
 
         #region Additional test attributes
         // 
@@ -65,24 +74,26 @@ namespace p4api.net.unit.test
         ///A test for GetDepotFiles
         ///</summary>
         [TestMethod()]
-        [DeploymentItem("p4api.net.dll")]
         public void GetDepotFilesTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 2, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
+                
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 2, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -117,8 +128,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -126,12 +138,9 @@ namespace p4api.net.unit.test
         ///A test for GetDepotFilesInUnloaded
         ///</summary>
         [TestMethod()]
-        [DeploymentItem("p4api.net.dll")]
         public void GetDepotFilesInUloadedTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -139,11 +148,16 @@ namespace p4api.net.unit.test
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 2, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 2, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -164,7 +178,8 @@ namespace p4api.net.unit.test
 
                         Options options = new Options();
                         options["-c"] = "admin_space2";
-                        P4Command cmd = new P4Command(con, "unload", true, null);
+                        using (P4Command cmd = new P4Command(con, "unload", true, null))
+                        {
                         try
                         {
                             cmd.Run(options);
@@ -172,6 +187,7 @@ namespace p4api.net.unit.test
                         catch
                         {
 
+                        }
                         }
 
                         GetDepotFilesCmdOptions opts =
@@ -194,8 +210,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -204,24 +221,25 @@ namespace p4api.net.unit.test
         ///A test for GetDepotFilesInArchiveTest
         ///</summary>
         [TestMethod()]
-        [DeploymentItem("p4api.net.dll")]
         public void GetDepotFilesInArchiveTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 2, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 2, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -243,7 +261,8 @@ namespace p4api.net.unit.test
                         Options options = new Options();
                         options["-D"] = "Archive";
 
-                        P4Command cmd = new P4Command(con, "archive", true, "//depot/TheirCode/...");
+                        using (P4Command cmd = new P4Command(con, "archive", true, "//depot/TheirCode/..."))
+                        {
                         try
                         {
                             cmd.Run(options);
@@ -251,6 +270,7 @@ namespace p4api.net.unit.test
                         catch (P4Exception)
                         {
 
+                        }
                         }
 
                         GetDepotFilesCmdOptions opts =
@@ -271,9 +291,10 @@ namespace p4api.net.unit.test
                 }
                 finally
                 {
-                    Utilities.RemoveTestServer(p4d, TestDir, resetDepot: true, unicode: unicode);
+                    Utilities.RemoveTestServer(p4d, TestDir, resetDepot: true);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -283,7 +304,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetArchiveFileActionTestA()
         {
-            GetArchiveFileActionTest(false);
+            GetArchiveFileActionTest(Utilities.CheckpointType.A);
         }
 
         /// <summary>
@@ -292,25 +313,30 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetArchiveFileActionTestU()
         {
-            GetArchiveFileActionTest(true);
+            GetArchiveFileActionTest(Utilities.CheckpointType.U);
         }
 
         /// <summary>
         ///A test for GetArchiveFileActionTest
         ///</summary>
-        public void GetArchiveFileActionTest(bool unicode)
+        public void GetArchiveFileActionTest(Utilities.CheckpointType cptype)
         {
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
+            Process p4d = null;
+            Repository rep = null;
 
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 2, unicode);
-                Server server = new Server(new ServerAddress(uri));
             try
             {
-                Repository rep = new Repository(server);
+                p4d = Utilities.DeployP4TestServer(TestDir, 2, cptype);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+                Server server = new Server(new ServerAddress(uri));
+                rep = new Repository(server);
+                Utilities.SetClientRoot(rep,  TestDir, cptype, ws_client, false);
 
                 using (Connection con = rep.Connection)
                 {
@@ -332,7 +358,8 @@ namespace p4api.net.unit.test
                     Options options = new Options();
                     options["-D"] = "Archive";
 
-                    P4Command cmd = new P4Command(con, "archive", true, "//depot/TheirCode/...");
+                    using (P4Command cmd = new P4Command(con, "archive", true, "//depot/TheirCode/..."))
+                    {
                     try
                     {
                         cmd.Run(options);
@@ -341,18 +368,21 @@ namespace p4api.net.unit.test
                     {
 
                     }
+                    }
 
                     FileSpec fs = new FileSpec(new DepotPath("//depot/TheirCode/Silly.bmp"), null);
                     IList<FileSpec> lfs = new List<FileSpec>();
                     lfs.Add(fs);
 
                     IList<FileMetaData> fmd = rep.GetFileMetaData(lfs, null);
-                    Assert.AreEqual(fmd[0].HeadAction, FileAction.Archive);
+                    Assert.AreEqual(FileAction.Archive,fmd[0].HeadAction);
                 }
             }
             finally
             {
-                Utilities.RemoveTestServer(p4d, TestDir, resetDepot: true, unicode: unicode);
+                Utilities.RemoveTestServer(p4d, TestDir, resetDepot: true);
+                p4d?.Dispose();
+                rep?.Dispose();
             }
         }
 
@@ -360,24 +390,25 @@ namespace p4api.net.unit.test
         ///A test for GetDepotFilesInRangeTest
         ///</summary>
         [TestMethod()]
-        [DeploymentItem("p4api.net.dll")]
         public void GetDepotFilesInRangeTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 2, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 2, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -403,7 +434,7 @@ namespace p4api.net.unit.test
 
                         Assert.IsNotNull(target);
 
-                        if (!unicode)
+                        if (cptype != Utilities.CheckpointType.U)
                         {
                             Assert.AreEqual(target.Count, 5);
                             Assert.AreEqual(target[0].DepotPath.Path,
@@ -420,8 +451,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -430,24 +462,26 @@ namespace p4api.net.unit.test
         ///A test for GetDepotFilesNotDeletedTest
         ///</summary>
         [TestMethod()]
-        [DeploymentItem("p4api.net.dll")]
         public void GetDepotFilesNotDeletedTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 2, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 2, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client, false);
 
                     using (Connection con = rep.Connection)
                     {
@@ -487,7 +521,7 @@ namespace p4api.net.unit.test
 
                         Assert.IsNotNull(target);
 
-                        if (!unicode)
+                        if (cptype != Utilities.CheckpointType.U)
                         {
                             Assert.AreEqual(target.Count, 7);
                             Assert.AreEqual(target[0].DepotPath.Path,
@@ -504,8 +538,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -515,18 +550,21 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetDepotFilesjob094897Test()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = Utilities.DeployP4TestServer(TestDir, 2, unicode);
-            Server server = new Server(new ServerAddress(uri));
+            Process p4d = null;
+            Repository rep = null;
+            var cptype = Utilities.CheckpointType.A;
             try
             {
-                Repository rep = new Repository(server);
+                p4d = Utilities.DeployP4TestServer(TestDir, 2, cptype);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+                Server server = new Server(new ServerAddress(uri));
+                rep = new Repository(server);
 
                 using (Connection con = rep.Connection)
                 {
@@ -560,6 +598,8 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
             }
         }
 
@@ -569,20 +609,22 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetDepotFilesjob095001Test()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
+            Process p4d = null;
+            Repository rep = null;
+            var cptype = Utilities.CheckpointType.A;
 
-
-            Process p4d = Utilities.DeployP4TestServer(TestDir, 2, unicode);
-            Server server = new Server(new ServerAddress(uri));
             try
             {
-                Repository rep = new Repository(server);
+                p4d = Utilities.DeployP4TestServer(TestDir, 2, cptype);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+            Server server = new Server(new ServerAddress(uri));
+                rep = new Repository(server);
 
                 using (Connection con = rep.Connection)
                 {
@@ -617,8 +659,9 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
             }
-            unicode = !unicode;
         }
 
         /// <summary>
@@ -627,20 +670,22 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetDepotFilesjob095131Test()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
+            Process p4d = null;
+            Repository rep = null;
+            var cptype = Utilities.CheckpointType.A;
 
-
-            Process p4d = Utilities.DeployP4TestServer(TestDir, 13, unicode);
-            Server server = new Server(new ServerAddress(uri));
             try
             {
-                Repository rep = new Repository(server);
+                p4d = Utilities.DeployP4TestServer(TestDir, 13, cptype);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+            Server server = new Server(new ServerAddress(uri));
+                rep = new Repository(server);
 
                 using (Connection con = rep.Connection)
                 {
@@ -688,8 +733,9 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
             }
-            unicode = !unicode;
         }
 
         /// <summary>
@@ -698,21 +744,24 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetOpenedFilesTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 12, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
+                
                 try
                 {
-                    Repository rep = new Repository(server);
+                   p4d = Utilities.DeployP4TestServer(TestDir, 12, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                   rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -748,7 +797,7 @@ namespace p4api.net.unit.test
                         opts["-C"] = con.Client.Name;
                         target = rep.GetOpenedFiles(null, opts);
                         Assert.IsNotNull(target);
-                        if (!unicode)
+                        if (cptype != Utilities.CheckpointType.U)
                         {
                             Assert.AreEqual(target.Count, 3);
                         }
@@ -756,14 +805,14 @@ namespace p4api.net.unit.test
                         {
                             Assert.AreEqual(target.Count, 7);
                         }
-
                     }
                 }
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -773,21 +822,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetOpenedFilesShortOutputTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 12, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 12, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -827,8 +878,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -840,21 +892,26 @@ namespace p4api.net.unit.test
         {
             // TODO: add distributed environment to utilities setup
             // in order to test the success path of this operation
-            bool unicode = false;
 
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 12, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 12, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
+                    
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client, false);
 
                     using (Connection con = rep.Connection)
                     {
@@ -865,7 +922,6 @@ namespace p4api.net.unit.test
                         bool connected = con.Connect(null);
                         Assert.IsTrue(connected);
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
                         FileSpec fs = new FileSpec(new DepotPath("//..."), null);
 
@@ -898,8 +954,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -909,20 +966,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetFileMetadataTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 6, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 6, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -1015,7 +1075,7 @@ namespace p4api.net.unit.test
                         int actual = target[0].HaveRev;
                         Assert.AreEqual(expected, actual);
 
-                        if (unicode == false)
+                        if (cptype != Utilities.CheckpointType.U)
                             expected = 11;
                         else
                             expected = 10;
@@ -1091,8 +1151,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -1102,7 +1163,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetFileMetadataStaleRevTestA()
         {
-            GetFileMetadataStaleRevTest(false);
+            GetFileMetadataStaleRevTest(Utilities.CheckpointType.A);
         }
 
         /// <summary>
@@ -1111,28 +1172,33 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetFileMetadataStaleRevTestU()
         {
-            GetFileMetadataStaleRevTest(true);
+            GetFileMetadataStaleRevTest(Utilities.CheckpointType.U);
         }
 
         /// <summary>
         ///A test for GetFileMetadataStaleRev
         ///</summary>
-        public void GetFileMetadataStaleRevTest(bool unicode)
+        public void GetFileMetadataStaleRevTest(Utilities.CheckpointType cptype)
         {
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = Utilities.DeployP4TestServer(TestDir, 6, unicode);
-            var clientRoot = Utilities.TestClientRoot(TestDir, unicode);
+            var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
             var adminSpace = System.IO.Path.Combine(clientRoot, "admin_space");
             System.IO.Directory.CreateDirectory(adminSpace);
 
-            Server server = new Server(new ServerAddress(uri));
+            Process p4d = null;
+            Repository rep = null;
             try
             {
-                Repository rep = new Repository(server);
+                p4d = Utilities.DeployP4TestServer(TestDir, 6, cptype);
+                Assert.IsNotNull(p4d, "Setup Failure");
+                
+                Server server = new Server(new ServerAddress(uri));
+                rep = new Repository(server);
+                Utilities.SetClientRoot(rep, TestDir, cptype, ws_client, false);
 
                 using (Connection con = rep.Connection)
                 {
@@ -1142,11 +1208,9 @@ namespace p4api.net.unit.test
 
                     bool connected = con.Connect(null);
                     Assert.IsTrue(connected);
-
                     Assert.AreEqual(con.Status, ConnectionStatus.Connected);
-                    Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
-                    if (unicode)
+                    if (cptype == Utilities.CheckpointType.U)
                     {
                         FileSpec fs = new FileSpec(new DepotPath("//depot/MyCode/ReadMe.txt"), new Revision(0));
                         FileSpec fs2 = new FileSpec(new DepotPath("//depot/Modifiers/Text.txt"), new Revision(1));
@@ -1197,6 +1261,8 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
             }
         }
 
@@ -1204,24 +1270,25 @@ namespace p4api.net.unit.test
         ///A test for GetFileMetaDataFileCount
         ///</summary>
         [TestMethod()]
-        [DeploymentItem("p4api.net.dll")]
         public void GetFileMetaDataFileCountTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 2, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 2, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -1244,7 +1311,7 @@ namespace p4api.net.unit.test
 
                         Assert.IsNotNull(target);
                         Assert.AreEqual(target.Count, 1);
-                        if (unicode)
+                        if (cptype == Utilities.CheckpointType.U)
                         {
                             Assert.AreEqual(target[0].TotalFileCount, 14);
                         }
@@ -1257,8 +1324,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -1266,24 +1334,25 @@ namespace p4api.net.unit.test
         ///A test for GetFileMetaDataInUnloaded
         ///</summary>
         [TestMethod()]
-        [DeploymentItem("p4api.net.dll")]
         public void GetFileMetaDataInUnloadedTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 2, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 2, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -1304,7 +1373,8 @@ namespace p4api.net.unit.test
 
                         Options options = new Options();
                         options["-c"] = "admin_space2";
-                        P4Command cmd = new P4Command(con, "unload", true, null);
+                        using (P4Command cmd = new P4Command(con, "unload", true, null))
+                        {
                         try
                         {
                             cmd.Run(options);
@@ -1312,6 +1382,7 @@ namespace p4api.net.unit.test
                         catch
                         {
 
+                        }
                         }
 
                         GetFileMetaDataCmdOptions opts = new GetFileMetaDataCmdOptions(GetFileMetadataCmdFlags.InUnloadDepot,
@@ -1331,8 +1402,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -1340,24 +1412,26 @@ namespace p4api.net.unit.test
         ///A test for GetFileMetaDataAttribute
         ///</summary>
         [TestMethod()]
-        [DeploymentItem("p4api.net.dll")]
         public void GetFileMetaDataAttributeTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 13, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 13, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client, false);
 
                     using (Connection con = rep.Connection)
                     {
@@ -1368,7 +1442,6 @@ namespace p4api.net.unit.test
                         bool connected = con.Connect(null);
                         Assert.IsTrue(connected);
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
                         FileSpec fs = new FileSpec(new DepotPath("//depot/MyCode/ReadMe.txt"), null);
                         rep.Connection.Client.EditFiles(null, fs);
@@ -1377,7 +1450,8 @@ namespace p4api.net.unit.test
                         options["-n"] = "attribute";
                         options["-v"] = "1024";
 
-                        P4Command cmd = new P4Command(con, "attribute", true, "//depot/MyCode/ReadMe.txt");
+                        using (P4Command cmd = new P4Command(con, "attribute", true, "//depot/MyCode/ReadMe.txt"))
+                        {
                         try
                         {
                             cmd.Run(options);
@@ -1385,6 +1459,7 @@ namespace p4api.net.unit.test
                         catch
                         {
 
+                        }
                         }
 
                         SubmitCmdOptions submitOpts = new SubmitCmdOptions(SubmitFilesCmdFlags.None, 0, null,
@@ -1408,8 +1483,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -1417,24 +1493,26 @@ namespace p4api.net.unit.test
         ///A test for GetFileMetaDataAttributeDigest
         ///</summary>
         [TestMethod()]
-        [DeploymentItem("p4api.net.dll")]
         public void GetFileMetaDataAttributeDigestTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 13, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 13, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client, false);
 
                     using (Connection con = rep.Connection)
                     {
@@ -1445,7 +1523,7 @@ namespace p4api.net.unit.test
                         bool connected = con.Connect(null);
                         Assert.IsTrue(connected);
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
+
 
                         FileSpec fs = new FileSpec(new DepotPath("//depot/MyCode/ReadMe.txt"), null);
                         rep.Connection.Client.EditFiles(null, fs);
@@ -1454,7 +1532,8 @@ namespace p4api.net.unit.test
                         options["-n"] = "attribute";
                         options["-v"] = "1024";
 
-                        P4Command cmd = new P4Command(con, "attribute", true, "//depot/MyCode/ReadMe.txt");
+                        using (P4Command cmd = new P4Command(con, "attribute", true, "//depot/MyCode/ReadMe.txt"))
+                        {
                         try
                         {
                             cmd.Run(options);
@@ -1462,19 +1541,22 @@ namespace p4api.net.unit.test
                         catch
                         {
 
+                        }
                         }
 
                         options["-n"] = "anotherone";
                         options["-v"] = "1024";
 
-                        cmd = new P4Command(con, "attribute", true, "//depot/MyCode/ReadMe.txt");
+                        using (P4Command cmd1 = new P4Command(con, "attribute", true, "//depot/MyCode/ReadMe.txt"))
+                        {
                         try
                         {
-                            cmd.Run(options);
+                                cmd1.Run(options);
                         }
                         catch
                         {
 
+                        }
                         }
 
                         SubmitCmdOptions submitOpts = new SubmitCmdOptions(SubmitFilesCmdFlags.None, 0, null,
@@ -1498,8 +1580,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -1507,24 +1590,26 @@ namespace p4api.net.unit.test
         ///A test for GetFileMetaDataAttributeHex
         ///</summary>
         [TestMethod()]
-        [DeploymentItem("p4api.net.dll")]
         public void GetFileMetaDataAttributeHexTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 13, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 13, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client, false);
 
                     using (Connection con = rep.Connection)
                     {
@@ -1535,7 +1620,6 @@ namespace p4api.net.unit.test
                         bool connected = con.Connect(null);
                         Assert.IsTrue(connected);
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
                         FileSpec fs = new FileSpec(new DepotPath("//depot/MyCode/ReadMe.txt"), null);
                         rep.Connection.Client.EditFiles(null, fs);
@@ -1544,7 +1628,8 @@ namespace p4api.net.unit.test
                         options["-n"] = "attribute";
                         options["-v"] = "1024";
 
-                        P4Command cmd = new P4Command(con, "attribute", true, "//depot/MyCode/ReadMe.txt");
+                        using (P4Command cmd = new P4Command(con, "attribute", true, "//depot/MyCode/ReadMe.txt"))
+                        {
                         try
                         {
                             cmd.Run(options);
@@ -1552,6 +1637,7 @@ namespace p4api.net.unit.test
                         catch
                         {
 
+                        }
                         }
 
                         SubmitCmdOptions submitOpts = new SubmitCmdOptions(SubmitFilesCmdFlags.None, 0, null,
@@ -1575,8 +1661,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -1584,24 +1671,27 @@ namespace p4api.net.unit.test
         ///A test for GetFileMetaDataAttributePattern
         ///</summary>
         [TestMethod()]
-        [DeploymentItem("p4api.net.dll")]
         public void GetFileMetaDataAttributePatternTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 13, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 13, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
+                    
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client, false);
 
                     using (Connection con = rep.Connection)
                     {
@@ -1612,7 +1702,6 @@ namespace p4api.net.unit.test
                         bool connected = con.Connect(null);
                         Assert.IsTrue(connected);
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
                         FileSpec fs = new FileSpec(new DepotPath("//depot/MyCode/ReadMe.txt"), null);
                         rep.Connection.Client.EditFiles(null, fs);
@@ -1621,7 +1710,8 @@ namespace p4api.net.unit.test
                         options["-n"] = "attribute";
                         options["-v"] = "1024";
 
-                        P4Command cmd = new P4Command(con, "attribute", true, "//depot/MyCode/ReadMe.txt");
+                        using (P4Command cmd = new P4Command(con, "attribute", true, "//depot/MyCode/ReadMe.txt"))
+                        {
                         try
                         {
                             cmd.Run(options);
@@ -1629,32 +1719,37 @@ namespace p4api.net.unit.test
                         catch
                         {
 
+                        }
                         }
 
                         options["-n"] = "anotherone";
                         options["-v"] = "1024";
 
-                        cmd = new P4Command(con, "attribute", true, "//depot/MyCode/ReadMe.txt");
+                        using (P4Command cmd1 = new P4Command(con, "attribute", true, "//depot/MyCode/ReadMe.txt"))
+                        {
                         try
                         {
-                            cmd.Run(options);
+                                cmd1.Run(options);
                         }
                         catch
                         {
 
+                        }
                         }
 
                         options["-n"] = "anotheroney";
                         options["-v"] = "1024";
 
-                        cmd = new P4Command(con, "attribute", true, "//depot/MyCode/ReadMe.txt");
+                        using (P4Command cmd2 = new P4Command(con, "attribute", true, "//depot/MyCode/ReadMe.txt"))
+                        {
                         try
                         {
-                            cmd.Run(options);
+                                cmd2.Run(options);
                         }
                         catch
                         {
 
+                        }
                         }
 
                         SubmitCmdOptions submitOpts = new SubmitCmdOptions(SubmitFilesCmdFlags.None, 0, null,
@@ -1678,8 +1773,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -1687,24 +1783,27 @@ namespace p4api.net.unit.test
         ///A test for GetFileMetaDataAttributePropagate
         ///</summary>
         [TestMethod()]
-        [DeploymentItem("p4api.net.dll")]
         public void GetFileMetaDataAttributePropagateTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri =configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 13, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 13, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
+                    
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client, false);
 
                     using (Connection con = rep.Connection)
                     {
@@ -1715,7 +1814,6 @@ namespace p4api.net.unit.test
                         bool connected = con.Connect(null);
                         Assert.IsTrue(connected);
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
-                        Utilities.SetClientRoot(rep, TestDir, unicode, ws_client);
 
                         FileSpec fs = new FileSpec(new DepotPath("//depot/MyCode/ReadMe.txt"), null);
                         rep.Connection.Client.EditFiles(null, fs);
@@ -1724,7 +1822,8 @@ namespace p4api.net.unit.test
                         options["-n"] = "attribute";
                         options["-v"] = "1024";
 
-                        P4Command cmd = new P4Command(con, "attribute", true, "//depot/MyCode/ReadMe.txt");
+                        using (P4Command cmd = new P4Command(con, "attribute", true, "//depot/MyCode/ReadMe.txt"))
+                        {
                         try
                         {
                             cmd.Run(options);
@@ -1732,20 +1831,23 @@ namespace p4api.net.unit.test
                         catch
                         {
 
+                        }
                         }
 
                         options["-p"] = null;
                         options["-n"] = "anotherone";
                         options["-v"] = "1024";
 
-                        cmd = new P4Command(con, "attribute", true, "//depot/MyCode/ReadMe.txt");
+                        using (P4Command cmd1 = new P4Command(con, "attribute", true, "//depot/MyCode/ReadMe.txt"))
+                        {
                         try
                         {
-                            cmd.Run(options);
+                                cmd1.Run(options);
                         }
                         catch
                         {
 
+                        }
                         }
 
                         SubmitCmdOptions submitOpts = new SubmitCmdOptions(SubmitFilesCmdFlags.None, 0, null,
@@ -1782,8 +1884,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -1791,37 +1894,45 @@ namespace p4api.net.unit.test
         ///A test for FileMetaDataToFileSpecEditTestjob059334
         ///</summary>
         [TestMethod()]
-        [DeploymentItem("p4api.net.dll")]
         public void FileMetaDataToFileSpecEditTestjob059334A()
         {
-            FileMetaDataToFileSpecEditTestjob059334(false);
+            FileMetaDataToFileSpecEditTestjob059334(Utilities.CheckpointType.A);
         }
 
         /// <summary>
         ///A test for FileMetaDataToFileSpecEditTestjob059334
         ///</summary>
         [TestMethod()]
-        [DeploymentItem("p4api.net.dll")]
         public void FileMetaDataToFileSpecEditTestjob059334U()
         {
-            FileMetaDataToFileSpecEditTestjob059334(true);
+            FileMetaDataToFileSpecEditTestjob059334(Utilities.CheckpointType.U);
         }
 
         /// <summary>
         ///A test for FileMetaDataToFileSpecEditTestjob059334
         ///</summary>
-        public void FileMetaDataToFileSpecEditTestjob059334(bool unicode)
+        public void FileMetaDataToFileSpecEditTestjob059334(Utilities.CheckpointType cptype)
         {
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = Utilities.DeployP4TestServer(TestDir, 2, unicode);
-            Server server = new Server(new ServerAddress(uri));
+            Process p4d = null;
+            Repository rep = null;
             try
             {
-                Repository rep = new Repository(server);
+                p4d = Utilities.DeployP4TestServer(TestDir, 2, cptype);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+                Server server = new Server(new ServerAddress(uri));
+                rep = new Repository(server);
+                
+                Utilities.SetClientRoot(rep,TestDir,cptype,ws_client,false);
+                
+                var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
+                var adminSpace = System.IO.Path.Combine(clientRoot, ws_client);
+                
                 using (Connection con = rep.Connection)
                 {
                     con.UserName = user;
@@ -1841,7 +1952,7 @@ namespace p4api.net.unit.test
                     FileSpecs = con.Client.SyncFiles(opts, fs);
 
                     // get the local files that exist in the workspace
-                    string[] files = System.IO.Directory.GetFiles(@"c:\MyTestDir\admin_space", "*", System.IO.SearchOption.AllDirectories);
+                    string[] files = System.IO.Directory.GetFiles(adminSpace, "*", System.IO.SearchOption.AllDirectories);
 
                     // turn them into a LocalSpecList
                     FileSpecs = FileSpec.LocalSpecList(files);
@@ -1874,7 +1985,7 @@ namespace p4api.net.unit.test
                     FileSpecs = con.Client.EditFiles(FileSpec.UnversionedSpecList(FileSpecs), null);
 
                     Assert.IsNotNull(FileSpecs);
-                    if (unicode)
+                    if (cptype == Utilities.CheckpointType.U)
                     {
                         Assert.AreEqual(FileSpecs.Count, 7);
                     }
@@ -1887,6 +1998,8 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
             }
         }
 
@@ -1895,16 +2008,22 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetFileMetaDatajob094926Test()
         {
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = Utilities.DeployP4TestServer(TestDir, 13, false);
-            Server server = new Server(new ServerAddress(uri));
+            Process p4d = null;
+            Repository rep = null;
+            var cptype = Utilities.CheckpointType.A;
             try
             {
-                Repository rep = new Repository(server);
+                p4d = Utilities.DeployP4TestServer(TestDir, 13, cptype);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+                Server server = new Server(new ServerAddress(uri));
+               rep = new Repository(server);
+               Utilities.SetClientRoot(rep, TestDir, cptype, ws_client, false);
 
                 using (Connection con = rep.Connection)
                 {
@@ -1915,7 +2034,7 @@ namespace p4api.net.unit.test
                     bool connected = con.Connect(null);
                     Assert.IsTrue(connected);
                     Assert.AreEqual(con.Status, ConnectionStatus.Connected);
-                    Utilities.SetClientRoot(rep, TestDir, false, ws_client);
+                
 
                     FileSpec fs = new FileSpec(new DepotPath("//depot/MyCode/ReadMe.txt"), null);
 
@@ -1951,6 +2070,8 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
             }
         }
 
@@ -1960,20 +2081,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void HistoricalFileTypesTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 15, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 15, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -1987,7 +2111,7 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
 
 
-                        if (unicode == false)
+                        if (cptype != Utilities.CheckpointType.U)
                         {
                             FileSpec fs = new FileSpec(new DepotPath("//depot/Filetypes/ctempobj"), null);
                             List<FileSpec> lfs = new List<FileSpec>();
@@ -2135,7 +2259,7 @@ namespace p4api.net.unit.test
 
                         }
 
-                        if (unicode == true)
+                        if (cptype == Utilities.CheckpointType.U)
                         {
                             FileSpec fs = new FileSpec(new DepotPath("//depot/Filetypes/xunicode"), null);
                             List<FileSpec> lfs = new List<FileSpec>();
@@ -2152,8 +2276,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -2163,21 +2288,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetDepotDirsTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -2211,8 +2338,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -2222,21 +2350,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetFixesTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 13, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 13, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -2271,9 +2401,9 @@ namespace p4api.net.unit.test
                             actual = fix.ClientName;
                             Assert.AreEqual(expected, actual);
 
-                            // these dates sometimes come out an hour off, possibly do
-                            //  tho daylight savings times?
-                            //if (unicode == false)
+                            // these dates sometimes come out an hour off, possibly to do
+                            //  with daylight savings times?
+                            //if (cptype != Utilities.CheckpointType.U)
                             //{
                             //    string datestr = "12/2/2010 2:13:00 PM";
                             //    DateTime date = DateTime.Parse(datestr);
@@ -2298,7 +2428,7 @@ namespace p4api.net.unit.test
                             FixAction right = fix.Action;
                             Assert.AreEqual(left, right);
 
-                            if (unicode == false)
+                            if (cptype != Utilities.CheckpointType.U)
                             {
                                 int cl = 4;
                                 int clpos = fix.ChangeId;
@@ -2325,8 +2455,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -2336,20 +2467,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetFileHistoryTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 5, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 5, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -2375,7 +2509,7 @@ namespace p4api.net.unit.test
                         int actual = target[0].Revision;
                         Assert.AreEqual(expected, actual);
 
-                        if (unicode == false)
+                        if (cptype != Utilities.CheckpointType.U)
                             expected = 11;
                         else
                             expected = 10;
@@ -2394,11 +2528,11 @@ namespace p4api.net.unit.test
                         string actual1 = target[0].UserName;
                         Assert.AreEqual(expected1, actual1);
 
-                        if (unicode == false)
-                            expected1 = "submit without changes ";
+                        if (cptype != Utilities.CheckpointType.U)
+                            expected1 = "submit without changes";
                         else
-                            expected1 = "submit with no changes ";
-                        actual1 = target[0].Description;
+                            expected1 = "submit with no changes";
+                        actual1 = target[0].Description.Trim();
                         Assert.AreEqual(expected1, actual1);
 
                         expected1 = "admin_space";
@@ -2413,7 +2547,7 @@ namespace p4api.net.unit.test
                         int actual3 = target[1].Revision;
                         Assert.AreEqual(expected3, actual3);
 
-                        if (unicode == false)
+                        if (cptype != Utilities.CheckpointType.U)
                             expected3 = 10;
                         else
                             expected3 = 8;
@@ -2424,8 +2558,8 @@ namespace p4api.net.unit.test
                         string actual4 = target[1].UserName;
                         Assert.AreEqual(expected4, actual4);
 
-                        expected4 = "branch to MyCode2 ";
-                        actual4 = target[1].Description;
+                        expected4 = "branch to MyCode2";
+                        actual4 = target[1].Description.Trim();
                         Assert.AreEqual(expected4, actual4);
 
                         expected4 = "admin_space";
@@ -2435,15 +2569,14 @@ namespace p4api.net.unit.test
                         FileAction expected5 = FileAction.Branch;
                         FileAction actual5 = target[1].Action;
                         Assert.AreEqual(expected5, actual5);
-
-
                     }
                 }
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -2453,21 +2586,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetCountersTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 4, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 4, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -2500,8 +2635,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -2511,21 +2647,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetCounterTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 4, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 4, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -2541,18 +2679,18 @@ namespace p4api.net.unit.test
                         Counter target = rep.GetCounter("deleteme", null);
                         bool foundit = false;
 
-                        if (target.Name == "deleteme"
-                            &&
-                            target.Value == "44")
+                        if (target.Name == "deleteme" && target.Value == "44")
                         {
                             foundit = true;
                         }
                         Assert.IsTrue(foundit);
 
-                        // previous tests did not use options. Use both depricated
+                        // previous tests did not use options. Use both deprecated
                         // misspelled options and then fixed options name to get
                         // and increment the deleteme counter.
+#pragma warning disable 0618
                         CoutnerCmdOptions misspelledOpts = new CoutnerCmdOptions(CounterCmdFlags.Increment);
+#pragma warning restore 0618
                         target = rep.GetCounter("deleteme", misspelledOpts);
                         foundit = false;
 
@@ -2580,8 +2718,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -2589,24 +2728,25 @@ namespace p4api.net.unit.test
         ///A test for DeleteCounter
         ///</summary>
         [TestMethod()]
-        [DeploymentItem("p4api.net.dll")]
         public void DeleteCounterTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 4, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 4, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -2640,8 +2780,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -2651,21 +2792,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetProtectionTableTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 4, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 4, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -2678,7 +2821,7 @@ namespace p4api.net.unit.test
 
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
 
-                        IList<ProtectionEntry> target = rep.GetProtectionTable(null);
+                        IList<ProtectionEntry> target = rep.GetProtectionTable();
 
                         Assert.IsNotNull(target);
                         bool foundit = false;
@@ -2708,8 +2851,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -2719,7 +2863,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetProtectionTableTestjob079134A()
         {
-            GetProtectionTableTestjob079134(false);
+            GetProtectionTableTestjob079134(Utilities.CheckpointType.A);
         }
 
         /// <summary>
@@ -2728,25 +2872,29 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetProtectionTableTestjob079134U()
         {
-            GetProtectionTableTestjob079134(true);
+            GetProtectionTableTestjob079134(Utilities.CheckpointType.U);
         }
 
         /// <summary>
         ///A test for GetProtectionTablejob079134
         ///</summary>
-        public void GetProtectionTableTestjob079134(bool unicode)
+        public void GetProtectionTableTestjob079134(Utilities.CheckpointType cptype)
         {
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
+            Process p4d = null;
+            Repository rep = null;
 
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 4, unicode);
-                Server server = new Server(new ServerAddress(uri));
             try
             {
-                Repository rep = new Repository(server);
+                p4d = Utilities.DeployP4TestServer(TestDir, 4, cptype, TestContext.TestName);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+                Server server = new Server(new ServerAddress(uri));
+                rep = new Repository(server);
 
                 using (Connection con = rep.Connection)
                 {
@@ -2789,29 +2937,34 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
             }
         }
+        
         /// <summary>
         ///A test for GetTriggerTable
         ///</summary>
         [TestMethod()]
         public void GetTriggerTableTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 4, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 4, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -2843,7 +2996,7 @@ namespace p4api.net.unit.test
                                 &&
                                 t.Path == "//depot/..."
                                 &&
-                                t.Command == "\"cmd %changelist%\""
+                                t.Command == "\"touch %changelist%\""
                                 &&
                                 t.Order == 0)
                             {
@@ -2859,8 +3012,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -2870,21 +3024,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetTypeMapTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 4, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 4, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -2927,8 +3083,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -2938,21 +3095,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetFormSpecTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 4, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 4, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -3022,8 +3181,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -3033,21 +3193,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetFieldDataTypeTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 4, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 4, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -3097,8 +3259,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -3108,20 +3271,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetReviewersTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, unicode, TestContext.TestName);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -3162,8 +3328,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -3173,21 +3340,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetProtectionEntriesTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 4, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 4, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -3235,8 +3404,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -3246,7 +3416,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetMaxProtectionAccessTestA()
         {
-            GetMaxProtectionAccessTest(false);
+            GetMaxProtectionAccessTest(Utilities.CheckpointType.A);
         }
 
         /// <summary>
@@ -3255,24 +3425,32 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetMaxProtectionAccessTestU()
         {
-            GetMaxProtectionAccessTest(true);
+            GetMaxProtectionAccessTest(Utilities.CheckpointType.U);
         }
 
         /// <summary>
         ///A test for GetMaxProtectionAccess
         ///</summary>
-        public void GetMaxProtectionAccessTest(bool unicode)
+        public void GetMaxProtectionAccessTest(Utilities.CheckpointType cptype)
         {
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = Utilities.DeployP4TestServer(TestDir, 4, unicode);
-            Server server = new Server(new ServerAddress(uri));
+            Process p4d = null;
+            Repository rep = null;
+            
             try
             {
-                Repository rep = new Repository(server);
+                p4d = Utilities.DeployP4TestServer(TestDir, 4, cptype, TestContext.TestName);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+                Server server = new Server(new ServerAddress(uri));
+                rep = new Repository(server);
+
+                string clientDir = Utilities.TestClientRoot(TestDir, cptype);
+                Utilities.SetClientRoot(rep, TestDir, cptype, ws_client,false);
 
                 using (Connection con = rep.Connection)
                 {
@@ -3307,7 +3485,7 @@ namespace p4api.net.unit.test
 
                     target = rep.GetMaxProtectionAccess(new List<FileSpec>()
                           {
-                                  new FileSpec(new DepotPath("c:\\MyTestDir\\admin_space\\Modifiers\\ReadMe.txt"), null, null, null)
+                              new FileSpec(new DepotPath(Path.Combine(clientDir,"admin_space","Modifiers","Readme.txt")), null, null, null)
                           }, opts);
 
                     Assert.AreEqual(target, ProtectionMode.None);
@@ -3326,6 +3504,8 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
             }
         }
 
@@ -3335,7 +3515,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetEqualsProtectionModesA()
         {
-            GetEqualsProtectionModesTest(false);
+            GetEqualsProtectionModesTest(Utilities.CheckpointType.A);
         }
 
         /// <summary>
@@ -3344,25 +3524,29 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetEqualsProtectionModesTestU()
         {
-            GetEqualsProtectionModesTest(true);
+            GetEqualsProtectionModesTest(Utilities.CheckpointType.U);
         }
 
         /// <summary>
         ///A test for GetEqualsProtectionModes
         ///</summary>
-        public void GetEqualsProtectionModesTest(bool unicode)
+        public void GetEqualsProtectionModesTest(Utilities.CheckpointType cptype)
         {
-            int checkpoint = unicode ? 17 : 18;
-            string uri = "localhost:6666";
+            int checkpoint = (cptype == Utilities.CheckpointType.U) ? 17 : 18;
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = Utilities.DeployP4TestServer(TestDir, checkpoint, unicode);
-            Server server = new Server(new ServerAddress(uri));
+            Process p4d = null;
+            Repository rep = null;
             try
             {
-                Repository rep = new Repository(server);
+                p4d = Utilities.DeployP4TestServer(TestDir, checkpoint, cptype, TestContext.TestName);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+                Server server = new Server(new ServerAddress(uri));
+                rep = new Repository(server);
 
                 using (Connection con = rep.Connection)
                 {
@@ -3389,6 +3573,8 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
             }
         }
 
@@ -3398,7 +3584,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetExcludedProtectionsTestA()
         {
-            GetExcludedProtectionsTest(false);
+            GetExcludedProtectionsTest(Utilities.CheckpointType.A);
         }
 
         /// <summary>
@@ -3407,25 +3593,29 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetExcludedProtectionsTestU()
         {
-            GetExcludedProtectionsTest(true);
+            GetExcludedProtectionsTest(Utilities.CheckpointType.U);
         }
 
         /// <summary>
         ///A test for GetEqualsProtectionModes
         ///</summary>
-        public void GetExcludedProtectionsTest(bool unicode)
+        public void GetExcludedProtectionsTest(Utilities.CheckpointType cptype)
         {
-            int checkpoint = unicode ? 18 : 19;
-            string uri = "localhost:6666";
+            int checkpoint = (cptype == Utilities.CheckpointType.U) ? 18 : 19;
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = Utilities.DeployP4TestServer(TestDir, checkpoint, unicode);
-            Server server = new Server(new ServerAddress(uri));
+            Process p4d = null;
+            Repository rep = null;
             try
             {
-                Repository rep = new Repository(server);
+                p4d = Utilities.DeployP4TestServer(TestDir, checkpoint, cptype, TestContext.TestName);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+                Server server = new Server(new ServerAddress(uri));
+                rep = new Repository(server);
 
                 using (Connection con = rep.Connection)
                 {
@@ -3449,7 +3639,7 @@ namespace p4api.net.unit.test
                     Assert.AreEqual(target[7].Unmap, false);
                     Assert.AreEqual(target[8].Unmap, true);
 
-                    IList<ProtectionEntry> GetProtectionTable = rep.GetProtectionTable(null);
+                    IList<ProtectionEntry> GetProtectionTable = rep.GetProtectionTable();
                     Assert.AreEqual(GetProtectionTable[7].Unmap, false);
                     Assert.AreEqual(GetProtectionTable[8].Unmap, true);
                 }
@@ -3457,6 +3647,8 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
             }
         }
 
@@ -3466,21 +3658,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void TagFilesTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 5, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 5, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -3523,8 +3717,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -3534,21 +3729,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetFilesTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 6, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 6, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -3583,15 +3780,14 @@ namespace p4api.net.unit.test
 
                         }
                         Assert.IsTrue(foundit);
-
-
                     }
                 }
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -3601,21 +3797,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetSubmittedIntegrationsTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 6, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 6, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -3666,15 +3864,14 @@ namespace p4api.net.unit.test
 
                         }
                         Assert.IsTrue(foundit);
-
-
                     }
                 }
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -3684,21 +3881,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetFileLineMatchesTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 6, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 6, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -3736,8 +3935,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -3747,21 +3947,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetFileAnnotationsTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 13, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 13, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -3824,8 +4026,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -3835,21 +4038,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetFileAnnotationsBranchesTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 13, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 13, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -3908,8 +4113,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -3919,21 +4125,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetFileAnnotationsIntegrationsTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 13, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 13, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -3982,8 +4190,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -3993,21 +4202,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetFileContentsTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 6, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 6, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -4044,8 +4255,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -4055,21 +4267,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetFileContentsExTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 6, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 6, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -4108,8 +4322,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -4119,16 +4334,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetFileDiffsTest()
         {
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-            Process p4d = Utilities.DeployP4TestServer(TestDir, 2, false);
-            Server server = new Server(new ServerAddress(uri));
+            Process p4d = null;
+            Repository rep = null;
+            var cptype = Utilities.CheckpointType.A;
             try
             {
-                Repository rep = new Repository(server);
+                p4d = Utilities.DeployP4TestServer(TestDir, 2, cptype, TestContext.TestName);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+                Server server = new Server(new ServerAddress(uri));
+                rep = new Repository(server);
+
+                Utilities.SetClientRoot(rep, TestDir, cptype, ws_client, false);
 
                 using (Connection con = rep.Connection)
                 {
@@ -4165,6 +4387,8 @@ namespace p4api.net.unit.test
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
             }
         }
 
@@ -4174,21 +4398,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetDepotFileDiffsTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -4235,8 +4461,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -4246,21 +4473,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetDepotFileDiffsRCSTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -4277,21 +4506,28 @@ namespace p4api.net.unit.test
                             null, null);
                         IList<DepotFileDiff> target = rep.GetDepotFileDiffs("//flow/D1/a/that.txt#1",
                             "//flow/D1/a/that.txt#3", options);
-                        if (!(unicode))
+                        if (cptype != Utilities.CheckpointType.U)
                         {
-                            Assert.AreEqual(target[0].Diff, "a7 4\nA change... on Fri Jun 24 16:22:05 PDT 2011\n\nA change... on Fri Jun 24 16:22:07 PDT 2011\n\n");
+                            string expected = Utilities.FixLineFeeds(
+                                "a7 4\nA change... on Fri Jun 24 16:22:05 PDT 2011\n\nA change... on Fri Jun 24 16:22:07 PDT 2011\n\n");
+                            string actual = Utilities.FixLineFeeds(target[0].Diff);
+                            Assert.AreEqual(expected, actual,"on non unicode server");
                         }
                         else
                         {
-                            Assert.AreEqual(target[0].Diff, "a7 4\nA change... on Mon Jun 27 15:02:42 PDT 2011\n\nA change... on Mon Jun 27 15:02:42 PDT 2011\n\n");
+                            string expected = Utilities.FixLineFeeds(
+                                "a7 4\nA change... on Mon Jun 27 15:02:42 PDT 2011\n\nA change... on Mon Jun 27 15:02:42 PDT 2011\n\n");
+                            string actual = Utilities.FixLineFeeds(target[0].Diff);
+                            Assert.AreEqual(expected, actual,"on unicode server");
                         }
                     }
                 }
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -4301,21 +4537,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetDepotFileDiffsContextTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -4332,13 +4570,19 @@ namespace p4api.net.unit.test
                             null, null);
                         IList<DepotFileDiff> target = rep.GetDepotFileDiffs("//flow/D1/a/that.txt#1",
                             "//flow/D1/a/that.txt#3", options);
-                        if (!(unicode))
+                        if (cptype != Utilities.CheckpointType.U)
                         {
-                            Assert.AreEqual(target[0].Diff, "***************\n*** 1,7 ****\n--- 1,11 ----\n  that\n  that\n  thatA Change on Mon May 16 16:01:35 PDT 2011\n  \n  A Change on Tue May 24 14:04:57 PDT 2011-changes to a-\n  A Change on Tue May 24 14:06:00 PDT 2011-changes to a, again-\n  A Change on Tue May 24 14:28:53 PDT 2011-changes to a alone (again)-\n+ A change... on Fri Jun 24 16:22:05 PDT 2011\n+ \n+ A change... on Fri Jun 24 16:22:07 PDT 2011\n+ \n");
+                            string expected = Utilities.FixLineFeeds(
+                                "***************\n*** 1,7 ****\n--- 1,11 ----\n  that\n  that\n  thatA Change on Mon May 16 16:01:35 PDT 2011\n  \n  A Change on Tue May 24 14:04:57 PDT 2011-changes to a-\n  A Change on Tue May 24 14:06:00 PDT 2011-changes to a, again-\n  A Change on Tue May 24 14:28:53 PDT 2011-changes to a alone (again)-\n+ A change... on Fri Jun 24 16:22:05 PDT 2011\n+ \n+ A change... on Fri Jun 24 16:22:07 PDT 2011\n+ \n");
+                            string actual = Utilities.FixLineFeeds(target[0].Diff);
+                            Assert.AreEqual(expected, actual,"on non unicode server");
                         }
                         else
                         {
-                            Assert.AreEqual(target[0].Diff, "***************\n*** 1,7 ****\n--- 1,11 ----\n  that\n  that\n  thatA Change on Mon May 16 16:01:35 PDT 2011\n  \n  A Change on Tue May 24 14:04:57 PDT 2011-changes to a-\n  A Change on Tue May 24 14:06:00 PDT 2011-changes to a, again-\n  A Change on Tue May 24 14:28:53 PDT 2011-changes to a alone (again)-\n+ A change... on Mon Jun 27 15:02:42 PDT 2011\n+ \n+ A change... on Mon Jun 27 15:02:42 PDT 2011\n+ \n");
+                            string expected = Utilities.FixLineFeeds(
+                                "***************\n*** 1,7 ****\n--- 1,11 ----\n  that\n  that\n  thatA Change on Mon May 16 16:01:35 PDT 2011\n  \n  A Change on Tue May 24 14:04:57 PDT 2011-changes to a-\n  A Change on Tue May 24 14:06:00 PDT 2011-changes to a, again-\n  A Change on Tue May 24 14:28:53 PDT 2011-changes to a alone (again)-\n+ A change... on Mon Jun 27 15:02:42 PDT 2011\n+ \n+ A change... on Mon Jun 27 15:02:42 PDT 2011\n+ \n");
+                            string actual = Utilities.FixLineFeeds(target[0].Diff);
+                            Assert.AreEqual(expected, actual, "on unicode server");
                         }
 
                     }
@@ -4346,8 +4590,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -4357,21 +4602,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetDepotFileDiffsSummaryTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -4395,8 +4642,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -4406,21 +4654,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetDepotFileDiffsUnifiedTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -4437,22 +4687,28 @@ namespace p4api.net.unit.test
                             null, null);
                         IList<DepotFileDiff> target = rep.GetDepotFileDiffs("//flow/D1/a/that.txt#1",
                             "//flow/D1/a/that.txt#3", options);
-                        if (!(unicode))
+                        if (cptype != Utilities.CheckpointType.U)
                         {
-                            Assert.AreEqual(target[0].Diff, "@@ -1,7 +1,11 @@\n that\n that\n thatA Change on Mon May 16 16:01:35 PDT 2011\n \n A Change on Tue May 24 14:04:57 PDT 2011-changes to a-\n A Change on Tue May 24 14:06:00 PDT 2011-changes to a, again-\n A Change on Tue May 24 14:28:53 PDT 2011-changes to a alone (again)-\n+A change... on Fri Jun 24 16:22:05 PDT 2011\n+\n+A change... on Fri Jun 24 16:22:07 PDT 2011\n+\n");
+                            string expected = Utilities.FixLineFeeds(
+                                "@@ -1,7 +1,11 @@\n that\n that\n thatA Change on Mon May 16 16:01:35 PDT 2011\n \n A Change on Tue May 24 14:04:57 PDT 2011-changes to a-\n A Change on Tue May 24 14:06:00 PDT 2011-changes to a, again-\n A Change on Tue May 24 14:28:53 PDT 2011-changes to a alone (again)-\n+A change... on Fri Jun 24 16:22:05 PDT 2011\n+\n+A change... on Fri Jun 24 16:22:07 PDT 2011\n+\n");
+                            string actual = Utilities.FixLineFeeds(target[0].Diff);
+                            Assert.AreEqual(expected, actual,"on non unicode server");
                         }
                         else
                         {
-                            Assert.AreEqual(target[0].Diff, "@@ -1,7 +1,11 @@\n that\n that\n thatA Change on Mon May 16 16:01:35 PDT 2011\n \n A Change on Tue May 24 14:04:57 PDT 2011-changes to a-\n A Change on Tue May 24 14:06:00 PDT 2011-changes to a, again-\n A Change on Tue May 24 14:28:53 PDT 2011-changes to a alone (again)-\n+A change... on Mon Jun 27 15:02:42 PDT 2011\n+\n+A change... on Mon Jun 27 15:02:42 PDT 2011\n+\n");
+                            string expected = Utilities.FixLineFeeds(
+                                "@@ -1,7 +1,11 @@\n that\n that\n thatA Change on Mon May 16 16:01:35 PDT 2011\n \n A Change on Tue May 24 14:04:57 PDT 2011-changes to a-\n A Change on Tue May 24 14:06:00 PDT 2011-changes to a, again-\n A Change on Tue May 24 14:28:53 PDT 2011-changes to a alone (again)-\n+A change... on Mon Jun 27 15:02:42 PDT 2011\n+\n+A change... on Mon Jun 27 15:02:42 PDT 2011\n+\n");
+                            string actual = Utilities.FixLineFeeds(target[0].Diff);
+                            Assert.AreEqual(expected, actual,"on a unicode server");
                         }
-
                     }
                 }
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -4462,21 +4718,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetDepotFileDiffsIgnoreWSChangesTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -4494,22 +4752,28 @@ namespace p4api.net.unit.test
                         IList<DepotFileDiff> target = rep.GetDepotFileDiffs("//flow/D1/a/that.txt#1",
                             "//flow/D1/a/that.txt#3", options);
 
-                        if (!(unicode))
+                        if (cptype != Utilities.CheckpointType.U)
                         {
-                            Assert.AreEqual(target[0].Diff, "7a8,11\n> A change... on Fri Jun 24 16:22:05 PDT 2011\n> \n> A change... on Fri Jun 24 16:22:07 PDT 2011\n> \n");
+                            string expected = Utilities.FixLineFeeds(
+                                "7a8,11\n> A change... on Fri Jun 24 16:22:05 PDT 2011\n> \n> A change... on Fri Jun 24 16:22:07 PDT 2011\n> \n");
+                            string actual = Utilities.FixLineFeeds(target[0].Diff);
+                            Assert.AreEqual(expected, actual,"on non unicode server");
                         }
                         else
                         {
-                            Assert.AreEqual(target[0].Diff, "7a8,11\n> A change... on Mon Jun 27 15:02:42 PDT 2011\n> \n> A change... on Mon Jun 27 15:02:42 PDT 2011\n> \n");
+                            string expected = Utilities.FixLineFeeds(
+                                "7a8,11\n> A change... on Mon Jun 27 15:02:42 PDT 2011\n> \n> A change... on Mon Jun 27 15:02:42 PDT 2011\n> \n");
+                            string actual = Utilities.FixLineFeeds(target[0].Diff);
+                            Assert.AreEqual(expected, actual,"on non unicode server");
                         }
-
                     }
                 }
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -4519,21 +4783,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetDepotFileDiffsIgnoreWSTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -4551,23 +4817,28 @@ namespace p4api.net.unit.test
                         IList<DepotFileDiff> target = rep.GetDepotFileDiffs("//flow/D1/a/that.txt#1",
                             "//flow/D1/a/that.txt#3", options);
 
-                        if (!(unicode))
+                        if (cptype != Utilities.CheckpointType.U)
                         {
-                            Assert.AreEqual(target[0].Diff, "7a8,11\n> A change... on Fri Jun 24 16:22:05 PDT 2011\n> \n> A change... on Fri Jun 24 16:22:07 PDT 2011\n> \n");
+                            string expected = Utilities.FixLineFeeds(
+                                "7a8,11\n> A change... on Fri Jun 24 16:22:05 PDT 2011\n> \n> A change... on Fri Jun 24 16:22:07 PDT 2011\n> \n");
+                            string actual = Utilities.FixLineFeeds(target[0].Diff);
+                            Assert.AreEqual(expected, actual,"on non unicode server");
                         }
                         else
                         {
-                            Assert.AreEqual(target[0].Diff, "7a8,11\n> A change... on Mon Jun 27 15:02:42 PDT 2011\n> \n> A change... on Mon Jun 27 15:02:42 PDT 2011\n> \n");
+                            string expected = Utilities.FixLineFeeds(
+                                "7a8,11\n> A change... on Mon Jun 27 15:02:42 PDT 2011\n> \n> A change... on Mon Jun 27 15:02:42 PDT 2011\n> \n");
+                            string actual = Utilities.FixLineFeeds(target[0].Diff);
+                            Assert.AreEqual(expected, actual,"on unicode server");
                         }
-
-
                     }
                 }
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -4577,21 +4848,24 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetDepotFileDiffsIgnoreLETest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
+                
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -4608,21 +4882,28 @@ namespace p4api.net.unit.test
                             null, null);
                         IList<DepotFileDiff> target = rep.GetDepotFileDiffs("//flow/D1/a/that.txt#1",
                             "//flow/D1/a/that.txt#3", options);
-                        if (!(unicode))
+                        if (cptype != Utilities.CheckpointType.U)
                         {
-                            Assert.AreEqual(target[0].Diff, "7a8,11\n> A change... on Fri Jun 24 16:22:05 PDT 2011\n> \n> A change... on Fri Jun 24 16:22:07 PDT 2011\n> \n");
+                            string expected = Utilities.FixLineFeeds(
+                                "7a8,11\n> A change... on Fri Jun 24 16:22:05 PDT 2011\n> \n> A change... on Fri Jun 24 16:22:07 PDT 2011\n> \n");
+                            string actual = Utilities.FixLineFeeds(target[0].Diff);
+                            Assert.AreEqual(expected,actual,"non unicode server");
                         }
                         else
                         {
-                            Assert.AreEqual(target[0].Diff, "7a8,11\n> A change... on Mon Jun 27 15:02:42 PDT 2011\n> \n> A change... on Mon Jun 27 15:02:42 PDT 2011\n> \n");
+                            string expected = Utilities.FixLineFeeds(
+                                "7a8,11\n> A change... on Mon Jun 27 15:02:42 PDT 2011\n> \n> A change... on Mon Jun 27 15:02:42 PDT 2011\n> \n");
+                            string actual = Utilities.FixLineFeeds(target[0].Diff);
+                            Assert.AreEqual(expected,actual,"unicode server");
                         }
                     }
                 }
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -4632,21 +4913,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetDepotFileDiffsLimitedTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 13, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 13, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -4683,8 +4966,96 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
+            }
+        }
+
+        /// <summary>
+        ///A test for GetDepotFileDiffsShelved
+        ///</summary>
+        [TestMethod()]
+        public void GetDepotFileDiffsShelved()
+        {
+            string uri = configuration.ServerPort;
+            string user = "admin";
+            string pass = string.Empty;
+            string ws_client = "admin_space";
+
+            for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
+            {
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
+                try
+                {
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
+
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client, true);
+
+                    using (Connection con = rep.Connection)
+                    {
+                        con.UserName = user;
+                        con.Client = new Client();
+                        con.Client.Name = ws_client;
+
+                        bool connected = con.Connect(null);
+                        Assert.IsTrue(connected);
+
+                        Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+
+                        // This file is already open in change 5, create a shelve from it
+                        IList<FileSpec> rFiles = new List<FileSpec>();
+                        ShelveFilesCmdOptions opts = new ShelveFilesCmdOptions(
+                            ShelveFilesCmdFlags.None, null, 5);
+                        try
+                        {
+                            FileMetaData file = new FileMetaData();
+                            file.DepotPath = new DepotPath("//depot/MyCode/NewFile.txt");
+                            FileSpec fs = new FileSpec(file.DepotPath, null, null, null);
+                            rFiles = con.Client.ShelveFiles(opts, fs);
+                        }
+                        catch
+                        {
+                            // ignore error
+                        }
+
+                        IList<DepotFileDiff> target = rep.GetDepotFileDiffs("//flow/D1/a/that.txt#1",
+                            "//depot/MyCode/NewFile.txt@=5", null);
+
+                        if (cptype != Utilities.CheckpointType.U)
+                        {
+                            string expected = Utilities.FixLineFeeds(
+                                "1,3c1\n< that\n< that\n< thatA Change on Mon May 16 16:01:35 PDT 2011\n---\n" +
+                                "> Don't Read This!\n5,7c3\n< A Change on Tue May 24 14:04:57 PDT 2011-changes to a-\n" +
+                                "< A Change on Tue May 24 14:06:00 PDT 2011-changes to a, again-\n" +
+                                "< A Change on Tue May 24 14:28:53 PDT 2011-changes to a alone (again)-\n---\n> It's Secret!");
+                            string actual = Utilities.FixLineFeeds(target[0].Diff);
+                            Assert.AreEqual(expected, actual, "on non unicode server");
+            }
+                        else
+                        {
+                            string expected = Utilities.FixLineFeeds(
+                                "1,3c1\n< that\n< that\n< thatA Change on Mon May 16 16:01:35 PDT 2011\n---\n" +
+                                "> Don't Read This!\n5,7c3\n< A Change on Tue May 24 14:04:57 PDT 2011-changes to a-\n" + 
+                                "< A Change on Tue May 24 14:06:00 PDT 2011-changes to a, again-\n" + 
+                                "< A Change on Tue May 24 14:28:53 PDT 2011-changes to a alone (again)-\n---\n> It's Secret!");
+                            string actual = Utilities.FixLineFeeds(target[0].Diff);
+                            Assert.AreEqual(expected, actual, "on unicode server");
+                        }
+        }
+                }
+                finally
+                {
+                    Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
+                }
             }
         }
 
@@ -4694,21 +5065,23 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetDepotFileDiffsNoFlags()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
-                Server server = new Server(new ServerAddress(uri));
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Repository rep = new Repository(server);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -4724,23 +5097,28 @@ namespace p4api.net.unit.test
                         IList<DepotFileDiff> target = rep.GetDepotFileDiffs("//flow/D1/a/that.txt#1",
                             "//flow/D1/a/that.txt#3", null);
 
-                        if (!(unicode))
+                        if (cptype != Utilities.CheckpointType.U)
                         {
-                            Assert.AreEqual(target[0].Diff, "7a8,11\n> A change... on Fri Jun 24 16:22:05 PDT 2011\n> \n> A change... on Fri Jun 24 16:22:07 PDT 2011\n> \n");
+                            string expected = Utilities.FixLineFeeds(
+                                "7a8,11\n> A change... on Fri Jun 24 16:22:05 PDT 2011\n> \n> A change... on Fri Jun 24 16:22:07 PDT 2011\n> \n");
+                            string actual = Utilities.FixLineFeeds(target[0].Diff);
+                            Assert.AreEqual(expected, actual,"on non unicode server");
                         }
                         else
                         {
-                            Assert.AreEqual(target[0].Diff, "7a8,11\n> A change... on Mon Jun 27 15:02:42 PDT 2011\n> \n> A change... on Mon Jun 27 15:02:42 PDT 2011\n> \n");
+                            string expected = Utilities.FixLineFeeds(
+                                "7a8,11\n> A change... on Mon Jun 27 15:02:42 PDT 2011\n> \n> A change... on Mon Jun 27 15:02:42 PDT 2011\n> \n");
+                            string actual = Utilities.FixLineFeeds(target[0].Diff);
+                            Assert.AreEqual(expected, actual,"on unicode server");
                         }
-
-
                     }
                 }
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -4750,29 +5128,33 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void P4APINET_158_Test()
         {
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
 
-            bool unicode = false;
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 8, unicode);
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
                 try
                 {
-                    Perforce.P4.Server srv = new Perforce.P4.Server(new ServerAddress(uri));
-                    Perforce.P4.Repository p4 = new Perforce.P4.Repository(srv);
-                    p4.Connection.UserName = user;
-                    p4.Connection.Connect(new Perforce.P4.Options());
-                    p4.Connection.Login(pass);
-                    p4.Connection.Disconnect();
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server srv = new Perforce.P4.Server(new ServerAddress(uri));
+                    rep = new Perforce.P4.Repository(srv);
+                    rep.Connection.UserName = user;
+                    rep.Connection.Connect(new Perforce.P4.Options());
+                    rep.Connection.Login(pass);
+                    rep.Connection.Disconnect();
                 }
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
 
@@ -4782,21 +5164,22 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetDittoMappingFilesTest()
         {
-            bool unicode = false;
-
-            string uri = "localhost:6666";
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "ditto-client";
 
-
             for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
             {
-                Process p4d = Utilities.DeployP4TestServer(TestDir, 6, unicode);
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
+
+                p4d = Utilities.DeployP4TestServer(TestDir, 6, cptype);
                 Server server = new Server(new ServerAddress(uri));
                 try
                 {
-                    Repository rep = new Repository(server);
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -4822,9 +5205,11 @@ namespace p4api.net.unit.test
 
                         con.Client.SyncFiles(new Options(), fs);
 
-                        P4Command cmd = new P4Command(con, "have", true, null);
+                        using (P4Command cmd = new P4Command(con, "have", true, null))
+                        {
                         P4CommandResult results = cmd.Run();
                         Assert.IsNotNull(results.TaggedOutput);
+                        }
 
                         Client newClient = rep.GetClient(ws_client);
                         Assert.AreEqual(newClient.ViewMap[0].Type, MapType.Ditto);
@@ -4834,8 +5219,9 @@ namespace p4api.net.unit.test
                 finally
                 {
                     Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
                 }
-                unicode = !unicode;
             }
         }
     }

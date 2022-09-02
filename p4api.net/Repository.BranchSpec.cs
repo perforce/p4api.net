@@ -144,16 +144,16 @@ namespace Perforce.P4
 			if (branch == null)
 			{
 				throw new ArgumentNullException("branch");
-
 			}
-			P4Command cmd = new P4Command(this, "branch", true);
-
+            using (P4Command cmd = new P4Command(this, "branch", true))
+            {
 			cmd.DataSet = branch.ToString();
 
 			if (options == null)
 			{
-				options = new Options((BranchSpecCmdFlags.Input), null, null);
+                    options = new Options(BranchSpecCmdFlags.Input, null, null);
 			}
+
 			if (options.ContainsKey("-i") == false)
 			{
 				options["-i"] = null;
@@ -168,8 +168,10 @@ namespace Perforce.P4
 			{
 				P4Exception.Throw(results.ErrorList);
 			}
+
 			return null;
 		}
+        }
 		/// <summary>
 		/// Create a new branch in the repository.
 		/// </summary>
@@ -241,13 +243,12 @@ namespace Perforce.P4
 			if (branch == null)
 			{
 				throw new ArgumentNullException("branch");
-
 			}
-			P4Command cmd = new P4Command(this, "branch", true, branch);
-
+            using (P4Command cmd = new P4Command(this, "branch", true, branch))
+            {
 			if (options == null)
 			{
-				options = new Options((BranchSpecCmdFlags.Output), stream, parent);
+                    options = new Options(BranchSpecCmdFlags.Output, stream, parent);
 			}
 
 			if (options.ContainsKey("-o") == false)
@@ -272,8 +273,10 @@ namespace Perforce.P4
 			{
 				P4Exception.Throw(results.ErrorList);
 			}
+
 			return null;
 		}
+        }
 
         /// <summary>
         /// Get a BranchSpec from the branch name
@@ -344,9 +347,8 @@ namespace Perforce.P4
 		/// <seealso cref="BranchSpecsCmdFlags"/>
 		public IList<BranchSpec> GetBranchSpecs(Options options)
 		{
-			P4Command cmd = new P4Command(this, "branches", true);
-
-
+            using (P4Command cmd = new P4Command(this, "branches", true))
+            {
 			P4CommandResult results = cmd.Run(options);
 			if (results.Success)
 			{
@@ -355,30 +357,33 @@ namespace Perforce.P4
 					return null;
 				}
 
-                bool dst_mismatch = false;
+                    bool dstMismatch = false;
                 string offset = string.Empty;
 
                 if (Server != null && Server.Metadata != null)
                 {
                     offset = Server.Metadata.DateTimeOffset;
-                    dst_mismatch = FormBase.DSTMismatch(Server.Metadata);
+                        dstMismatch = FormBase.DSTMismatch(Server.Metadata);
                 }
 
 				List<BranchSpec> value = new List<BranchSpec>();
 				foreach (TaggedObject obj in results.TaggedOutput)
 				{
 					BranchSpec branch = new BranchSpec();
-					branch.FromBranchSpecsCmdTaggedOutput(obj,offset,dst_mismatch);
+                        branch.FromBranchSpecsCmdTaggedOutput(obj, offset, dstMismatch);
 					value.Add(branch);
 				}
+
 				return value;
 			}
 			else
 			{
 				P4Exception.Throw(results.ErrorList);
 			}
+
 			return null;
 		}
+        }
 
 		/// <summary>
 		/// Delete a branch from the repository
@@ -411,10 +416,9 @@ namespace Perforce.P4
 			if (branch == null)
 			{
 				throw new ArgumentNullException("branch");
-
 			}
-			P4Command cmd = new P4Command(this, "branch", true, branch.Id);
-
+            using (P4Command cmd = new P4Command(this, "branch", true, branch.Id))
+            {
 			if (options == null)
 			{
 				options = new Options(BranchSpecCmdFlags.Delete, null, null);
@@ -432,4 +436,5 @@ namespace Perforce.P4
 			}
 		}
 	}
+}
 }

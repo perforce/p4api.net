@@ -46,8 +46,8 @@ using System.Diagnostics;
 namespace Perforce.P4
 {
     /// <summary>
-    /// Allows a client to monitor the execution of a command. It allow the client to 
-    /// cancel the command if it takes to long to complete or display a UI to allow the 
+    /// Allows a client to monitor the execution of a command. It allow the client to
+    /// cancel the command if it takes to long to complete or display a UI to allow the
     /// user to cancel the command.
     /// </summary>
     public interface IKeepAlive
@@ -76,8 +76,8 @@ namespace Perforce.P4
 
     /// <summary>
     /// P4Server
-    /// 
-    /// Represents the connection to a Perforce Server using the the P4 Bridge 
+    ///
+    /// Represents the connection to a Perforce Server using the the P4 Bridge
     /// DLL. It wraps the calls exported by the DLL and transforms the data
     /// types exported by the DLL as native C#.NET data types.
     /// </summary>
@@ -111,7 +111,7 @@ namespace Perforce.P4
                 {
                     if (_lastResultsCache.Count > 32)
                     {
-                        // if the results cach is getting large, throw awy anything older than 10 seconds
+                        // if the results cache is getting large, throw away anything older than 10 seconds
                         int[] keys = new int[_lastResultsCache.Keys.Count];
                         _lastResultsCache.Keys.CopyTo(keys, 0);
                         DateTime old = DateTime.Now - TimeSpan.FromSeconds(10);
@@ -190,18 +190,19 @@ namespace Perforce.P4
         private string _cwd;
 
         private static P4CallBacks.LogMessageDelegate logfn = new P4CallBacks.LogMessageDelegate(LogBridgeMessage);
+        private static IntPtr pLogFn = IntPtr.Zero; // contains pinned pointer for the bridge
 
         /// <summary>
         /// Create a P4BridgeServer used to connect to the specified P4Server
         /// </summary>
         /// <param name="server">Host:port for the P4 server.</param>
-        /// <param name="user">User name for the login. 
-        ///     Can be null/blank if only running commands that do not require 
+        /// <param name="user">User name for the login.
+        ///     Can be null/blank if only running commands that do not require
         ///     a login.</param>
-        /// <param name="pass">Password for  the login. Can be null/blank if 
+        /// <param name="pass">Password for  the login. Can be null/blank if
         ///     only running commands that do not require a login.</param>
-        /// <param name="ws_client">Workspace (client) to be used by the 
-        ///     connection. Can be null/blank if only running commands that do 
+        /// <param name="ws_client">Workspace (client) to be used by the
+        ///     connection. Can be null/blank if only running commands that do
         ///     not require a login.</param>
         public P4Server(String server,
                          String user,
@@ -215,7 +216,7 @@ namespace Perforce.P4
         /// Create a P4BridgeServer using the PUC specified by the environment
         ///		or a p4config file if one exists.
         /// </summary>
-        /// <param name="cwd">Current working Directory. Can be null/blank if 
+        /// <param name="cwd">Current working Directory. Can be null/blank if
         ///		not connecting to the Perforce server using a P4Config file.</param>
         public P4Server(String cwd)
             : this(null, null, null, null, cwd)
@@ -225,15 +226,15 @@ namespace Perforce.P4
         /// Create a P4BridgeServer used to connect to the specified P4Server
         /// </summary>
         /// <param name="server">Host:port for the P4 server.</param>
-        /// <param name="user">User name for the login. 
-        ///     Can be null/blank if only running commands that do not require 
+        /// <param name="user">User name for the login.
+        ///     Can be null/blank if only running commands that do not require
         ///     a login.</param>
-        /// <param name="pass">Password for  the login. Can be null/blank if 
+        /// <param name="pass">Password for  the login. Can be null/blank if
         ///     only running commands that do not require a login.</param>
-        /// <param name="ws_client">Workspace (client) to be used by the 
-        ///     connection. Can be null/blank if only running commands that do 
+        /// <param name="ws_client">Workspace (client) to be used by the
+        ///     connection. Can be null/blank if only running commands that do
         ///     not require a login.</param>
-        /// <param name="cwd">Current working Directory. Can be null/blank if 
+        /// <param name="cwd">Current working Directory. Can be null/blank if
         ///		not connecting to the Perforce server using a P4Config file.</param>
         internal P4Server(String server,
                          String user,
@@ -245,7 +246,7 @@ namespace Perforce.P4
             // by default we are owned by the creating thread
             SetThreadOwner(Thread.CurrentThread.ManagedThreadId);
 
-            if (string.IsNullOrEmpty(cwd) == false)
+            if (string.IsNullOrEmpty(cwd) == false) // use P4CONFIG to fill out missing settings
             {
                 string tmpServer, tmpUser, tmpClient;
                 ConnectionInfoFromPath(cwd, out tmpServer, out tmpUser, out tmpClient);
@@ -254,15 +255,52 @@ namespace Perforce.P4
                 ws_client = (ws_client == null) ? tmpClient : ws_client;
             }
             _server = server;
+
             _user = user;
             _pass = pass;
             _ws_client = ws_client;
             _cwd = cwd;
+#if _OSX || _LINUX
+            // Enviro can sometimes miss environment variables when not in windows
+            // So we check for them here also
+            if (string.IsNullOrEmpty(_server))
+            {
+                string eport = Environment.GetEnvironmentVariable("P4PORT");
+                if (!string.IsNullOrEmpty(eport))
+                {
+                    _server = server = eport;
+                }
+            }
+            if (string.IsNullOrEmpty(_user))
+            {
+                string euser = Environment.GetEnvironmentVariable("P4USER");
+                if (!string.IsNullOrEmpty(euser))
+                {
+                    _user = user = euser;
+                }
+            }
+            if (string.IsNullOrEmpty(_ws_client))
+            {
+                string eclient = Environment.GetEnvironmentVariable("P4CLIENT");
+                if (!string.IsNullOrEmpty(eclient))
+                {
+                    _ws_client = ws_client = eclient;
+                }
+            }
+            if (string.IsNullOrEmpty(_pass))
+            {
+                string epass = Environment.GetEnvironmentVariable("P4PASSWD");
+                if (!string.IsNullOrEmpty(epass))
+                {
+                    _pass = pass = epass;
+                }
+            }
+#endif
             isUnicode = false;
 
             CurrentEncodeing = P4Encoding.ASCII;
 
-            // connect to the server without passing user/client/password, that way 
+            // connect to the server without passing user/client/password, that way
             // we can determine if the target server is Unicode enabled or not, so we
             // can use the correct encoding for those parameters
 
@@ -270,9 +308,11 @@ namespace Perforce.P4
 
             if (pServer != IntPtr.Zero)
             {
+                CurrentWorkingDirectory = cwd;  // set up the environ
+
                 if (isUnicode = P4Bridge.IsUnicode(pServer))
                 {
-                    // if the server supports Unicode, encode the username, password, and workspace 
+                    // if the server supports Unicode, encode the cwd, username and workspace
                     // name in UTF-8
                     using (PinnedByteArray pCwd = MarshalStringToIntPtr(cwd),
                                            pUser = MarshalStringToIntPtr(user),
@@ -285,8 +325,8 @@ namespace Perforce.P4
                 }
                 else
                 {
-                    // if the server does not support Unicode, pass the username, password, and 
-                    // workspace name in ASCII
+                    // if the server does not support Unicode, pass the cwd, username and workspace
+                    //  name in ASCII
                     P4Bridge.set_cwdA(pServer, cwd);
                     P4Bridge.set_userA(pServer, user);
                     P4Bridge.set_clientA(pServer, ws_client);
@@ -299,17 +339,16 @@ namespace Perforce.P4
                 if (ConnectionError == null)
                 {
                     IntPtr pObj = P4Bridge.GetErrorResults(pServer, 0);
-                    P4ClientErrorList _errorList = new P4ClientErrorList(this, pObj);
+                    P4ClientErrorList errorList = new P4ClientErrorList(this, pObj);
 
-                    if ((_errorList != null) && (_errorList.Count > 0))
+                    if (errorList.Count > 0)
                     {
-                        P4Exception.Throw(_errorList, GetInfoResults(0));
+                        P4Exception.Throw(errorList, GetInfoResults(0));
                     }
                     ConnectionError = new P4ClientError(ErrorSeverity.E_FATAL, string.Format("Unknown error connecting to server, {0}", _server));
                 }
                 P4Exception.Throw(ConnectionError);
                 return;
-                //throw new ApplicationException(connectionError);
             }
             else
             {
@@ -355,24 +394,24 @@ namespace Perforce.P4
             SetResolveACallback();
             SetParallelTransferCallback();
 
-            // If we were supplied a password, login into the server. If the 
+            // If we were supplied a password, login into the server. If the
             // server requires a login (security level >= 3), this will prompt
             // for the password. If login is not required, the command will just
             // return with a result saying that login is not required.
-            //Login(pass, null);
+            Login(pass, null);
         }
 
         /// <summary>
         /// Create a P4BridgeServer used to connect to the specified P4Server
         /// </summary>
         /// <param name="server">Host:port for the P4 server.</param>
-        /// <param name="user">User name for the login. 
-        ///     Can be null/blank if only running commands that do not require 
+        /// <param name="user">User name for the login.
+        ///     Can be null/blank if only running commands that do not require
         ///     a login.</param>
-        /// <param name="pass">Password for  the login. Can be null/blank if 
+        /// <param name="pass">Password for  the login. Can be null/blank if
         ///     only running commands that do not require a login.</param>
-        /// <param name="ws_client">Workspace (client) to be used by the 
-        ///     connection. Can be null/blank if only running commands that do 
+        /// <param name="ws_client">Workspace (client) to be used by the
+        ///     connection. Can be null/blank if only running commands that do
         ///     not require a login.</param>
         /// <param name="cwd">Current working directory</param>
         /// <param name="trust_flag">Trust or not</param>
@@ -396,12 +435,11 @@ namespace Perforce.P4
             CurrentEncodeing = P4Encoding.ASCII;
 
             // encode the username, password, and workspace name in UTF-8, we
-            // won't know if the client supports Unicode until after connect 
+            // won't know if the client supports Unicode until after connect
             // returns
             using (PinnedByteArray pUser = MarshalStringToIntPtr(user),
                                    pClient = MarshalStringToIntPtr(ws_client))
             {
-                IntPtr pLogFn = IntPtr.Zero;
                 if (logfn != null)
                     pLogFn = Marshal.GetFunctionPointerForDelegate(logfn);
 
@@ -415,11 +453,11 @@ namespace Perforce.P4
                 if (ConnectionError == null)
                 {
                     IntPtr pObj = P4Bridge.GetErrorResults(pServer, 0);
-                    P4ClientErrorList _errorList = new P4ClientErrorList(this, pObj);
+                    P4ClientErrorList errorList = new P4ClientErrorList(this, pObj);
 
-                    if ((_errorList != null) && (_errorList.Count > 0))
+                    if (errorList.Count > 0)
                     {
-                        P4Exception.Throw(_errorList, GetInfoResults(0));
+                        P4Exception.Throw(errorList, GetInfoResults(0));
                     }
                     ConnectionError = new P4ClientError(ErrorSeverity.E_FAILED,
                         string.Format("Unknown error connecting to server, {0}", _server));
@@ -431,7 +469,7 @@ namespace Perforce.P4
             {
                 ConnectionError = null;
             }
-
+            CurrentWorkingDirectory = cwd;  // set up the environ
 
             if (isUnicode = P4Bridge.IsUnicode(pServer))
             {
@@ -461,7 +499,7 @@ namespace Perforce.P4
             SetResolveACallback();
             SetParallelTransferCallback();
 
-            // If we were supplied a password, login into the server. If the 
+            // If we were supplied a password, login into the server. If the
             // server requires a login (security level >= 3), this will prompt
             // for the password. If login is not required, the command will just
             // return with a result saying that login is not required.
@@ -475,12 +513,13 @@ namespace Perforce.P4
         /// <param name="options">options/flags</param>
         /// <returns>Success/Failure</returns>
         /// <remarks>
-        /// If the server requires a login (security level >= 3), this will 
+        /// If the server requires a login (security level >= 3), this will
         /// prompt for the password. If login is not required, the command will
         /// just return with a result saying that login is not required.
         /// </remarks>
         public bool Login(string password, StringList options)
         {
+            Password = password;
             if (!requiresLogin)
             {
                 // server does not support login command
@@ -494,28 +533,32 @@ namespace Perforce.P4
                 }
                 return false;
             }
-            P4Command login = new P4Command(this, "login", false);
-            login.Responses = new Dictionary<string, string>();
-            login.Responses["DefaultResponse"] = password;
-            P4CommandResult results;
-            try
+            using (P4Command login = new P4Command(this, "login", false))
             {
-                results = login.Run(options);
+                login.Responses = new Dictionary<string, string>();
+                login.Responses["DefaultResponse"] = password;
+                P4CommandResult results;
+                try
+                {
+                    results = login.Run(options);
+                }
+                catch
+                {
+                    results = null;
+                    return false;
+                }
+
+                if (!results.Success)
+                {
+                    ConnectionError = results.ErrorList[0];
+                }
+                else
+                {
+                    ConnectionError = null;
+                }
+
+                return results.Success;
             }
-            catch
-            {
-                results = null;
-                return false;
-            }
-            if (!results.Success)
-            {
-                ConnectionError = results.ErrorList[0];
-            }
-            else
-            {
-                ConnectionError = null;
-            }
-            return results.Success;
         }
 
         /// <summary>
@@ -525,31 +568,36 @@ namespace Perforce.P4
         /// <param name="user">The user to log out (requires super access)</param>
         /// <returns>Success/Failure</returns>
         /// <remarks>
-        /// If the server requires a login (security level >= 3), this will 
+        /// If the server requires a login (security level >= 3), this will
         /// logout the user and remove the local ticket.
         /// </remarks>
         public bool Logout(StringList options, string user = null)
         {
-            P4Command logout = user != null ? new P4Command(this, "logout", false, user) : new P4Command(this, "logout", false);
-            P4CommandResult results;
-            try
+            using (P4Command logout = user != null ?
+                new P4Command(this, "logout", false, user) :
+                new P4Command(this, "logout", false))
             {
-                results = logout.Run(options);
+                P4CommandResult results;
+                try
+                {
+                    results = logout.Run(options);
+                }
+                catch
+                {
+                    return false;
+                }
+
+                if (!results.Success)
+                {
+                    ConnectionError = results.ErrorList[0];
+                }
+                else
+                {
+                    ConnectionError = null;
+                }
+
+                return results.Success;
             }
-            catch
-            {
-                results = null;
-                return false;
-            }
-            if (!results.Success)
-            {
-                ConnectionError = results.ErrorList[0];
-            }
-            else
-            {
-                ConnectionError = null;
-            }
-            return results.Success;
         }
 
         /// <summary>
@@ -628,17 +676,13 @@ namespace Perforce.P4
             }
             CurrentEncodeing = P4Encoding.ASCII;
 
-            P4CallBacks.LogMessageDelegate logfn =
-                new P4CallBacks.LogMessageDelegate(LogBridgeMessage);
-
             // encode the username, password, and workspace name in UTF-8, we
-            // won't know if the client supports Unicode until after connect 
+            // won't know if the client supports Unicode until after connect
             // returns
             using (PinnedByteArray pUser = MarshalStringToIntPtr(_user),
                                    pPass = MarshalStringToIntPtr(_pass),
                                    pClient = MarshalStringToIntPtr(_ws_client))
             {
-                IntPtr pLogFn = IntPtr.Zero;
                 if (logfn != null)
                     pLogFn = Marshal.GetFunctionPointerForDelegate(logfn);
 
@@ -688,7 +732,7 @@ namespace Perforce.P4
             ProgramVersion = _prog_ver;
 
             // *** Don't login using the login command. If we are reconnecting
-            // *** after a timeout, doe not want to risk the login timing out and 
+            // *** after a timeout, doe not want to risk the login timing out and
             // *** throwing us in an infinite loop
             // We've theoretically already logged in, so if using tickets, _pass
             // should hold the ticket.
@@ -698,7 +742,7 @@ namespace Perforce.P4
         /// <summary>
         /// Close the connection to a P4 Server
         /// </summary>
-        /// <remarks> 
+        /// <remarks>
         /// Called by the Dispose() method
         /// </remarks>
         public void Close()
@@ -719,7 +763,7 @@ namespace Perforce.P4
                         {
                             Debug.Trace(
                                 string.Format("In Close(), currently running command {0}", lastCmdId));
-                            // can't canel commands from the origonal list, as that might change the contents
+                            // can't cancel commands from the original list, as that might change the contents
                             // of the list and crash the enumerator
 
                             P4Bridge.CancelCommand(pServer, lastCmdId);
@@ -840,7 +884,7 @@ namespace Perforce.P4
         }
 
 #if DEBUG
-        // long delays for debugging so it won't time out / disconnect why stepping through code
+        // long delays for debugging so it won't time out / disconnect while stepping through code
 
         public TimeSpan RunCmdTimeout = TimeSpan.FromSeconds(5000);
 
@@ -990,14 +1034,14 @@ namespace Perforce.P4
         private DateTime lastRunCommand = new DateTime();
         // record the last cmdId for Close()'s cancel operation
         private uint lastCmdId = 0;
-        // runLock syncronizes the idle disconnect timeout and the main execution thread
+        // runLock synchronizes the idle disconnect timeout and the main execution thread
         private Object runLock = new Object();
 
         /// <summary>
         /// Run a P4 command on the P4 Server
         /// </summary>
         /// <remarks>
-        /// If the command fails, the error output will contain one or more 
+        /// If the command fails, the error output will contain one or more
         /// errors generated by the P4 server.
         /// </remarks>
         /// <param name="cmd">Command code</param>
@@ -1045,10 +1089,10 @@ namespace Perforce.P4
                     parallelServers = null;
 
                     // set the transfer function now that we have locked the runner
-                    if (ParallelTransferCallbackFn != null)
+                    if (ParallelTransferCallbackFn != IntPtr.Zero)
                         P4Bridge.SetParallelTransferCallbackFn(pServer, ParallelTransferCallbackFn);
 
-                    if (DisconnectTimer != null)
+                    if (DisconnectTimer != null && DisconnectTimer.Enabled)
                         DisconnectTimer.Stop();
 
                     if (!isUnicode)
@@ -1077,7 +1121,7 @@ namespace Perforce.P4
                     if (!results)
                     {
                         Debug.Trace(string.Format("RunCommand Command [{0}] failed!", cmdId));
-                        // error 
+                        // error
                         IntPtr pObj = P4Bridge.GetErrorResults(pServer, cmdId);
 
                         if (pObj == IntPtr.Zero)
@@ -1159,7 +1203,7 @@ namespace Perforce.P4
         /// <param name="CmdId">Unique Id for the run of the command</param>
         public void CancelCommand(uint CmdId)
         {
-            
+
             // special case for parallel operations
             if (parallelServers != null && parallelServers.Count > 0)
             {
@@ -1176,7 +1220,7 @@ namespace Perforce.P4
         /// Delegate used to send tagged output as it is generated.
         /// </summary>
         /// <remarks>
-        /// This delegate will send a complete object after all of its fields 
+        /// This delegate will send a complete object after all of its fields
         /// have been received by the callback from the bridge dll.
         /// </remarks>
         /// <param name="cmdId">Unique Id for the run of the command</param>
@@ -1207,7 +1251,7 @@ namespace Perforce.P4
                 return null;
             }
 
-            // use a StrDictListIterator to return all of the objects and 
+            // use a StrDictListIterator to return all of the objects and
             //  their keys.
             StrDictListIterator data = new StrDictListIterator(this, pData);
             TaggedObjectList objects = new TaggedObjectList(nData);
@@ -1237,7 +1281,7 @@ namespace Perforce.P4
         /// Delegate used to send errors as they are generated.
         /// </summary>
         /// <remarks>
-        /// This delegate will send a block of data for each call received by 
+        /// This delegate will send a block of data for each call received by
         /// the callback from the bridge dll.
         /// </remarks>
         /// <param name="cmdId">Command Id of the command causing the error</param>
@@ -1246,8 +1290,8 @@ namespace Perforce.P4
         /// <param name="data">Error message</param>
         public delegate void ErrorDelegate(uint cmdId, int severity, int errorNumber, String data);
         /// <summary>
-        /// Holds the call back passed to the bridge used to receive the 
-        /// raw  data 
+        /// Holds the call back passed to the bridge used to receive the
+        /// raw  data
         /// </summary>
         P4CallBacks.ErrorDelegate
             ErrorCallbackFn_Int = null;
@@ -1264,7 +1308,7 @@ namespace Perforce.P4
         public P4ClientErrorList GetErrorResults(uint cmdId)
         {
             // special case for parallel operations, return the parallel list if non-empty
-            if (parallelErrors != null && parallelErrors.Count > 0)
+            if ((parallelErrors?.Count ?? 0) > 0)
                 return parallelErrors;
 
             IntPtr pErr = P4Bridge.GetErrorResults(pServer, cmdId);
@@ -1280,7 +1324,7 @@ namespace Perforce.P4
         /// Delegate used to send Info Results as they are generated.
         /// </summary>
         /// <remarks>
-        /// This delegate will send a block of data for each call received by 
+        /// This delegate will send a block of data for each call received by
         /// the callback from the bridge dll.
         /// </remarks>
         /// <param name="cmdId">Unique Id for the run of the command</param>
@@ -1319,7 +1363,7 @@ namespace Perforce.P4
         /// Delegate used to send Text Results as they are generated.
         /// </summary>
         /// <remarks>
-        /// This delegate will send a block of data for each call received by 
+        /// This delegate will send a block of data for each call received by
         /// the callback from the bridge dll.
         /// </remarks>
         /// <param name="cmdId">Unique Id for the run of the command</param>
@@ -1347,7 +1391,7 @@ namespace Perforce.P4
         /// Delegate used to send binary output as it is generated.
         /// </summary>
         /// <remarks>
-        /// This delegate will send a block of data for each call received by 
+        /// This delegate will send a block of data for each call received by
         /// the callback from the bridge dll.
         /// </remarks>
         /// <param name="data">Binary data generated by a command</param>
@@ -1434,7 +1478,7 @@ namespace Perforce.P4
         /// The data set for use by a command
         /// </summary>
         /// <remarks>
-        /// If a command requires data not passed on the command line, such as 
+        /// If a command requires data not passed on the command line, such as
         /// a client spec, it is passed to the P$ server by setting the data
         /// set in the P4 api.
         /// </remarks>
@@ -1483,7 +1527,7 @@ namespace Perforce.P4
         /// <param name="dictIter">dictionary of variables</param>
         /// <param name="threads">number of threads to launch</param>
         public delegate int ParallelTransferDelegate(IntPtr pServer, String cmd, [MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)] String[] args, uint argCount, IntPtr dictIter, uint threads);
-       
+
         /// <summary>
         /// Delegate used to provide a custom handler for Resolve callbacks passing a ClientMerge object from the p4api.
         /// </summary>
@@ -1510,7 +1554,7 @@ namespace Perforce.P4
         /// The parameters used by the connection
         /// </summary>
         /// <remarks>
-        /// The  properties, client, port, user, and password, 
+        /// The  properties, client, port, user, and password,
         /// represent the criteria used to connect to a P4 server. If one or
         /// more is changed, the bridge will drop the current connection if any
         /// and attempt to connect to the (possibly different) P4 server when
@@ -1540,7 +1584,7 @@ namespace Perforce.P4
         /// The client workspace used by the connection
         /// </summary>
         /// <remarks>
-        /// The  properties, client, port, user, and password, 
+        /// The  properties, client, port, user, and password,
         /// represent the criteria used to connect to a P4 server. If one or
         /// more is changed, the bridge will drop the current connection if any
         /// and attempt to connect to the (possibly different) P4 server when
@@ -1578,7 +1622,7 @@ namespace Perforce.P4
         /// The user name used by the connection
         /// </summary>
         /// <remarks>
-        /// The  properties, client, port, user, and password, 
+        /// The  properties, client, port, user, and password,
         /// represent the criteria used to connect to a P4 server. If one or
         /// more is changed, the bridge will drop the current connection if any
         /// and attempt to connect to the (possibly different) P4 server when
@@ -1616,7 +1660,7 @@ namespace Perforce.P4
         /// The hostname:port used by the connection
         /// </summary>
         /// <remarks>
-        /// The  properties, client, port, user, and password, 
+        /// The  properties, client, port, user, and password,
         /// represent the criteria used to connect to a P4 server. If one or
         /// more is changed, the bridge will drop the current connection if any
         /// and attempt to connect to the (possibly different) P4 server when
@@ -1654,7 +1698,7 @@ namespace Perforce.P4
         /// The user's password used by the connection
         /// </summary>
         /// <remarks>
-        /// The  properties, client, port, user, and password, 
+        /// The  properties, client, port, user, and password,
         /// represent the criteria used to connect to a P4 server. If one or
         /// more is changed, the bridge will drop the current connection if any
         /// and attempt to connect to the (possibly different) P4 server when
@@ -1673,17 +1717,17 @@ namespace Perforce.P4
             }
             set
             {
-                _pass = value;
+                _pass = value ?? "";  // cleaner to pass empty strings instead of nulls
                 if (isUnicode)
                 {
-                    using (PinnedByteArray pData = MarshalStringToIntPtr(value))
+                    using (PinnedByteArray pData = MarshalStringToIntPtr(_pass))
                     {
                         P4Bridge.set_passwordW(pServer, pData);
                     }
                 }
                 else
                 {
-                    P4Bridge.set_passwordA(pServer, value);
+                    P4Bridge.set_passwordA(pServer, _pass);
                 }
             }
         }
@@ -1760,7 +1804,7 @@ namespace Perforce.P4
         /// The current working directory (cwd) used by the p4 server
         /// </summary>
         /// <remarks>
-        /// The  properties, client, port, user, and password, 
+        /// The  properties, client, port, user, and password,
         /// represent the criteria used to connect to a P4 server. If one or
         /// more is changed, the bridge will drop the current connection if any
         /// and attempt to connect to the (possibly different) P4 server when
@@ -1806,7 +1850,7 @@ namespace Perforce.P4
         /// </summary>
         /// <remarks>
         /// The character set used to connect to Unicode servers is set by the
-        /// bridge dll automatically (possibly overridden by P4CHARSET) based 
+        /// bridge dll automatically (possibly overridden by P4CHARSET) based
         /// on the current Windows code page.
         /// </remarks>
         public String CharacterSet
@@ -1873,7 +1917,7 @@ namespace Perforce.P4
         /// <summary>
         /// Get an environment setting used by the server, such as user, client, ..
         /// </summary>
-        /// <param name="var">The name of the environment varible</param>
+        /// <param name="var">The name of the environment variable</param>
         /// <returns></returns>
         static public String Get(string var)
         {
@@ -1950,7 +1994,7 @@ namespace Perforce.P4
         }
 
         /// <summary>
-        /// Use the C++ API to determin the path of the ticket file
+        /// Use the C++ API to determine the path of the ticket file
         /// for the current connection
         /// </summary>
         /// <returns>The path for the ticket file for the current connection</returns>
