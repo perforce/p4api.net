@@ -393,12 +393,6 @@ namespace Perforce.P4
             SetResolveCallback();
             SetResolveACallback();
             SetParallelTransferCallback();
-
-            // If we were supplied a password, login into the server. If the
-            // server requires a login (security level >= 3), this will prompt
-            // for the password. If login is not required, the command will just
-            // return with a result saying that login is not required.
-            Login(pass, null);
         }
 
         /// <summary>
