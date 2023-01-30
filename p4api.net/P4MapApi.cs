@@ -59,32 +59,13 @@ namespace Perforce.P4
             DllManager.ResolverSet = true;
         }
 #else
-         private const string bridgeDll = "p4bridge.dll";
-         static P4MapApi()
-         {
-            Assembly p4apinet = Assembly.GetExecutingAssembly();
-            PortableExecutableKinds peKind;
-            ImageFileMachine machine;
-            p4apinet.ManifestModule.GetPEKind(out peKind, out machine);
-
-            // only set this path if it is Any CPU (ILOnly)
-            if (peKind.ToString() == "ILOnly")
-            {
-                string currentArchSubPath = "x86";
-
-                // Is this a 64 bits process?
-                if (IntPtr.Size == 8)
-                {
-                    currentArchSubPath = "x64";
-                }
-                SetDllDirectory(currentArchSubPath);
-            }
+        private const string bridgeDll = "p4bridge.dll";
+        static P4MapApi()
+        {
+            P4BridgeLoader.Load();
         }
-
-        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        static extern bool SetDllDirectory(string lpPathName);
-
 #endif
+
         /// <summary>
         /// Translate a returned string based on the UseUnicode setting
         /// </summary>

@@ -34,6 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * Description	:  P4BridgeServer
  *
  ******************************************************************************/
+
 #include "P4BridgeClient.h"
 #include "P4Connection.h"
 
@@ -309,8 +310,9 @@ public:
 	string get_config();
 	static string get_config( const char* cwd );
 
-	/* We provide a static Enviro */
+	/* The BridgeServer provides a static Enviro */
 	/* it is inherited by the P4Connection class */
+	/* beware, the client has a default Enviro too, and it might not match! */
 
 	static const char* Get( const char *var );
 	static void Set( const char *var, const char *value );
@@ -318,7 +320,15 @@ public:
 	static void Reload();
 	static void ListEnviro();
 	static void ListEnviro(Enviro* ptr);
-	static Enviro *GetEnviro(); 
+	static Enviro *GetEnviro();
+
+	// set things like "-vnet.maxwait=5"  here.
+	// or just a number like "5"
+	//  output will be on stdout
+	static void SetDebugLevel(const char* lvl);
+
+	// output like above but logged to a file
+	static void SetDebugLevel(const char* lvl, const char* logFile);
 
 	static LogCallbackFn *SetLogCallFn(LogCallbackFn *log_fn);
 

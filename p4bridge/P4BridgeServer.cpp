@@ -45,6 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ticket.h"
 #include "error.h"
 #include "errornum.h"
+#include "errorlog.h"
 #include "strarray.h"
 #include "enviro.h"
 
@@ -55,6 +56,8 @@ using namespace std;
 #include <sstream>
 #include <iomanip>
 #include <typeinfo>
+#include <mutex>
+
 
 extern Ident p4api_ident;   // Ident provided by P4API library
 
@@ -87,6 +90,9 @@ bool CheckErrorId(Error  &e, const ErrorId &tgt)
 	return false;
 }
 
+// used for debug level / log configuration.
+static P4DebugConfig debug_config;
+
 // keep a multi-threaded lock around Bridge Methods
 // share initialization with bridge_enviro_lock
 static ILockable BridgeLock;
@@ -113,6 +119,7 @@ static ILockable* GetEnviroLock() {
 
 // This is where the pointer to the log callback is stored if set by the user.
 LogCallbackFn * P4BridgeServer::pLogFn = NULL;
+std::mutex g_plogfn; 
 
 /*******************************************************************************
 *
@@ -134,6 +141,8 @@ void P4BridgeServer::ReportException(std::exception& e, const char* fun)
 ******************************************************************************/
 int P4BridgeServer::LogMessageNoArgs(int log_level, const char * file, int line, const char * message)
 {
+	const std::lock_guard<std::mutex> lock(g_plogfn);
+
 	if (!pLogFn)
 		return 0;
 	
@@ -146,6 +155,8 @@ int P4BridgeServer::LogMessageNoArgs(int log_level, const char * file, int line,
 ******************************************************************************/
 int P4BridgeServer::LogMessage(int log_level, const char * file, int line, const char * message, ...)
 {
+	const std::lock_guard<std::mutex> lock(g_plogfn);
+
 	if (pLogFn)
 	{
 		va_list args;
@@ -1497,6 +1508,31 @@ string P4BridgeServer::get_ticketFile()
 
 /*******************************************************************************
  *
+ * SetDebugLevel
+ *
+ * Set things like "-vnet.maxwait=5"
+ *   or even just a number like "5"
+ *
+ ******************************************************************************/
+
+void P4BridgeServer::SetDebugLevel(const char* lvl)
+{
+	p4debug.SetLevel(lvl);
+}
+
+extern ErrorLog  AssertLog;
+
+void P4BridgeServer::SetDebugLevel(const char* lvl, const char *logFile)
+{
+	debug_config.Install();
+	AssertLog.SetLog(logFile);
+	debug_config.SetErrorLog(&AssertLog);
+	p4debug.SetLevel(lvl);
+}
+
+
+/*******************************************************************************
+ *
  * get_programName
  *
  *  Get the program name used for the connection.
@@ -2097,6 +2133,8 @@ string P4BridgeServer::GetTicket(char* uri, char* user)
 
 LogCallbackFn* P4BridgeServer::SetLogCallFn(LogCallbackFn *log_fn)
 {
+	const std::lock_guard<std::mutex> lock(g_plogfn);
+	
 	LogCallbackFn* old = pLogFn;
 	pLogFn = log_fn;
 	return old;

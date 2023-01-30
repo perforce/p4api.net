@@ -1492,6 +1492,7 @@ namespace Perforce.P4
 
         private TimeSpan _commandTimeout = TimeSpan.Zero;
 
+        [Obsolete]
         public TimeSpan CommandTimeout
         {
             get => connectionEstablished() ? getP4Server().RunCmdTimeout : TimeSpan.Zero;

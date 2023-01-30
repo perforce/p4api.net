@@ -105,6 +105,44 @@ Key to symbols used in change notes below.
          ** -- requires P4API.NET built with new P4API
         *** -- requires new p4d server program
 
+--------------------------------------------------------------------------
+
+Bug fixed in 2021.2 Patch 5
+
+        #2394629 *
+            Property 'CommandTimeout' in class 'Connection' is marked as 
+            Obsolete, as it is no longer valid.
+
+--------------------------------------------------------------------------
+
+Bug fixed in 2021.2 Patch 4 (2021.2/2393847) (2023/01/18)
+
+        #2390047 (Job #113519) * **
+            Fixed the issue where AccessViolationException (Attempted to 
+            read or write protected memory) was thrown while using 
+            multi-threaded environment
+
+--------------------------------------------------------------------------
+
+New functionality in 2021.2 Patch 3
+
+        #2334385 (Job #111968) * **
+            Added support for the p4Debug.SetLevel() functionality from C++ API
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2021.2 Patch 3
+
+        #2352032 (Job #112528) * **
+            Fixed the issue where loading p4bridge.dll was causing invalid 
+            environment for other libraries
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2021.2 Patch 2
+
+        #2350293 (Job #112567) * **
+            Fixed unnecessary extra login calls, when creating P4Server object.
 
 --------------------------------------------------------------------------
 

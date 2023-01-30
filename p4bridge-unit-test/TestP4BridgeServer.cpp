@@ -997,12 +997,23 @@ bool TestP4BridgeServer::TestSetVars()
         // -v options are passed by p4debug.SetLevel() calls.
         // p4debug.SetLevel("rpc=3");   // This will spew debug output to stdout WORKS
         // p4debug.SetLevel(5);		// This will spew ALL debug output to stdout WORKS
+        //p4debug.SetLevel("track=1");
+        //p4debug.SetLevel(0);   // Disable Debug output WORKS
 
-    //p4debug.SetLevel("track=1");
+        const char* logfile = "clientlog.txt";
+        P4BridgeServer::SetDebugLevel("rpc=3", logfile);
 
         ps->Run_int(client, cmdname, bridge_ui);
 
-        //p4debug.SetLevel(0);   // Disable Debug output WORKS
+        P4BridgeServer::SetDebugLevel("0");
+
+        // check that clientlog.txt now exists and is non-empty
+        bool logExists = [&]()
+        {
+	        struct stat buf{};
+	        return (stat(logfile, &buf) == 0 && buf.st_size > 0);
+        }();
+        ASSERT_TRUE(logExists)
 
         StrDictListIterator* tagout = bridge_ui->GetTaggedOutput();
         const char* tout = bridge_ui->GetTextResults();

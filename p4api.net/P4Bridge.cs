@@ -120,34 +120,14 @@ namespace Perforce.P4
             DllManager.ResolverSet = true;
         }
 #else
-		const string bridgeDll = "p4bridge.dll";
+        private const string bridgeDll = "p4bridge.dll";
 
-		static P4Debugging()
+        static P4Debugging()
 		{
-			Assembly p4apinet = Assembly.GetExecutingAssembly();
-			PortableExecutableKinds peKind;
-			ImageFileMachine machine;
-			p4apinet.ManifestModule.GetPEKind(out peKind, out machine);
-
-			// only set this path if it is Any CPU (ILOnly)
-			if (peKind.ToString() == "ILOnly")
-			{
-				string currentArchSubPath = "x86";
-
-				// Is this a 64 bits process?
-				if (IntPtr.Size == 8)
-				{
-					currentArchSubPath = "x64";
-				}
-
-				SetDllDirectory(currentArchSubPath);
-			}
-		}
-
-		[DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-		static extern bool SetDllDirectory(string lpPathName);
-
+            P4BridgeLoader.Load();
+        }
 #endif
+
 		/* object allocation debugging functions, mostly for testing */
 		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl)]
         public static extern int GetAllocObjCount();
@@ -334,11 +314,11 @@ namespace Perforce.P4
 	internal class P4Bridge
 	{
 
-/***********************************************************************
- * 
- * DllImports
- * 
- **********************************************************************/
+        /***********************************************************************
+         * 
+         * DllImports
+         * 
+         **********************************************************************/
 
 #if NET5_0_OR_GREATER
         const string bridgeDll = "p4bridge";
@@ -351,39 +331,14 @@ namespace Perforce.P4
             DllManager.ResolverSet = true;
         }
 #else
-        const string bridgeDll = "p4bridge.dll";
-
-		static P4Bridge()
+        private const string bridgeDll = "p4bridge.dll";
+        static P4Bridge()
 		{
-			Assembly p4apinet = Assembly.GetExecutingAssembly();
-			PortableExecutableKinds peKind;
-			ImageFileMachine machine;
-			p4apinet.ManifestModule.GetPEKind(out peKind, out machine);
-
-			// only set this path if it is Any CPU (ILOnly)
-			if (peKind.ToString()=="ILOnly")
-			{
-               // wchar_t buffer[MAX_PATH];
-				string currentArchSubPath = "x86";
-
-                string dlldir = AppDomain.CurrentDomain.BaseDirectory;
-                string cwd = Directory.GetCurrentDirectory();
-                //GetModuleFileName(null, buffer, MAX_PATH);
-
-				// Is this a 64 bits process?
-				if (IntPtr.Size == 8)
-				{
-					currentArchSubPath = "x64";
-				}
-
-				SetDllDirectory(currentArchSubPath);
-			}
-		}
-
-		[DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-		static extern bool SetDllDirectory(string lpPathName);
+            P4BridgeLoader.Load();
+        }
 
 #endif
+
 		/// <summary>
 		/// Create a new P4BridgeServer in the DLL and connect to the 
 		///     specified P4 Server.
@@ -628,7 +583,7 @@ namespace Perforce.P4
         /// 
         [DllImport(bridgeDll,
             CallingConvention = CallingConvention.Cdecl)]
-        public static extern void SetProtocol(IntPtr pServer, String var, String val);
+        public static extern void SetProtocol(IntPtr pServer, string var, string val);
 
         /// <summary>
         /// Run a command on the P4 Server
@@ -917,21 +872,62 @@ namespace Perforce.P4
 		public static extern
 			IntPtr GetDataSet(IntPtr pServer, uint cmdId);
 
-		/***********************************************************************
+        /***********************************************************************
+         * 
+         * Set Debug Level
+         * 
+         **********************************************************************/
+
+        /// <summary>
+        /// Set the debug level
+        /// </summary>
+        /// <param name="level">level string</param>
+
+        [DllImport(bridgeDll, EntryPoint = "set_debugLevel",
+            CallingConvention = CallingConvention.Cdecl,
+            CharSet = CharSet.Ansi)]
+        public static extern void SetDebugLevelA(string level);
+
+        [DllImport(bridgeDll, EntryPoint = "set_debugLevel",
+            CallingConvention = CallingConvention.Cdecl)]
+        public static extern bool SetDebugLevelW(IntPtr level);
+
+        /***********************************************************************
+         * 
+         * Set client Debug Level and logfile
+         * 
+         **********************************************************************/
+
+        /// <summary>
+        /// Set the client debug level and log file
+        /// </summary>
+        /// <param name="level">level string</param>
+        /// <param name="filename">log filename</param>
+
+        [DllImport(bridgeDll, EntryPoint = "set_debugLevelFile",
+            CallingConvention = CallingConvention.Cdecl,
+            CharSet = CharSet.Ansi)]
+        public static extern void SetDebugLevelFileA(string level, string filename);
+
+        [DllImport(bridgeDll, EntryPoint = "set_debugLevelFile",
+            CallingConvention = CallingConvention.Cdecl)]
+        public static extern bool SetDebugLevelFileW(IntPtr level, IntPtr filename);
+
+        /***********************************************************************
 		 * 
 		 * Connect parameters
 		 * 
 		 **********************************************************************/
 
-		/// <summary>
-		/// Set the connection parameters using Unicode strings.
-		/// </summary>
-		/// <param name="pServer">P4BridgeServer Handle</param>
-		/// <param name="newPort">New port </param>
-		/// <param name="newUser">New workspace</param>
-		/// <param name="newPassword">New password</param>
-		/// <param name="newClient">New workspace</param>
-		[DllImport(bridgeDll, EntryPoint = "set_connection",
+        /// <summary>
+        /// Set the connection parameters using Unicode strings.
+        /// </summary>
+        /// <param name="pServer">P4BridgeServer Handle</param>
+        /// <param name="newPort">New port </param>
+        /// <param name="newUser">New workspace</param>
+        /// <param name="newPassword">New password</param>
+        /// <param name="newClient">New workspace</param>
+        [DllImport(bridgeDll, EntryPoint = "set_connection",
 					CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			void set_connectionW(IntPtr pServer,
@@ -1201,15 +1197,15 @@ namespace Perforce.P4
 		public static extern
 			void set_cwdA(IntPtr pServer, string cwd);
 
-		/// <summary>
-		/// Set the program name using a Unicode string
-		/// </summary>
-		/// <remarks>
-		/// The encoding should match that set by SetCharacterSet()
-		/// </remarks>
-		/// <param name="pServer">P4BridgeServer Handle</param>
-		/// <param name="workspace">program name</param>
-		[DllImport(bridgeDll, EntryPoint = "set_programName",
+        /// <summary>
+        /// Set the program name using a Unicode string
+        /// </summary>
+        /// <remarks>
+        /// The encoding should match that set by SetCharacterSet()
+        /// </remarks>
+        /// <param name="pServer">P4BridgeServer Handle</param>
+        /// <param name="workspace">program name</param>
+        [DllImport(bridgeDll, EntryPoint = "set_programName",
 			CallingConvention = CallingConvention.Cdecl)]
 		public static extern
 			void set_programNameW(IntPtr pServer, IntPtr workspace);
@@ -1591,28 +1587,11 @@ namespace Perforce.P4
         private const string bridgeDll = "p4bridge.dll";
         static P4ClientMergeBridge()
         {
-			Assembly p4apinet = Assembly.GetExecutingAssembly();
-			PortableExecutableKinds peKind;
-			ImageFileMachine machine;
-			p4apinet.ManifestModule.GetPEKind(out peKind, out machine);
+            P4BridgeLoader.Load();
+        }
 
-			// only set this path if it is Any CPU (ILOnly)
-			if (peKind.ToString() == "ILOnly")
-			{
-				string currentArchSubPath = "x86";
-
-				// Is this a 64 bits process?
-				if (IntPtr.Size == 8)
-				{
-					currentArchSubPath = "x64";
-				}
-				SetDllDirectory(currentArchSubPath);
-			}
-		}
-
-		[DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-		static extern bool SetDllDirectory(string lpPathName);
 #endif
+
         public static bool ResolverSet { get; set; }
 
 		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CM_AutoResolve")]
@@ -1706,28 +1685,10 @@ namespace Perforce.P4
         private const string bridgeDll = "p4bridge.dll";
         static P4ClientResolveBridge()
         {
-			Assembly p4apinet = Assembly.GetExecutingAssembly();
-			PortableExecutableKinds peKind;
-			ImageFileMachine machine;
-			p4apinet.ManifestModule.GetPEKind(out peKind, out machine);
-
-			// only set this path if it is Any CPU (ILOnly)
-			if (peKind.ToString() == "ILOnly")
-			{
-				string currentArchSubPath = "x86";
-
-				// Is this a 64 bits process?
-				if (IntPtr.Size == 8)
-				{
-					currentArchSubPath = "x64";
-				}
-				SetDllDirectory(currentArchSubPath);
-			}
-		}
-
-		[DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-		static extern bool SetDllDirectory(string lpPathName);
+            P4BridgeLoader.Load();
+        }
 #endif
+
 		[DllImport(bridgeDll, CallingConvention = CallingConvention.Cdecl, EntryPoint = "CR_AutoResolve")]
 		public static extern int AutoResolve(IntPtr pObj, int force);
 

@@ -6,7 +6,7 @@ using System.Diagnostics;
 
 namespace p4api.net.unit.test
 {
-	
+
 	/// <summary>
 	///This is a test class for RepositoryTest and is intended
 	///to contain RepositoryTest Unit Tests
@@ -62,14 +62,14 @@ namespace p4api.net.unit.test
 						Assert.IsNotNull(newGuy);
 						Assert.AreEqual(targetGroup, newGuy.Id);
 
-                        // create a group connected as admin user with owner Alex and 
+                        // create a group connected as admin user with owner Alex and
                         // users Alice and Alex (no -A needed)
                         Group group = new Group();
                         string targetGroup2 = "Mygroup";
                         group.Id = targetGroup2;
                         group.UserNames = new List<string> { "Alice", "Alex" };
                         group.OwnerNames = new List<string> { "Alex" };
-                        
+
                         Group newGuy2 = rep.CreateGroup(group, null);
                         Assert.IsNotNull(newGuy2);
                         Assert.AreEqual(targetGroup2, newGuy2.Id);
@@ -87,7 +87,7 @@ namespace p4api.net.unit.test
 
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
 
-                        // create a group as Alex with owner Alex using -A 
+                        // create a group as Alex with owner Alex using -A
                         Group Alex_group = new Group();
                         string targetGroup3 = "Alex_group";
                         Alex_group.Id = targetGroup3;
@@ -269,7 +269,7 @@ namespace p4api.net.unit.test
                         catch (P4Exception e)
                         {
                             Assert.AreEqual(805705769, e.ErrorCode, "You don't have permission for this operation.\n");
-                        }						                                            
+                        }
                     }
 				}
 				finally
@@ -346,7 +346,7 @@ namespace p4api.net.unit.test
                         group.OwnerNames = new List<string> { "Alex" };
                         group.MaxResults = 9999;
                         rep.CreateGroup(group, new Options(GroupCmdFlags.AdminAdd));
-                        
+
                         // use the -A flag to get the group
                         GroupCmdOptions opts = new GroupCmdOptions(GroupCmdFlags.OwnerAccess);
                         Group u2 = rep.GetGroup(groupstring, opts);
@@ -417,7 +417,7 @@ namespace p4api.net.unit.test
                         IList<Group> u = rep.GetGroups(new Options(GroupsCmdFlags.None, 2));
                         Assert.IsNotNull(u);
                         Assert.AreEqual(2, u.Count);
-                       
+
                         // add another group with a subgroup
                         Group group2 = new Group();
                         group2.Id = "superGroup";
@@ -440,7 +440,7 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(4, u3.Count);
 
                         // use the -v flag to get the MaxResults, MaxScanRows, MaxLockTime, and
-                        // Timeout values for the specified group. 
+                        // Timeout values for the specified group.
                         IList<Group> u4 = rep.GetGroups(new Options(GroupsCmdFlags.IncludeAllValues, 1));
 
                         Assert.IsNotNull(u4);
@@ -507,12 +507,12 @@ namespace p4api.net.unit.test
 						u.OwnerNames = new List<string> { "admin" };
 						u.MaxResults = 9999;
                         u.PasswordTimeout = 1111;
-                     
+
                         Group newGuy = rep.CreateGroup(u, null);
 
 						Assert.IsNotNull(newGuy);
 						Assert.AreEqual(targetGroup, newGuy.Id);
-                     
+
                         newGuy.UserNames.Add("Alice");
                         newGuy.UserNames.Add("Alex");
                         Group u2 = rep.UpdateGroup(newGuy);
@@ -568,6 +568,9 @@ namespace p4api.net.unit.test
 
                         Assert.AreEqual(con.Status, ConnectionStatus.Connected);
 
+                        // setting P4TICKETS doesn't work in linux and OSX
+                        con.getP4Server().SetTicketFile(configuration.TestP4Tickets);
+
                         Group u = new Group();
                         u.Id = targetGroup;
                         u.UserNames = new List<string> { "admin" };
@@ -585,6 +588,8 @@ namespace p4api.net.unit.test
                         con.UserName = "Alex";
                         connected = con.Connect(null);
                         Assert.IsTrue(connected);
+
+                        con.getP4Server().SetTicketFile(configuration.TestP4Tickets);
                         con.Credential = rep.Connection.Login("pass");
 
                         u = rep.GetGroup(targetGroup);
@@ -610,7 +615,7 @@ namespace p4api.net.unit.test
         }
 
         /// <summary>
-        ///A test for UpdateGroup using -A. This flag can only be used to add new groups, 
+        ///A test for UpdateGroup using -A. This flag can only be used to add new groups,
         ///not update existing ones.
         ///</summary>
         [TestMethod()]
@@ -661,7 +666,7 @@ namespace p4api.net.unit.test
                         catch (P4Exception e)
                         {
                             Assert.AreEqual(822090446, e.ErrorCode, "Error in group specification.\nNo permission to modify existing group everyone.\n");
-                        }                       
+                        }
                     }
                 }
                 finally
@@ -675,7 +680,7 @@ namespace p4api.net.unit.test
 
 
         /// <summary>
-        ///A test for UpdateGroup using -A. This flag can only be used to add new groups, 
+        ///A test for UpdateGroup using -A. This flag can only be used to add new groups,
         ///not update existing ones.
         ///</summary>
         [TestMethod()]
@@ -715,7 +720,7 @@ namespace p4api.net.unit.test
                         Group u = new Group();
                         u.Id = targetGroup;
                         u.OwnerNames = new List<string> { "Alex" };
-                       
+
                         try
                         {
                             Group u2 = rep.CreateGroup(u, new Options(GroupCmdFlags.OwnerAccess));
@@ -782,7 +787,7 @@ namespace p4api.net.unit.test
                         u.MaxOpenFiles = 103;
                         u.TimeOut = 104;
                         u.PasswordTimeout = 105;
-                        
+
                         //GroupOptions uFlags = new GroupOptions(GroupFlags.Force);
                         Group createdGroup = rep.CreateGroup(u, null);
 

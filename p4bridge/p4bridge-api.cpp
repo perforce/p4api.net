@@ -1087,6 +1087,34 @@ extern "C"
 
 	/**************************************************************************
 	*
+	*  set_debugLevel: Set debug options like "rpc=3"
+	*
+	*    level: The level value as a null terminated string.
+	*	 debug information goes to stdout
+	*
+	**************************************************************************/
+
+	EXPORT void set_debugLevel(const char* level)
+	{
+		P4BridgeServer::SetDebugLevel(level);
+	}
+
+	/**************************************************************************
+	*
+	*  set_debugLevelFile: Set debug options like "rpc=3" with output to file
+	*
+	*    level: The level value as a null terminated string.
+	*	 filename: debug information is output to this file
+	*
+	**************************************************************************/
+
+	EXPORT void set_debugLevelFile(const char* level, const char *filename)
+	{
+		P4BridgeServer::SetDebugLevel(level, filename);
+	}
+
+	/**************************************************************************
+	*
 	*  get_charset: Get the character to use for the connection.
 	*
 	*    pServer: Pointer to the P4BridgeServer 

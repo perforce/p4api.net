@@ -5,10 +5,20 @@
             <Link>p4bridge.dll</Link>
         </None>
     </ItemGroup>
-    <ItemGroup Condition=" $([MSBuild]::IsOSPlatform('Windows')) And ('$(Platform)' == 'x86' OR '$(Platform)' == 'AnyCPU') ">
+    <ItemGroup Condition=" $([MSBuild]::IsOSPlatform('Windows')) And '$(Platform)' == 'x86' ">
         <None Include="$(MSBuildThisFileDirectory)..\runtimes\win-x86\native\p4bridge.dll">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Link>p4bridge.dll</Link>
+        </None>
+    </ItemGroup>
+    <ItemGroup Condition=" $([MSBuild]::IsOSPlatform('Windows')) And '$(Platform)' == 'AnyCPU' ">
+        <None Include="$(MSBuildThisFileDirectory)..\runtimes\win-x64\native\p4bridge.dll">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Link>x64\p4bridge.dll</Link>
+        </None>
+        <None Include="$(MSBuildThisFileDirectory)..\runtimes\win-x86\native\p4bridge.dll">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Link>x86\p4bridge.dll</Link>
         </None>
     </ItemGroup>
     <ItemGroup Condition=" $([MSBuild]::IsOSPlatform('Linux')) ">

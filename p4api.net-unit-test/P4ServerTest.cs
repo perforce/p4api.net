@@ -1767,12 +1767,18 @@ namespace p4api.net.unit.test
                     else
                         Assert.IsFalse(target.UseUnicode, "Non Unicode server detected as supporting Unicode");
 
-                    string actual = target.Password;
+                    // can't rely on P4TICKETS environment variable to work in OSX or Linux
+                    target.SetTicketFile(configuration.TestP4Tickets);
 
-#if _WINDOWS
-                    // P4APINET-524: if _WINDOWS condition can be removed once this is JIRA fixed. More details in the JIRA P4APINET-524.
+                    // remove any existing ticket file:
+                    if (System.IO.File.Exists(configuration.TestP4Tickets))
+                    {
+                        System.IO.File.SetAttributes(configuration.TestP4Tickets, FileAttributes.Normal);
+                    }
+                    System.IO.File.Delete(configuration.TestP4Tickets);
+
+                    string actual = target.Password;
                     Assert.IsTrue(string.IsNullOrEmpty(actual));
-#endif
 
                     /// try a bad value
                     target.Password = "ssap";
@@ -3216,17 +3222,22 @@ namespace p4api.net.unit.test
                 p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
                 Assert.IsNotNull(p4d, "Setup Failure");
 
-                var serverRoot = Utilities.TestServerRoot(TestDir, cptype);
+                string serverRoot = Utilities.TestServerRoot(TestDir, cptype);
 
-                // turn on rpc debugging
+                // turn on server side rpc debugging
                 using (P4Server target = new P4Server(server, user, pass, ws_client))
                 {
                     Assert.IsTrue(target.RunCommand("configure", 0, true, new string[] { "set", "rpc=3" }, 2));
                 }
 
+                // set up client side rpc debugging too
+                string clientLogPath = Path.Combine(serverRoot, "clientlog.txt");
+                P4Server.SetDebugLevel("rpc=3", clientLogPath);
+
                 // reconnect
                 using (P4Server target = new P4Server(server, user, pass, ws_client))
                 {
+
                     // due to the way the .net api is implemented, we must disconnect first
                     // careful setting breakpoints through here, the auto-disconnect could
                     // cause a reconnect and re-send of protocols, which throws off the counts
@@ -3235,8 +3246,8 @@ namespace p4api.net.unit.test
                     target.SetProtocol("pizza", "3");
                     // now run a command, we should get an Rpc message in the log with our custom protocol
                     Assert.IsTrue(target.RunCommand("info", 0, true, null, 0));
-                    // find RpcSendBuffer pizza = 3 in the log
 
+                    // find RpcSendBuffer pizza = 3 in the log
                     string logPath = Path.Combine(serverRoot, "p4d.log");
                     Assert.IsTrue(FindInLog(logPath, "RpcRecvBuffer pizza = 3"));
 
@@ -3252,10 +3263,15 @@ namespace p4api.net.unit.test
                     Assert.IsTrue(target.RunCommand("info", 0, true, null, 0));
                     Assert.IsTrue(FindInLog(logPath, "RpcRecvBuffer pizza = 3", 2));
                     Assert.IsTrue(FindInLog(logPath, "RpcRecvBuffer calzone = 4"));
+
+                    // check that the client side debugging log also contains good stuff
+                    Assert.IsTrue(FindInLog(clientLogPath, "Rpc invoking protocol"));
+
                 }
             }
             finally
             {
+                P4Server.SetDebugLevel("0");
                 Utilities.RemoveTestServer(p4d, TestDir);
                 p4d?.Dispose();
             }

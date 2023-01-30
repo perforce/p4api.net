@@ -1599,6 +1599,8 @@ namespace p4api.net.unit.test
                         Assert.AreEqual(target.Server.State, ServerState.Online);
                         Assert.AreEqual(target.Status, ConnectionStatus.Connected);
 
+                        target.getP4Server().SetTicketFile(configuration.TestP4Tickets);
+
                         // login as alex/alexei
                         Credential cred2 = target.Login(pass);
                         Assert.IsNotNull(cred2);
@@ -1615,7 +1617,6 @@ namespace p4api.net.unit.test
                 }
                 finally
                 {
-                    P4Bridge.ReloadEnviro();
                     Utilities.RemoveTestServer(p4d, TestDir);
                     p4d?.Dispose();
                 }
@@ -1704,7 +1705,7 @@ namespace p4api.net.unit.test
             try
             {
                 ticketPath = Environment.ExpandEnvironmentVariables(tpath);
-                
+
                 // make sure the ticket file exists
                 // Create the file, or overwrite if the file exists.
                 using (FileStream fs = System.IO.File.Create(ticketPath))
@@ -1750,8 +1751,9 @@ namespace p4api.net.unit.test
                     envVar = target.GetP4EnvironmentVar("P4TICKETS");
                     Assert.AreEqual(envVar, ticketPath);
 
-                    // now remove it
-                    target.SetP4EnvironmentVar("P4TICKETS", "");
+                    // now reset it
+                    target.SetP4EnvironmentVar("P4TICKETS", configuration.TestP4Tickets);
+                    target.getP4Server().SetTicketFile(configuration.TestP4Tickets);
 
                     // BUG #2) No other way to pass the ticket to the api
                     // but setting the environment variable through .Net,
@@ -1896,6 +1898,9 @@ namespace p4api.net.unit.test
                         Assert.IsTrue(target.Connect(options));
                         Assert.AreEqual(target.Server.State, ServerState.Online);
                         Assert.AreEqual(target.Status, ConnectionStatus.Connected);
+
+                        // use the Test .p4tickets file
+                        target.getP4Server().SetTicketFile(configuration.TestP4Tickets);
 
                         // set the connection Client to null
                         target.Client = null;

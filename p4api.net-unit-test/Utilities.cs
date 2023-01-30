@@ -12,7 +12,7 @@ using File = System.IO.File;
 
 namespace p4api.net.unit.test
 {
-    // This class handles the unit test configuration as stored in appsettings.json 
+    // This class handles the unit test configuration as stored in appsettings.json
     // Three values for each OS (directory, p4d, tar) and one common (port)
     class UnitTestConfiguration
     {
@@ -161,7 +161,7 @@ namespace p4api.net.unit.test
         private static string _p4d_cmd;
         private static string rsh_p4d_cmd;
 
-        // Three checkpoints types are available.  
+        // Three checkpoints types are available.
         // They are associated with the tar files a.tar u.tar and s3.tar ( kept in ../testDataDir )
         public enum CheckpointType
         {
@@ -228,7 +228,7 @@ namespace p4api.net.unit.test
             Environment.SetEnvironmentVariable("P4TICKETS", configuration.TestP4Tickets);
             Environment.SetEnvironmentVariable("P4ENVIRO", configuration.TestP4Enviro);
 
-            // save and restore the p4config env variable and the cwd
+                // save and restore the p4config env variable and the cwd
             SaveP4Prefs();
             allocs = P4Debugging.GetStringAllocs();
             frees = P4Debugging.GetStringReleases();
@@ -302,7 +302,7 @@ namespace p4api.net.unit.test
         }
 
 
-        // Delete recursively a directory, even if the files are read only, 
+        // Delete recursively a directory, even if the files are read only,
         // If the directory doesn't exist, that is OK too.
         public static void DeleteDirectory(string path, bool recurse = false)
         {
@@ -419,8 +419,9 @@ namespace p4api.net.unit.test
             using (Connection con = rep.Connection)
             {
                 con.UserName = "admin";
-               
+
                 con.Connect(null);
+                con.getP4Server().SetTicketFile(configuration.TestP4Tickets);  // sometimes the bridge doesn't pick up the P4TICKETS environment variable
 
                 Credential cred = con.Login("Password");
 
@@ -540,7 +541,7 @@ namespace p4api.net.unit.test
                     return false;
             }
 
-            // untar the file 
+            // untar the file
             ProcessStartInfo si;
             FileInfo fi = new FileInfo(targetTestTar);
             fi.IsReadOnly = false;

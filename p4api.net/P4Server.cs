@@ -1965,11 +1965,41 @@ namespace Perforce.P4
         /// </summary>
         /// <param name="path">The local path of the file</param>
         /// <returns>true if the file will be ignored</returns>
-        static public bool IsIgnored(string path)
+        public static bool IsIgnored(string path)
         {
             using (PinnedByteArray pData = MarshalStringToIntPtr(Encoding.UTF8, path))
             {
                 return P4Bridge.IsIgnoredW(pData);
+            }
+        }
+
+        /// <summary>
+        /// Set client debug level for things like "rpc=3"
+        ///    Output goes to stdout
+        /// </summary>
+        /// <param name="level">a string, like "rpc=3" </param>
+        /// <returns>null</returns>
+        public static void SetDebugLevel(string level)
+        {
+            using (PinnedByteArray pLevel = MarshalStringToIntPtr(Encoding.UTF8, level))
+            {
+                P4Bridge.SetDebugLevelW( pLevel);
+            }
+        }
+
+        /// <summary>
+        /// Set client debug level for things like "rpc=3"
+        ///    Output goes to specified log file
+        /// </summary>
+        /// <param name="level">a string, like "rpc=3" </param>
+        /// <param name="filename">a filename for the log file </param>
+        /// <returns>null</returns>
+        public static void SetDebugLevel(string level, string filename)
+        {
+            using (PinnedByteArray pLevel = MarshalStringToIntPtr(Encoding.UTF8, level),
+                                pFilename = MarshalStringToIntPtr(Encoding.UTF8, filename))
+            {
+                P4Bridge.SetDebugLevelFileW(pLevel, pFilename);
             }
         }
 
@@ -1984,7 +2014,6 @@ namespace Perforce.P4
             {
                 P4Bridge.set_ticketFileW(pServer, pPass);
             }
-            return;
         }
 
         /// <summary>
@@ -2087,7 +2116,7 @@ namespace Perforce.P4
             ownerThread = threadId;
         }
 
-        public void SetProtocol(String key, String val)
+        public void SetProtocol(string key, string val)
         {
             // Note that this only works if pServer is current disconnected or you reconnect after this call
             P4Bridge.SetProtocol(pServer, key, val);
