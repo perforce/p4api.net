@@ -12,24 +12,24 @@ mkdir p4api_release
 mkdir p4api_x86_release
 mkdir p4api_x86_debug
 
-: last sync on 10/12/2021
-set BRANCH=p21.2
-set RELNAME=2021.2
-set CHANGEID=2313916
-set VSVER=vs2017
+: last sync on 18/04/2023
+set BRANCH=p22.2
+set RELNAME=2022.2
+set CHANGEID=2425796
+set VSVER=vs2019
 
 : remove the comment below to debug using internal perforce branch build tree
 : if set, this script assumes that the c:\dev\internal\depot\%branch%\p4-bin\buildsdkg.bat has been run (to create the SDK)
 : set DEBUG_INTERNAL=true
 set INTERNAL_P4BIN=c:/dev/internal/depot/%BRANCH%/p4-bin
 
-set RELEASE_SDK_ZIP=p4api_%VSVER%_static_openssl1.1.1.zip
-set DEBUG_SDK_ZIP=p4api_%VSVER%_static_vsdebug_openssl1.1.1.zip
+set RELEASE_SDK_ZIP=p4api_%VSVER%_static_openssl3.zip
+set DEBUG_SDK_ZIP=p4api_%VSVER%_static_vsdebug_openssl3.zip
 
 set API_RELEASE=p4api-%RELNAME%.%CHANGEID%
 set API_IDENT=%API_RELEASE%.PREP-TEST_ONLY-%VSVER%_static
 
-set SSL_ARTIFACTS=c:/dev/internal/3rd_party/cpp_libraries/openssl/1.1.1-latest/artifacts
+set SSL_ARTIFACTS=c:/dev/internal/3rd_party/cpp_libraries/openssl/3-latest/artifacts
 set BUILD_P4BIN=c:/dev/internal/builds/%BRANCH%/p4-bin
 
 set CWD1=%~dp0

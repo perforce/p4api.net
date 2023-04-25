@@ -61,6 +61,56 @@ namespace Perforce.P4
             string firmerthanparent,
             string changeflowstoparent,
             string changeflowsfromparent,
+            ViewMap components,
+            ViewMap paths,
+            ViewMap remapped,
+            ViewMap ignored,
+            ViewMap view,
+            ViewMap changeview,
+            FormSpec spec,
+            Dictionary<string, object> customfields,
+            ParentView parentview)
+
+        {
+            Id = id;
+            Updated = updated;
+            Accessed = accessed;
+            OwnerName = ownername;
+            Name = name;
+            Parent = parent;
+            BaseParent = baseparent;
+            Type = type;
+            Description = description;
+            Options = options;
+            FirmerThanParent = firmerthanparent;
+            ChangeFlowsToParent = changeflowstoparent;
+            ChangeFlowsFromParent = changeflowsfromparent;
+            Components = components;
+            Paths = paths;
+            Remapped = remapped;
+            Ignored = ignored;
+            View = view;
+            ChangeView = changeview;
+            Spec = spec;
+            CustomFields = customfields;
+            ParentView = parentview;
+        }
+
+        [Obsolete("Use Stream(string id, DateTime updated, DateTime accessed, string ownername, string name, PathSpec parent, PathSpec baseparent, StreamType type, string description, StreamOption options, string firmerthanparent, string changeflowstoparent, string changeflowsfromparent, ViewMap components, ViewMap paths, ViewMap remapped, ViewMap ignored, ViewMap view, ViewMap changeview, FormSpec spec, Dictionary<string, object> customfields, ParentView parentview)", false)]
+        public Stream(
+            string id,
+            DateTime updated,
+            DateTime accessed,
+            string ownername,
+            string name,
+            PathSpec parent,
+            PathSpec baseparent,
+            StreamType type,
+            string description,
+            StreamOption options,
+            string firmerthanparent,
+            string changeflowstoparent,
+            string changeflowsfromparent,
             ViewMap paths,
             ViewMap remapped,
             ViewMap ignored,
@@ -118,7 +168,7 @@ namespace Perforce.P4
             ViewMap ignored,
             ViewMap view,
             FormSpec spec)
-        { 
+        {
             Id = id;
             Updated = updated;
             Accessed = accessed;
@@ -172,6 +222,7 @@ namespace Perforce.P4
             set { _options = (StreamOptionEnum)value; }
         }
 
+        public ViewMap Components { get; set; }
         public ViewMap Paths { get; set; }
         public ViewMap Remapped { get; set; }
         public ViewMap Ignored { get; set; }
@@ -188,9 +239,9 @@ namespace Perforce.P4
             set { _parentView = value; }
         }
 
-	#endregion
+        #endregion
 
-	private void PopulateCommonFields(TaggedObject objectInfo)
+        private void PopulateCommonFields(TaggedObject objectInfo)
         {
 
             if (objectInfo.ContainsKey("Stream"))
@@ -338,11 +389,12 @@ namespace Perforce.P4
                 specDef.Remove("Access");
             }
 
-            Paths               = ReadViewField(objectInfo, "Paths");
-            Remapped            = ReadViewField(objectInfo, "Remapped");
-            Ignored             = ReadViewField(objectInfo, "Ignored");
-            View                = ReadViewField(objectInfo, "View");
-            ChangeView          = ReadViewField(objectInfo, "ChangeView");
+            Components = ReadViewField(objectInfo, "Components");
+            Paths = ReadViewField(objectInfo, "Paths");
+            Remapped = ReadViewField(objectInfo, "Remapped");
+            Ignored = ReadViewField(objectInfo, "Ignored");
+            View = ReadViewField(objectInfo, "View");
+            ChangeView = ReadViewField(objectInfo, "ChangeView");
 
             PopulateCommonFields(objectInfo);
 
@@ -356,14 +408,14 @@ namespace Perforce.P4
             {
                 specDef.Remove(field);
             }
-           
+
 
             ViewMap map = new ViewMap();
             int idx = 0;
             int mapIdx = 0;
             string key = String.Format("{0}{1}", field, idx);
             string commentKey = String.Format("{0}Comment{1}", field, idx);
-            
+
             if (!objectInfo.ContainsKey(key))
                 return null;
 
@@ -398,17 +450,18 @@ namespace Perforce.P4
             _baseForm.Parse(spec); // parse the values into the underlying dictionary
             GetSpecDefinition(_baseForm);
 
-            Id                  = ParseSingleString(_baseForm, "Stream");
-            OwnerName           = ParseSingleString(_baseForm, "Owner");
-            Name                = ParseSingleString(_baseForm, "Name");            
-            Description         = ParseDescription(_baseForm);
-            Ignored             = ParseView(_baseForm, "Ignored");
-            Paths               = ParseView(_baseForm, "Paths");
-            Remapped            = ParseView(_baseForm, "Remapped");
-            View                = ParseView(_baseForm, "View");
-            ChangeView          = ParseView(_baseForm, "ChangeView");
-            Updated             = ParseDate(_baseForm, "Update");
-            Accessed            = ParseDate(_baseForm, "Access");
+            Id = ParseSingleString(_baseForm, "Stream");
+            OwnerName = ParseSingleString(_baseForm, "Owner");
+            Name = ParseSingleString(_baseForm, "Name");
+            Description = ParseDescription(_baseForm);
+            Ignored = ParseView(_baseForm, "Ignored");
+            Components = ParseView(_baseForm, "Components");
+            Paths = ParseView(_baseForm, "Paths");
+            Remapped = ParseView(_baseForm, "Remapped");
+            View = ParseView(_baseForm, "View");
+            ChangeView = ParseView(_baseForm, "ChangeView");
+            Updated = ParseDate(_baseForm, "Update");
+            Accessed = ParseDate(_baseForm, "Access");
 
             if (_baseForm.ContainsKey("Options"))
             {
@@ -437,8 +490,8 @@ namespace Perforce.P4
             }
 
             SetCustomFields();
-    
-                return true;
+
+            return true;
         }
 
         private string ParseSingleString(FormBase _baseForm, string field)
@@ -517,23 +570,25 @@ namespace Perforce.P4
         /// </summary>
         private static String StreamSpecFormat =
                                 "Stream:\t{0}" + Environment.NewLine + Environment.NewLine
-                                + "Update:\t{1}" + Environment.NewLine + Environment.NewLine 
+                                + "Update:\t{1}" + Environment.NewLine + Environment.NewLine
                                 + "Access:\t{2}" + Environment.NewLine + Environment.NewLine
                                 + "Owner:\t{3}" + Environment.NewLine + Environment.NewLine
                                 + "Name:\t{4}" + Environment.NewLine + Environment.NewLine
                                 + "Parent:\t{5}" + Environment.NewLine + Environment.NewLine
                                 + "Type:\t{6}" + Environment.NewLine + Environment.NewLine
-                                + "Description:" + Environment.NewLine 
+                                + "Description:" + Environment.NewLine
                                 + "\t{7}" + Environment.NewLine + Environment.NewLine
                                 + "Options:\t{8}" + Environment.NewLine + Environment.NewLine
                                 + "ParentView:\t{9}" + Environment.NewLine + Environment.NewLine
-                                + "Paths:" + Environment.NewLine 
-                                + "\t{10}" + Environment.NewLine + Environment.NewLine 
-                                + "Remapped:" + Environment.NewLine
+                                + "Components:" + Environment.NewLine
+                                + "\t{10}" + Environment.NewLine + Environment.NewLine
+                                + "Paths:" + Environment.NewLine
                                 + "\t{11}" + Environment.NewLine + Environment.NewLine
-                                + "Ignored:" + Environment.NewLine 
+                                + "Remapped:" + Environment.NewLine
                                 + "\t{12}" + Environment.NewLine + Environment.NewLine
-                                + "{13}";
+                                + "Ignored:" + Environment.NewLine
+                                + "\t{13}" + Environment.NewLine + Environment.NewLine
+                                + "{14}";
 
         /// <summary>
         /// Format of a stream specification used to save a stream to the server,
@@ -547,16 +602,18 @@ namespace Perforce.P4
                                 + "Name:\t{4}" + Environment.NewLine + Environment.NewLine
                                 + "Parent:\t{5}" + Environment.NewLine + Environment.NewLine
                                 + "Type:\t{6}" + Environment.NewLine + Environment.NewLine
-                                + "Description:"+ Environment.NewLine
+                                + "Description:" + Environment.NewLine
                                 + "\t{7}" + Environment.NewLine + Environment.NewLine
                                 + "Options:\t{8}" + Environment.NewLine + Environment.NewLine
-                                + "Paths:" + Environment.NewLine
+                                + "Components:" + Environment.NewLine
                                 + "\t{9}" + Environment.NewLine + Environment.NewLine
-                                + "Remapped:" + Environment.NewLine
+                                + "Paths:" + Environment.NewLine
                                 + "\t{10}" + Environment.NewLine + Environment.NewLine
-                                + "Ignored:" + Environment.NewLine
+                                + "Remapped:" + Environment.NewLine
                                 + "\t{11}" + Environment.NewLine + Environment.NewLine
-                                + "{12}";
+                                + "Ignored:" + Environment.NewLine
+                                + "\t{12}" + Environment.NewLine + Environment.NewLine
+                                + "{13}";
 
 
         /// <summary>
@@ -590,6 +647,10 @@ namespace Perforce.P4
                 }
             }
 
+            String componentsView = String.Empty;
+            if (Components != null)
+                componentsView = Components.ToString().Replace(Environment.NewLine, Environment.NewLine + "\t").Trim();
+
             String pathsView = String.Empty;
             if (Paths != null)
                 pathsView = Paths.ToString().Replace(Environment.NewLine, Environment.NewLine + "\t").Trim();
@@ -615,12 +676,14 @@ namespace Perforce.P4
                     OwnerName, Name, ParentPath, Type, descStr, _options.ToString(),
                     pathsView, remappedView, ignoredView, customFieldsString);
 
-            } else {
+            }
+            else
+            {
                 String ParentView = _parentView.ToString(StringEnumCase.Lower);
                 value = String.Format(StreamSpecFormat, Id,
                     FormBase.FormatDateTime(Updated), FormBase.FormatDateTime(Accessed),
                     OwnerName, Name, ParentPath, Type, descStr, _options.ToString(),
-                    ParentView, pathsView, remappedView, ignoredView, customFieldsString);
+                    ParentView, componentsView, pathsView, remappedView, ignoredView, customFieldsString);
             }
 
             return value;
@@ -651,9 +714,9 @@ namespace Perforce.P4
                     result += Environment.NewLine;
                 }
             }
-            return result.Substring(0, result.Length - Environment.NewLine.Length );
+            return result.Substring(0, result.Length - Environment.NewLine.Length);
         }
-        
+
         private void GetSpecDefinition(FormBase _baseForm)
         {
             if (_baseForm.ContainsKey("specdef"))
@@ -799,7 +862,7 @@ namespace Perforce.P4
         /// The child views are exactly what is specified in the Paths,
         /// Remapped, and Ignored fields.
         /// </summary>
-        NoInherit = 0x0002,        
+        NoInherit = 0x0002,
     }
 
     internal class StreamOptionEnum : StringEnum<StreamOption>

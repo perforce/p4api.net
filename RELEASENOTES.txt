@@ -1,14 +1,12 @@
                            Release Notes for
                 P4API.NET, the Helix P4API for .NET
 
-                          Version 2021.2
+                          Version 2022.2
 
 Introduction
 
         This document lists all user-visible changes to P4API.NET
-        between release 2011.1 and 2021.2
-
-Limitations:
+        between release 2011.1 and this release
 
         Perforce numbers releases YYYY.R/CCCCC, e.g. 2002.1/30547.
         YYYY is the year; R is the release of that year; CCCCC is the
@@ -19,9 +17,37 @@ Limitations:
 
 --------------------------------------------------------------------------
 
+Important End-of-Life Notice
+
+    Cross platform support was provided with the previous release of P4API.NET.
+    Currently 4 different Nuget packages are published ('p4api.net.core',
+    'p4api.net', 'p4api.net.x64' and 'p4api.net.x86'). But as 'p4api.net'
+    contains all the necessary libraries to work on all these 4 platforms, there
+    is no need for 4 different packages. Hence, this major release of P4API.NET
+    would be the last to publish all these packages. Starting with the next
+    release, only the 'p4api.net' package would be published and
+    other packages would be deprecated
+
+--------------------------------------------------------------------------
+
+Installation
+
+    The simplest way to install P4API.NET is using the NuGet package manager. 
+    The P4API.NET package can be found here - 
+    https://www.nuget.org/packages/p4api.net
+    
+    More details and other options can be found in the user guide - 
+    https://www.perforce.com/manuals/p4api.net/Content/P4API_NET/release-compatibility-prereqs.html#Installation
+    
+--------------------------------------------------------------------------
+
 Building P4API.NET from Source
 
-        Instructions for building are in the source code markdown (.md) files
+        The official version of P4API.NET exists as source on:
+        https://github.com/perforce/p4api.net
+        
+        Instructions for building are in the BUILD.md file which can be found
+        here - https://github.com/perforce/p4api.net/blob/master/BUILD.md
 
         To build the help file project (p4api.net.shfbproj) you will need
         the Sandcastle Help File Builder from http://shfb.codeplex.com/.
@@ -32,10 +58,9 @@ Building P4API.NET from Source
         P4API.NET supports SSL connections, and requires linking with SSL 
         libraries.
 
-        Executables linked against the P4API libraries must
-        also be linked against OpenSSL libraries 1.1.1 or 1.0.2: but the 1.1.1
-        is recommended. Use the OpenSSL libraries as mentioned 
-        in p4api.net\BUILD.md.
+        Executables linked against the P4API libraries must also be linked
+        against real OpenSSL libraries: The latest 3.0.x patch is recommended.
+        Use the OpenSSL libraries as mentioned in BUILD.md.
 
         P4API.NET is now dependent on NLog (http://nlog-project.org/). The
         related package will be installed automatically by Visual Studio
@@ -46,15 +71,6 @@ Building P4API.NET from Source
 
 Compatibility Statements
 
-        Discontinued versions
-
-          2020.1 is the last release for p4api.net64.zip and
-          p4api.net86.zip. They are obsoleted by the new p4api.net
-          and p4api.net.core NuGet packages which work on Any CPU.
-          2020.1 is the last release of p4api.net-src.zip on the Perforce
-          ftp site. It is now hosted on GitHub:
-          https://github.com/perforce/p4api.net
-
         Server Compatibility
 
           You can use this release of P4API.NET with any release of the
@@ -62,32 +78,41 @@ Compatibility Statements
 
         API Compatibility
 
-          The 2021.2 release of P4API.NET requires the 2021.2 Helix Core
-          API for C/C++ (P4API), built with Visual Studio 2019 or later.
+          This release of P4API.NET requires the 2022.2 Helix Core
+          API (2022.2/2407422) for C/C++ (P4API), built with Visual Studio 2019 
+          or later.
 
         C#/.NET Compatibility
 
-          The 2021.2 release of P4API.NET, when built from source using p4apicore.net.sln, is
-          compatible with '.NET Framework 4.6.2', '.NET 6.0' and '.NET Standard 2.0'. 
-          Other .Net Framework, .NET Core and .NET Standard versions might work, 
-          but are not supported.
+          This release of P4API.NET, when built from source using 
+          p4apicore.net.sln, is compatible with '.NET Framework 4.6.2',
+          '.NET 6.0' and '.NET Standard 2.0'. Other .Net Framework, .NET Core
+          and .NET Standard versions might work, but are not supported.
 
         Platform Compatibility
 
-          While P4API.NET is generally usable on Windows, Linux and MacOS platforms, the 
-          release is certified only on the following platforms:
+          While P4API.NET is generally usable on Windows, Linux and MacOS 
+          platforms, the release is certified only on the following platforms:
 
-                Windows 10, Windows Server 2019, Windows Server 2022, Ubuntu 20.04 and MacOS 12.2
+          Windows
+            Windows 10
+            Windows Server 2019
+            Windows Server 2022
+          Mac OS X
+            MacOS 12.2
+          Linux
+            Ubuntu 20.04
 
         Compiler Compatibility
 
-          Details regarding compiler compatibility can be found in the source code markdown (.md)
-          files i.e. p4api.net\BUILD.md and p4api.net\p4bridge\P4Bridge.md
+          Details regarding compiler compatibility can be found in the source 
+          code markdown (.md) files i.e. p4api.net\BUILD.md and 
+          p4api.net\p4bridge\P4Bridge.md
 
         Compatibility with Previous Releases
 
-          Unless otherwise stated below, the 2021.2 release of P4API.NET is
-          API compatible with previous releases from Perforce Software.
+          Unless otherwise stated below, this release of P4API.NET is compatible
+          with previous releases from Perforce Software.
 
         Known Limitations
 
@@ -107,7 +132,43 @@ Key to symbols used in change notes below.
 
 --------------------------------------------------------------------------
 
-Bug fixed in 2021.2 Patch 5
+New functionality in 2022.2 Patch 1 (2022.2/2432799) (2023/04/24)
+
+        #2431166 (Job #115331) *
+            Binaries of P4API.NET are now statically linked with OpenSSL 3.0.8
+
+--------------------------------------------------------------------------
+
+New functionality in 2022.2 (2022.2/2428247) (2023/04/13)
+
+        #2426141, #2424368 (Job #114276) * **
+            Updated P4API.NET to support 2022.2 release of Helix Core
+            
+        #2426754 (Job #106149) * **
+            Added support for the '-P' option in IntegrateFilesCmdOptions 
+            object, thus allowing for specifying a different target stream 
+            overriding the configured parent
+
+--------------------------------------------------------------------------
+
+Bug fixed in 2021.2 Patch 7 (2021.2/2413698) (2023/03/02)
+
+        #2410204 (Job #113832) *
+            Fixed the issue where adding the 'RevertFilesCmdFlags.Preview' (-n) 
+            flag had no impact on file reverts.
+
+--------------------------------------------------------------------------
+
+New functionality in 2021.2 Patch 6 (2021.2/2405588) (2023/02/10)
+
+        Important security note
+            This version addresses vulnerabilities in OpenSSL (CVE-2023-0286, 
+            CVE-2023-0215, CVE-2022-4450, CVE-2022-4304) by linking in version
+            1.1.1t of the library.
+
+--------------------------------------------------------------------------
+
+Bug fixed in 2021.2 Patch 5 (2021.2/2401970) (2023/02/03)
 
         #2394629 *
             Property 'CommandTimeout' in class 'Connection' is marked as 

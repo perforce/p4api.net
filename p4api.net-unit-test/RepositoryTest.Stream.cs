@@ -56,11 +56,23 @@ namespace p4api.net.unit.test
                         s.Options = new StreamOptionEnum(StreamOption.Locked | StreamOption.NoToParent);
                         s.Parent = new DepotPath("//Rocket/main");
                         s.Name = "Release1";
+
+                        // Components
+                        s.Components = new ViewMap();
+                        MapEntry c1 = new MapEntry(MapType.Readonly, new DepotPath("dirB"), new DepotPath("//streamsDepot/streamB"));
+                        s.Components.Add(c1);
+                        MapEntry c2 = new MapEntry(MapType.Writeall, new DepotPath("dirC"), new DepotPath("//streamsDepot/streamC"));
+                        s.Components.Add(c2);
+                        MapEntry c3 = new MapEntry(MapType.WriteImportPlus, new DepotPath("dirD"), new DepotPath("//streamsDepot/streamD"));
+                        s.Components.Add(c3);
+
+                        // Paths
                         s.Paths = new ViewMap();
                         MapEntry p1 = new MapEntry(MapType.Import, new DepotPath("..."), null);
                         s.Paths.Add(p1);
                         MapEntry p2 = new MapEntry(MapType.Share, new DepotPath("core/gui/..."), null);
                         s.Paths.Add(p2);
+
                         s.OwnerName = "admin";
                         s.Description = "release stream for first release";
                         s.Ignored = new ViewMap();
@@ -381,6 +393,17 @@ namespace p4api.net.unit.test
                         main.Options = new StreamOptionEnum(StreamOption.NoFromParent | StreamOption.NoToParent);
                         main.Options = new StreamOptionEnum(StreamOption.None);
                         main.Name = "mainlinetest";
+
+                        // Components
+                        main.Components = new ViewMap();
+                        MapEntry c1 = new MapEntry(MapType.Readonly, new DepotPath("dirB"), new DepotPath("//streamsDepot/streamB"));
+                        main.Components.Add(c1);
+                        MapEntry c2 = new MapEntry(MapType.Writeall, new DepotPath("dirC"), new DepotPath("//streamsDepot/streamC"));
+                        main.Components.Add(c2);
+                        MapEntry c3 = new MapEntry(MapType.WriteImportPlus, new DepotPath("dirD"), new DepotPath("//streamsDepot/streamD"));
+                        main.Components.Add(c3);
+
+                        // Paths
                         main.Paths = new ViewMap();
                         MapEntry p1 = new MapEntry(MapType.Import, new DepotPath("..."), null);
                         main.Paths.Add(p1);
@@ -1431,6 +1454,13 @@ namespace p4api.net.unit.test
 
                     // Create a Stream spec
                     //Define values for stream properties
+                    string expectedC1L = "dirB";
+                    string expectedC1R = "//streamsDepot/streamB";
+                    string expectedC2L = "dirC";
+                    string expectedC2R = "//streamsDepot/streamC";
+                    string expectedC3L = "dirD";
+                    string expectedC3R = "//streamsDepot/streamD";
+
                     string expectedP1 = "...";
                     string expectedP2 = "aps/...";
                     string expectedP3 = "aps/...";
@@ -1444,6 +1474,12 @@ namespace p4api.net.unit.test
                         { "TestField", testField1 },
                         { "NewField", testField2 },
                         { "DifferentField", testField3 }
+                    };
+                    ViewMap components = new ViewMap()
+                    {
+                        { new MapEntry(MapType.Readonly, new DepotPath(expectedC1L), new DepotPath(expectedC1R)) },
+                        { new MapEntry(MapType.Share, new DepotPath(expectedC2L), new DepotPath(expectedC2R)) },
+                        { new MapEntry(MapType.Share, new DepotPath(expectedC3L), new DepotPath(expectedC3R)) }
                     };
                     ViewMap Paths = new ViewMap() 
                     {
@@ -1473,6 +1509,7 @@ namespace p4api.net.unit.test
                     streamCustom.Name = name;
                     streamCustom.OwnerName = ownerName;
                     streamCustom.Description = description;
+                    streamCustom.Components = components;
                     streamCustom.Paths = Paths;
                     streamCustom.Remapped = Remapped;
                     streamCustom.Ignored = Ignored;
@@ -1492,6 +1529,10 @@ namespace p4api.net.unit.test
                     Assert.AreEqual(readStream.Name, name);                    
                     Assert.AreEqual(readStream.OwnerName, ownerName);
                     Assert.AreEqual(readStream.Description, description + Environment.NewLine);
+
+                    // Components
+                    Assert.AreEqual(readStream.Components[0].Left.ToString(), expectedC1L);
+
                     Assert.AreEqual(readStream.Paths[1].Left.ToString(), expectedP2);
                     Assert.AreEqual(readStream.Remapped[0].Left.ToString(), expectedP3);
                     Assert.AreEqual(readStream.Remapped[0].Right.ToString(), expectedP4);
@@ -1670,6 +1711,7 @@ Fields:
         708 Type word 32 required
         709 Description text 128 optional
         707 Options line 64 optional
+        716 Components wlist 64 optional
         710 Paths wlist 64 required
         711 Remapped wlist 64 optional
         712 Ignored wlist 64 optional
@@ -1681,6 +1723,7 @@ Fields:
         NNN DifferentField word 32 optional
 
 Words:
+        Components 3
         Paths 2
         Remapped 2
         View 2
@@ -1704,11 +1747,13 @@ Openable:
         Description isolate
         Options isolate
         ParentView isolate
+        Components propagate
         Paths propagate
         Remapped propagate
         Ignored propagate
 
 Maxwords:
+        Components 4
         Paths 3
 
 Comments:

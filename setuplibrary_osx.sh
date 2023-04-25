@@ -7,11 +7,11 @@
 #!/bin/bash
 
 # should remove p4api directory before running this.
-BRANCH=r21.1
-P4WORKSPACE=/Users/nmorse/Perforce/nmorse_ws_new
+BRANCH=r22.2
+P4WORKSPACE=/Users/user-name/Perforce/workspace
 
 mkdir p4api
 
-tar xvfz ${P4WORKSPACE}/builds/${BRANCH}/p4-bin/bin.macosx1015x86_64/p4api-openssl1.1.1.tgz -C ./p4api --strip-components 1
-cp -R ${P4WORKSPACE}/3rd_party/cpp_libraries/openssl/1.1.1-latest/artifacts/lib.macosx1013x86_64/* p4api/lib
+tar xvfz ${P4WORKSPACE}/builds/${BRANCH}/p4-bin/bin.macosx1015x86_64/p4api-openssl3.tgz -C ./p4api --strip-components 1
+cp -R ${P4WORKSPACE}/3rd_party/cpp_libraries/openssl/3-latest/artifacts/lib.macosx1015x86_64/* p4api/lib
 

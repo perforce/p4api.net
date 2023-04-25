@@ -3388,6 +3388,87 @@ namespace p4api.net.unit.test
         ///A test for RevertFiles
         ///</summary>
         [TestMethod()]
+        public void RevertFilesPreviewTest()
+        {
+            string uri = configuration.ServerPort;
+            string user = "admin";
+            string pass = string.Empty;
+            string ws_client = "admin_space";
+
+            for (int i = 0; i < 1; i++) // run once for ascii
+            {
+                Utilities.CheckpointType cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
+                try
+                {
+                    p4d = Utilities.DeployP4TestServer(TestDir, 2, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
+                    var adminSpace = Path.Combine(clientRoot, "admin_space");
+                    Directory.CreateDirectory(adminSpace);
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
+
+                    using (Connection con = rep.Connection)
+                    {
+                        con.UserName = user;
+                        con.Client = new Client();
+                        con.Client.Name = ws_client;
+                        Assert.AreEqual(con.Status, ConnectionStatus.Disconnected);
+                        Assert.AreEqual(con.Server.State, ServerState.Unknown);
+                        Assert.IsTrue(con.Connect(null));
+                        Assert.AreEqual(con.Server.State, ServerState.Online);
+                        Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+                        Assert.AreEqual("admin", con.Client.OwnerName);
+
+                        // test revert against all .txt files in a directory with no changelist specified
+                        FileSpec fromFile = new FileSpec(new LocalPath(Path.Combine(adminSpace, "TestData", "*.txt")),
+                            null);
+
+                        // test revert against all files in changelist 5 (1 marked for add)
+                        fromFile = new FileSpec(new DepotPath("//..."), null);
+
+                        // Revert Preview
+                        var sFlags = new Options(
+                            RevertFilesCmdFlags.Preview,
+                            5);
+                        var rFiles = con.Client.RevertFiles(sFlags, fromFile);
+                        Assert.IsNotNull(rFiles);
+                        Assert.AreEqual(1, rFiles.Count);
+
+
+                        // Revert Actual
+                        sFlags = new Options(
+                            RevertFilesCmdFlags.None,
+                            5);
+                        rFiles = con.Client.RevertFiles(sFlags, fromFile);
+                        Assert.IsNotNull(rFiles); // That means In earlier "Revert Preview" nothing was reverted.
+                        Assert.AreEqual(1, rFiles.Count);
+
+                        // Verify nothing left after "Revert Actual"
+                        sFlags = new Options(
+                            RevertFilesCmdFlags.Preview,
+                            5);
+                        rFiles = con.Client.RevertFiles(sFlags, fromFile);
+                        Assert.IsNull(rFiles); // That means In earlier "Revert Actual" all files in changelist got reverted.
+                    }
+                }
+                finally
+                {
+                    Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
+                }
+            }
+        }
+
+        /// <summary>
+        ///A test for RevertFiles
+        ///</summary>
+        [TestMethod()]
         public void RevertFilesTest()
         {
             string uri = configuration.ServerPort;
@@ -3433,7 +3514,7 @@ namespace p4api.net.unit.test
                         FileSpec fromFile = new FileSpec(new LocalPath(Path.Combine(adminSpace, "TestData", "*.txt")),
                             null);
                         Options sFlags = new Options(
-                            RevertFilesCmdFlags.Preview,
+                            RevertFilesCmdFlags.None,
                             -1
                         );
                         IList<FileSpec> rFiles = con.Client.RevertFiles(sFlags, fromFile);
@@ -3444,7 +3525,7 @@ namespace p4api.net.unit.test
                         // test revert against all files in changelist 5 (1 marked for add)
                         fromFile = new FileSpec(new DepotPath("//..."), null);
                         sFlags = new Options(
-                            RevertFilesCmdFlags.Preview,
+                            RevertFilesCmdFlags.None,
                             5);
                         rFiles = con.Client.RevertFiles(sFlags, fromFile);
 
@@ -3458,7 +3539,7 @@ namespace p4api.net.unit.test
 
                         fromFile = new FileSpec(new DepotPath("//..."), null);
                         sFlags = new Options(
-                            RevertFilesCmdFlags.Preview,
+                            RevertFilesCmdFlags.None,
                             0);
                         rFiles = con.Client.RevertFiles(sFlags, fromFile);
 
