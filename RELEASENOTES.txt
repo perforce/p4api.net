@@ -1,7 +1,7 @@
                            Release Notes for
                 P4API.NET, the Helix P4API for .NET
 
-                          Version 2022.2
+                          Version 2023.1
 
 Introduction
 
@@ -19,14 +19,14 @@ Introduction
 
 Important End-of-Life Notice
 
-    Cross platform support was provided with the previous release of P4API.NET.
-    Currently 4 different Nuget packages are published ('p4api.net.core',
-    'p4api.net', 'p4api.net.x64' and 'p4api.net.x86'). But as 'p4api.net'
+    Cross platform support was provided with the 2021.2 release of P4API.NET.
+    Since then, 4 different Nuget packages were published ('p4api.net.core',
+    'p4api.net', 'p4api.net.x64' and 'p4api.net.x86'). But as 'p4api.net' 
     contains all the necessary libraries to work on all these 4 platforms, there
-    is no need for 4 different packages. Hence, this major release of P4API.NET
-    would be the last to publish all these packages. Starting with the next
-    release, only the 'p4api.net' package would be published and
-    other packages would be deprecated
+    is no need for 4 different packages. Hence, this major release marks these
+    packages - 'p4api.net.core', 'p4api.net.x64' and 'p4api.net.x86' - as 
+    deprecated. We recommend using the 'p4api.net' package to avoid deprecation
+    warnings
 
 --------------------------------------------------------------------------
 
@@ -78,9 +78,9 @@ Compatibility Statements
 
         API Compatibility
 
-          This release of P4API.NET requires the 2022.2 Helix Core
-          API (2022.2/2407422) for C/C++ (P4API), built with Visual Studio 2019 
-          or later.
+          This release of P4API.NET requires the 2023.1 Helix Core API
+          (2023.1/2442900) for C/C++ (P4API), built with Visual Studio 2019 or 
+          later.
 
         C#/.NET Compatibility
 
@@ -131,7 +131,12 @@ Key to symbols used in change notes below.
         *** -- requires new p4d server program
 
 --------------------------------------------------------------------------
+New functionality in 2023.1 (2023.1/2456134) (2023/06/20)
 
+        #2446898, #2447440, #2447458 (Job #115785) * **
+            Updated P4API.NET to support 2023.1 release of Helix Core
+
+--------------------------------------------------------------------------
 New functionality in 2022.2 Patch 1 (2022.2/2432799) (2023/04/24)
 
         #2431166 (Job #115331) *

@@ -1270,6 +1270,11 @@ namespace p4api.net.unit.test
         ///A test for GetFileMetaDataFileCount
         ///</summary>
         [TestMethod()]
+        [Ignore]
+        // Broken by a bug on server side P4-23337 (Discrepancy in the result of totalFileCount in fstat - with different values of -m).
+        // With -m value as 1, the server has made optimization to skip calculating totalFileCount
+        // Existing file count might be already wrong.But with 23.1 server the count started deviating when '-m' value was either 1 or greater than 1. So this issue got surfaced.
+        // Test can be made alive once the bug is fixed.
         public void GetFileMetaDataFileCountTest()
         {
             string uri = configuration.ServerPort;

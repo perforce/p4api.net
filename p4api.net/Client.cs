@@ -89,8 +89,16 @@ namespace Perforce.P4
 		/// Makes 'p4 sync' attempt to delete a workspace
 		/// directory when all files in it are removed.
 		/// </summary>
-		RmDir		= 0x0020
-	};
+		RmDir		= 0x0020,
+        /// <summary>
+        /// Instructs the client to use an alternative sync
+        /// agent specified with P4ALTSYNC when performing
+        /// file operations in the workspace. This option
+        /// can only be changed when the client's have list
+        /// is empty
+        /// </summary>
+        AltSync     = 0x0040
+    };
 
 	internal class ClientOptionEnum : StringEnum<ClientOption>
 	{
@@ -152,14 +160,15 @@ namespace Perforce.P4
 		/// <returns></returns>
 		public override string ToString()
 		{
-			return String.Format("{0} {1} {2} {3} {4} {5}",
+			return String.Format("{0} {1} {2} {3} {4} {5} {6}",
 				((value & ClientOption.AllWrite) != 0) ? "allwrite" : "noallwrite",
 				((value & ClientOption.Clobber) != 0) ? "clobber" : "noclobber",
 				((value & ClientOption.Compress) != 0) ? "compress" : "nocompress",
 				((value & ClientOption.Locked) != 0) ? "locked" : "unlocked",
 				((value & ClientOption.ModTime) != 0) ? "modtime" : "nomodtime",
-				((value & ClientOption.RmDir) != 0) ? "rmdir" : "normdir"
-				);
+				((value & ClientOption.RmDir) != 0) ? "rmdir" : "normdir",
+                ((value & ClientOption.AltSync) != 0) ? "altsync" : "noaltsync"
+                );
 		}
 		/// <summary>
 		/// Parse a client spec formatted string
@@ -186,7 +195,10 @@ namespace Perforce.P4
 
 			if (!spec.Contains("normdir"))
 				value |= ClientOption.RmDir;
-		}
+
+            if (spec.Contains("altsync") && !spec.Contains("noaltsync"))
+                value |= ClientOption.AltSync;
+        }
 	}
 
 	/// <summary>

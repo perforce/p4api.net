@@ -54,7 +54,7 @@ AltRoots:
 	c:\XP1_dev_A1
 	c:\XP1_dev_A2
 
-Options:	noallwrite noclobber nocompress unlocked nomodtime normdir
+Options:	noallwrite noclobber nocompress unlocked nomodtime normdir noaltsync
 
 SubmitOptions:	submitunchanged
 

@@ -118,7 +118,7 @@ namespace p4api.net.unit.test
             workspaceInfo["Update"] = "2010/01/02 03:04:05"; // DateTime(2010, 1, 2, 3, 4, 5);
             workspaceInfo["Access"] = "2011/02/03 04:05:06"; // DateTime(2011, 2, 3, 4, 5, 6);
             workspaceInfo["Owner"] = "JoeOwner";
-            workspaceInfo["Options"] = "allwrite noclobber compress unlocked modtime normdir";
+            workspaceInfo["Options"] = "allwrite noclobber compress unlocked modtime normdir noaltsync";
             //new ClientOptionEnum(ClientOption.AllWrite | ClientOption.Compress | ClientOption.ModTime);
             workspaceInfo["SubmitOptions"] = "revertunchanged+reopen";
             //new ClientSubmitOptions(true, SubmitType.RevertUnchanged);
@@ -183,7 +183,7 @@ namespace p4api.net.unit.test
         {
             Client target = new Client(); // TODO: Initialize to an appropriate value
             string spec =
-                "Client:\tclientName\r\n\r\nUpdate:\t2010/01/02 03:04:05\r\n\r\nAccess:\t2011/02/03 04:05:06\r\n\r\nOwner:\tJoeOwner\r\n\r\nHost:\tMissManners\r\n\r\nDescription:\r\n\tMiss Manners client\r\n\r\nRoot:\tC:\\clientname\r\n\r\nAltRoots:\r\n\tC:\\alt0\r\n\tC:\\alt1\r\n\r\nChangeView:\r\n\t//depot/main/p4/changeview1@1\r\n\t//depot/main/p4/changeview2@1\r\n\r\nOptions:\tallwrite noclobber compress unlocked modtime normdir\r\n\r\nSubmitOptions:\trevertunchanged+reopen\r\n\r\nLineEnd:\tLocal\r\n\r\nView:\r\n\t//depot/main/p4/... //dbarbee_win-dbarbee/main/p4/...\r\n\t-//usr/... //dbarbee_win-dbarbee/usr/...\r\n\t+//spec/... //dbarbee_win-dbarbee/spec/...\r\n";
+                "Client:\tclientName\r\n\r\nUpdate:\t2010/01/02 03:04:05\r\n\r\nAccess:\t2011/02/03 04:05:06\r\n\r\nOwner:\tJoeOwner\r\n\r\nHost:\tMissManners\r\n\r\nDescription:\r\n\tMiss Manners client\r\n\r\nRoot:\tC:\\clientname\r\n\r\nAltRoots:\r\n\tC:\\alt0\r\n\tC:\\alt1\r\n\r\nChangeView:\r\n\t//depot/main/p4/changeview1@1\r\n\t//depot/main/p4/changeview2@1\r\n\r\nOptions:\tallwrite noclobber compress unlocked modtime normdir noaltsync\r\n\r\nSubmitOptions:\trevertunchanged+reopen\r\n\r\nLineEnd:\tLocal\r\n\r\nView:\r\n\t//depot/main/p4/... //dbarbee_win-dbarbee/main/p4/...\r\n\t-//usr/... //dbarbee_win-dbarbee/usr/...\r\n\t+//spec/... //dbarbee_win-dbarbee/spec/...\r\n";
             bool expected = true;
             bool actual;
             actual = target.Parse(spec);
@@ -248,7 +248,7 @@ namespace p4api.net.unit.test
             });
 
             string expected =
-                "Client:\tclientName\n\nUpdate:\t2010/01/02 03:04:05\n\nAccess:\t2011/02/03 04:05:06\n\nOwner:\tJoeOwner\n\nHost:\tMissManners\n\nDescription:\n\tMiss Manners client\n\nRoot:\tC:\\clientname\n\nAltRoots:\n\tC:\\alt0\n\tC:\\alt1\n\nOptions:\tnoallwrite noclobber nocompress unlocked nomodtime normdir\n\nSubmitOptions:\tsubmitunchanged\n\nLineEnd:\tLocal\n\nType:\twriteable\n\nStream:\t//Stream/main\n\nStreamAtChange:\t111\n\nServerID:\t"+ configuration.ServerPort +"\n\nView:\n\t//depot/main/p4/... //dbarbee_win-dbarbee/main/p4/...\n\t-//usr/... //dbarbee_win-dbarbee/usr/...\n\t+//spec/... //dbarbee_win-dbarbee/spec/...\n";
+                "Client:\tclientName\n\nUpdate:\t2010/01/02 03:04:05\n\nAccess:\t2011/02/03 04:05:06\n\nOwner:\tJoeOwner\n\nHost:\tMissManners\n\nDescription:\n\tMiss Manners client\n\nRoot:\tC:\\clientname\n\nAltRoots:\n\tC:\\alt0\n\tC:\\alt1\n\nOptions:\tnoallwrite noclobber nocompress unlocked nomodtime normdir noaltsync\n\nSubmitOptions:\tsubmitunchanged\n\nLineEnd:\tLocal\n\nType:\twriteable\n\nStream:\t//Stream/main\n\nStreamAtChange:\t111\n\nServerID:\t" + configuration.ServerPort +"\n\nView:\n\t//depot/main/p4/... //dbarbee_win-dbarbee/main/p4/...\n\t-//usr/... //dbarbee_win-dbarbee/usr/...\n\t+//spec/... //dbarbee_win-dbarbee/spec/...\n";
             
             string actual;
             actual = target.ToString();
@@ -289,7 +289,7 @@ namespace p4api.net.unit.test
             });
 
             string expected =
-                "Client:\tclientName\n\nUpdate:\t2010/01/02 03:04:05\n\nAccess:\t2011/02/03 04:05:06\n\nOwner:\tJoeOwner\n\nHost:\tMissManners\n\nDescription:\n\tMiss Manners client\n\nRoot:\tC:\\clientname\n\nAltRoots:\n\tC:\\alt0\n\tC:\\alt1\n\nOptions:\tallwrite noclobber compress unlocked modtime normdir\n\nSubmitOptions:\trevertunchanged+reopen\n\nLineEnd:\tLocal\n\nType:\twriteable\n\nStream:\t//Stream/main\n\nStreamAtChange:\t111\n\nServerID:\t"+ configuration.ServerPort + "\n\nChangeView:\t//dbarbee_win-dbarbee/main/p4/test@2\n\nView:\n\t//depot/main/p4/... //dbarbee_win-dbarbee/main/p4/...\n\t-//usr/... //dbarbee_win-dbarbee/usr/...\n\t+//spec/... //dbarbee_win-dbarbee/spec/...\n";
+                "Client:\tclientName\n\nUpdate:\t2010/01/02 03:04:05\n\nAccess:\t2011/02/03 04:05:06\n\nOwner:\tJoeOwner\n\nHost:\tMissManners\n\nDescription:\n\tMiss Manners client\n\nRoot:\tC:\\clientname\n\nAltRoots:\n\tC:\\alt0\n\tC:\\alt1\n\nOptions:\tallwrite noclobber compress unlocked modtime normdir noaltsync\n\nSubmitOptions:\trevertunchanged+reopen\n\nLineEnd:\tLocal\n\nType:\twriteable\n\nStream:\t//Stream/main\n\nStreamAtChange:\t111\n\nServerID:\t"+ configuration.ServerPort + "\n\nChangeView:\t//dbarbee_win-dbarbee/main/p4/test@2\n\nView:\n\t//depot/main/p4/... //dbarbee_win-dbarbee/main/p4/...\n\t-//usr/... //dbarbee_win-dbarbee/usr/...\n\t+//spec/... //dbarbee_win-dbarbee/spec/...\n";
             string actual;
             actual = target.ToString();
             Assert.AreEqual(expected, actual);

@@ -25,51 +25,53 @@ namespace p4api.net.unit.test
             Utilities.LogTestFinish(TestContext);
         }
 
-        private static string v0 = "noallwrite noclobber nocompress unlocked nomodtime normdir";
-		private static string v42 = "allwrite noclobber compress unlocked modtime normdir";
-		private static string v21 = "noallwrite clobber nocompress locked nomodtime rmdir";
-		private static string v64 = "allwrite clobber compress locked modtime rmdir";
+        private static string v0 = "noallwrite noclobber nocompress unlocked nomodtime normdir noaltsync";
+		private static string v42 = "allwrite noclobber compress unlocked modtime normdir noaltsync";
+		private static string v21 = "noallwrite clobber nocompress locked nomodtime rmdir noaltsync";
+		private static string v64 = "allwrite clobber compress locked modtime rmdir noaltsync";
+        private static string hex40 = "noallwrite noclobber nocompress unlocked nomodtime normdir altsync";
 
-		private static ClientOptionEnum e0 = new ClientOptionEnum(ClientOption.None);
+        private static ClientOptionEnum e0 = new ClientOptionEnum(ClientOption.None);
 		private static ClientOptionEnum e42 = new ClientOptionEnum(ClientOption.AllWrite | ClientOption.Compress | ClientOption.ModTime);
 		private static ClientOptionEnum e21 = new ClientOptionEnum(ClientOption.Clobber | ClientOption.Locked | ClientOption.RmDir);
 		private static ClientOptionEnum e64 = new ClientOptionEnum(ClientOption.AllWrite | ClientOption.Clobber | ClientOption.Compress | ClientOption.Locked | ClientOption.ModTime | ClientOption.RmDir);
+        private static ClientOptionEnum eHex40 = new ClientOptionEnum(ClientOption.AltSync);
 
-		#region Additional test attributes
-		// 
-		//You can use the following additional attributes as you write your tests:
-		//
-		//Use ClassInitialize to run code before running the first test in the class
-		//[ClassInitialize()]
-		//public static void MyClassInitialize(TestContext testContext)
-		//{
-		//}
-		//
-		//Use ClassCleanup to run code after all tests in a class have run
-		//[ClassCleanup()]
-		//public static void MyClassCleanup()
-		//{
-		//}
-		//
-		//Use TestInitialize to run code before running each test
-		//[TestInitialize()]
-		//public void MyTestInitialize()
-		//{
-		//}
-		//
-		//Use TestCleanup to run code after each test has run
-		//[TestCleanup()]
-		//public void MyTestCleanup()
-		//{
-		//}
-		//
-		#endregion
+        #region Additional test attributes
+        // 
+        //You can use the following additional attributes as you write your tests:
+        //
+        //Use ClassInitialize to run code before running the first test in the class
+        //[ClassInitialize()]
+        //public static void MyClassInitialize(TestContext testContext)
+        //{
+        //}
+        //
+        //Use ClassCleanup to run code after all tests in a class have run
+        //[ClassCleanup()]
+        //public static void MyClassCleanup()
+        //{
+        //}
+        //
+        //Use TestInitialize to run code before running each test
+        //[TestInitialize()]
+        //public void MyTestInitialize()
+        //{
+        //}
+        //
+        //Use TestCleanup to run code after each test has run
+        //[TestCleanup()]
+        //public void MyTestCleanup()
+        //{
+        //}
+        //
+        #endregion
 
 
-		/// <summary>
-		///A test for ClientOptionEnum Constructor
-		///</summary>
-		[TestMethod()]
+        /// <summary>
+        ///A test for ClientOptionEnum Constructor
+        ///</summary>
+        [TestMethod()]
 		public void ClientOptionEnumConstructorTest()
 		{
 			ClientOptionEnum target = new ClientOptionEnum(v0);
@@ -80,8 +82,9 @@ namespace p4api.net.unit.test
 			Assert.AreEqual(ClientOption.None, target & ClientOption.Locked);
 			Assert.AreEqual(ClientOption.None, target & ClientOption.ModTime);
 			Assert.AreEqual(ClientOption.None, target & ClientOption.RmDir);
+            Assert.AreEqual(ClientOption.None, target & ClientOption.AltSync);
 
-			target = new ClientOptionEnum(v42);
+            target = new ClientOptionEnum(v42);
 			Assert.AreNotEqual(ClientOption.None, target);
 			Assert.AreNotEqual(ClientOption.None, target & ClientOption.AllWrite);
 			Assert.AreEqual(ClientOption.None, target & ClientOption.Clobber);
@@ -89,8 +92,9 @@ namespace p4api.net.unit.test
 			Assert.AreEqual(ClientOption.None, target & ClientOption.Locked);
 			Assert.AreNotEqual(ClientOption.None, target & ClientOption.ModTime);
 			Assert.AreEqual(ClientOption.None, target & ClientOption.RmDir);
+            Assert.AreEqual(ClientOption.None, target & ClientOption.AltSync);
 
-			target = new ClientOptionEnum(v21);
+            target = new ClientOptionEnum(v21);
 			Assert.AreNotEqual(ClientOption.None, target);
 			Assert.AreEqual(ClientOption.None, target & ClientOption.AllWrite);
 			Assert.AreNotEqual(ClientOption.None, target & ClientOption.Clobber);
@@ -98,8 +102,9 @@ namespace p4api.net.unit.test
 			Assert.AreNotEqual(ClientOption.None, target & ClientOption.Locked);
 			Assert.AreEqual(ClientOption.None, target & ClientOption.ModTime);
 			Assert.AreNotEqual(ClientOption.None, target & ClientOption.RmDir);
+            Assert.AreEqual(ClientOption.None, target & ClientOption.AltSync);
 
-			target = new ClientOptionEnum(v64);
+            target = new ClientOptionEnum(v64);
 			Assert.AreNotEqual(ClientOption.None, target);
 			Assert.AreNotEqual(ClientOption.None, target & ClientOption.AllWrite);
 			Assert.AreNotEqual(ClientOption.None, target & ClientOption.Clobber);
@@ -107,12 +112,22 @@ namespace p4api.net.unit.test
 			Assert.AreNotEqual(ClientOption.None, target & ClientOption.Locked);
 			Assert.AreNotEqual(ClientOption.None, target & ClientOption.ModTime);
 			Assert.AreNotEqual(ClientOption.None, target & ClientOption.RmDir);
-		}
+            Assert.AreEqual(ClientOption.None, target & ClientOption.AltSync);
 
-		/// <summary>
-		///A test for Parse
-		///</summary>
-		[TestMethod()]
+            target = new ClientOptionEnum(hex40);
+            Assert.AreEqual(ClientOption.None, target & ClientOption.AllWrite);
+            Assert.AreEqual(ClientOption.None, target & ClientOption.Clobber);
+            Assert.AreEqual(ClientOption.None, target & ClientOption.Compress);
+            Assert.AreEqual(ClientOption.None, target & ClientOption.Locked);
+            Assert.AreEqual(ClientOption.None, target & ClientOption.ModTime);
+            Assert.AreEqual(ClientOption.None, target & ClientOption.RmDir);
+            Assert.AreEqual(ClientOption.AltSync, target & ClientOption.AltSync);
+        }
+
+        /// <summary>
+        ///A test for Parse
+        ///</summary>
+        [TestMethod()]
 		public void ParseTest()
 		{
 			ClientOptionEnum target = new ClientOptionEnum(ClientOption.None);
@@ -151,12 +166,21 @@ namespace p4api.net.unit.test
 			Assert.AreNotEqual(ClientOption.None, target & ClientOption.Locked);
 			Assert.AreNotEqual(ClientOption.None, target & ClientOption.ModTime);
 			Assert.AreNotEqual(ClientOption.None, target & ClientOption.RmDir);
-		}
 
-		/// <summary>
-		///A test for ToString
-		///</summary>
-		[TestMethod()]
+            target.Parse(hex40);
+            Assert.AreEqual(ClientOption.None, target & ClientOption.AllWrite);
+            Assert.AreEqual(ClientOption.None, target & ClientOption.Clobber);
+            Assert.AreEqual(ClientOption.None, target & ClientOption.Compress);
+            Assert.AreEqual(ClientOption.None, target & ClientOption.Locked);
+            Assert.AreEqual(ClientOption.None, target & ClientOption.ModTime);
+            Assert.AreEqual(ClientOption.None, target & ClientOption.RmDir);
+            Assert.AreEqual(ClientOption.AltSync, target & ClientOption.AltSync);
+        }
+
+        /// <summary>
+        ///A test for ToString
+        ///</summary>
+        [TestMethod()]
 		public void ToStringTest()
 		{
 			ClientOptionEnum v = new ClientOptionEnum(ClientOption.None);
@@ -178,7 +202,12 @@ namespace p4api.net.unit.test
 			expected = v64;
 			actual = v.ToString();
 			Assert.AreEqual(expected, actual);
-		}
+
+            v = new ClientOptionEnum(ClientOption.AltSync);
+            expected = hex40;
+            actual = v.ToString();
+            Assert.AreEqual(expected, actual);
+        }
 
 		/// <summary>
 		///A test for op_Implicit
@@ -206,7 +235,12 @@ namespace p4api.net.unit.test
 			expected = e64;
 			actual = s;
 			Assert.IsTrue(expected == actual);
-		}
+
+            s = hex40;
+            expected = eHex40;
+            actual = s;
+            Assert.IsTrue(expected == actual);
+        }
 
 		/// <summary>
 		///A test for op_Implicit
@@ -230,7 +264,11 @@ namespace p4api.net.unit.test
 			expected = v64;
 			actual = e64;
 			Assert.AreEqual(expected, actual);
-		}
+
+            expected = hex40;
+            actual = eHex40;
+            Assert.AreEqual(expected, actual);
+        }
 
 		/// <summary>
 		///A test for op_Implicit
