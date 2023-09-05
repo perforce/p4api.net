@@ -59,12 +59,10 @@ namespace p4api.net.unit.test
 
         private static String GroupSpec =
                 "Group:\tTest" + Environment.NewLine + Environment.NewLine
-                + "Description:\tTest Description" + Environment.NewLine + Environment.NewLine
                 + "MaxResults:\t100" + Environment.NewLine + Environment.NewLine
                 + "MaxScanRows:\t10" + Environment.NewLine + Environment.NewLine
                 + "MaxLockTime:\t20" + Environment.NewLine + Environment.NewLine
                 + "MaxOpenFiles:\t50" + Environment.NewLine + Environment.NewLine
-                + "MaxMemory:\t60" + Environment.NewLine + Environment.NewLine
                 + "Timeout:\t30" + Environment.NewLine + Environment.NewLine
                 + "PasswordTimeout:\t40" + Environment.NewLine + Environment.NewLine
                 + "Subgroups:" + Environment.NewLine
@@ -75,7 +73,9 @@ namespace p4api.net.unit.test
                 + "\tBeta" + Environment.NewLine + Environment.NewLine
                 + "Users:" + Environment.NewLine
                 + "\tAlice" + Environment.NewLine
-                + "\tBob" + Environment.NewLine;
+                + "\tBob" + Environment.NewLine + Environment.NewLine
+                + "Description:\tTest Description" + Environment.NewLine + Environment.NewLine
+                + "MaxMemory:\t60" + Environment.NewLine + Environment.NewLine;
 
 
         /// <summary>

@@ -154,27 +154,45 @@ namespace Perforce.P4
 		public static bool operator ==(ClientOptionEnum t1, ClientOption t2) { return t1.value.Equals(t2); }
 		public static bool operator !=(ClientOptionEnum t1, ClientOption t2) { return !t1.value.Equals(t2); }
 
-		/// <summary>
-		/// Convert to a client spec formatted string
-		/// </summary>
-		/// <returns></returns>
-		public override string ToString()
-		{
-			return String.Format("{0} {1} {2} {3} {4} {5} {6}",
-				((value & ClientOption.AllWrite) != 0) ? "allwrite" : "noallwrite",
-				((value & ClientOption.Clobber) != 0) ? "clobber" : "noclobber",
-				((value & ClientOption.Compress) != 0) ? "compress" : "nocompress",
-				((value & ClientOption.Locked) != 0) ? "locked" : "unlocked",
-				((value & ClientOption.ModTime) != 0) ? "modtime" : "nomodtime",
-				((value & ClientOption.RmDir) != 0) ? "rmdir" : "normdir",
+        /// <summary>
+        /// Convert to a client spec formatted string
+        /// </summary>
+        /// <returns>String representation of client options</returns>
+        public override string ToString()
+        {
+            return this.ToString(0);
+        }
+
+        /// <summary>
+        /// Convert to a client spec formatted string
+        /// </summary>
+        /// <param name="apiLevel">Server protocol</param>
+        /// <returns>String representation of client options</returns>
+        public string ToString(int apiLevel)
+        {
+            var clientOptionFormat = "{0} {1} {2} {3} {4} {5}";
+
+            // Append 'noaltsync' option above 2023.1 server OR if server version is not provided
+            clientOptionFormat += apiLevel >= 56 || apiLevel == 0 ?
+                " {6}" :
+                string.Empty;
+
+            return String.Format(clientOptionFormat,
+                ((value & ClientOption.AllWrite) != 0) ? "allwrite" : "noallwrite",
+                ((value & ClientOption.Clobber) != 0) ? "clobber" : "noclobber",
+                ((value & ClientOption.Compress) != 0) ? "compress" : "nocompress",
+                ((value & ClientOption.Locked) != 0) ? "locked" : "unlocked",
+                ((value & ClientOption.ModTime) != 0) ? "modtime" : "nomodtime",
+                ((value & ClientOption.RmDir) != 0) ? "rmdir" : "normdir",
                 ((value & ClientOption.AltSync) != 0) ? "altsync" : "noaltsync"
                 );
-		}
-		/// <summary>
-		/// Parse a client spec formatted string
-		/// </summary>
-		/// <param name="spec"></param>
-		public void Parse(String spec)
+        }
+
+        /// <summary>
+        /// Parse a client spec formatted string
+        /// </summary>
+        /// <param name="spec"></param>
+        public void Parse(String spec)
 		{
 			value = ClientOption.None;
 
@@ -977,11 +995,21 @@ namespace Perforce.P4
 			return string.Empty;
 		}
 
-		/// <summary>
-		/// Format as a client spec
-		/// </summary>
-		/// <returns>String description of client </returns>
-		override public String ToString()
+        /// <summary>
+        /// Format as a client spec
+        /// </summary>
+        /// <returns>String description of client</returns>
+        override public String ToString()
+        {
+            return this.ToString(this.Connection?.getP4Server()?.ApiLevel ?? 0);
+        }
+
+        /// <summary>
+        /// Format as a client spec
+        /// </summary>
+        /// <param name="apiLevel">Server protocol</param>
+        /// <returns>String description of client</returns>
+        public String ToString(int apiLevel)
 		{
             String tmpDescStr = String.Empty;
             if (!String.IsNullOrEmpty(Description))
@@ -1026,7 +1054,7 @@ namespace Perforce.P4
 				FormatDateTime(Updated),
 				FormatDateTime(Accessed),
 				OwnerName, Host, tmpDescStr, Root, tmpAltRootsStr,
-				_options.ToString(),
+				_options.ToString(apiLevel),
 				SubmitOptions.ToString(),
 				_lineEnd.ToString(), _clientType.ToString(), tmpStreamStr, tmpStreamAtChangeStr,
 				tmpServerIDStr, tmpChangeViewStr, tmpViewStr);

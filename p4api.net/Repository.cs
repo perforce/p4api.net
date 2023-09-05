@@ -106,26 +106,26 @@ namespace Perforce.P4
             using (P4Command filesCmd = new P4Command(this, "files", true, FileSpec.ToEscapedStrings(filespecs)))
             {
                 P4CommandResult r = filesCmd.Run(options);
-            if (r.Success != true)
-            {
-                P4Exception.Throw(r.ErrorList);
-                return null;
-            }
+                if (r.Success != true)
+                {
+                    P4Exception.Throw(r.ErrorList);
+                    return null;
+                }
 
-            if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
-            {
-                return null;
-            }
+                if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
+                {
+                    return null;
+                }
 
-            List<FileSpec> value = new List<FileSpec>();
+                List<FileSpec> value = new List<FileSpec>();
                 foreach (TaggedObject obj in r.TaggedOutput)
-            {
-                string path = obj["depotFile"];
-                PathSpec ps = new DepotPath(path);
-                int rev = 0;
-                int.TryParse(obj["rev"], out rev);
-                FileSpec fs = new FileSpec(ps, new Revision(rev));
-                value.Add(fs);
+                {
+                    string path = obj["depotFile"];
+                    PathSpec ps = new DepotPath(path);
+                    int rev = 0;
+                    int.TryParse(obj["rev"], out rev);
+                    FileSpec fs = new FileSpec(ps, new Revision(rev));
+                    value.Add(fs);
                 }
 
                 return value;
@@ -202,104 +202,104 @@ namespace Perforce.P4
             using (P4Command openedCmd = new P4Command(this, "opened", true, FileSpec.ToEscapedStrings(filespecs)))
             {
                 P4CommandResult r = openedCmd.Run(options);
-            if (r.Success != true)
-            {
-                P4Exception.Throw(r.ErrorList);
-                return null;
-            }
-
-            if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
-            {
-                return null;
-            }
-
-            List<File> value = new List<File>();
-
-            DepotPath dps = null;
-            ClientPath cps = null;
-            int revision = 0;
-            Revision rev = new Revision(0);
-            Revision haveRev = new Revision(0);
-            StringEnum<FileAction> action = null;
-            int change = -1;
-            FileType type = null;
-            DateTime submittime = DateTime.MinValue;
-            string user = string.Empty;
-            string client = string.Empty;
-            string stream = string.Empty;
-
-
-            foreach (P4.TaggedObject obj in r.TaggedOutput)
-            {
-                if (obj.ContainsKey("depotFile"))
+                if (r.Success != true)
                 {
-                    dps = new DepotPath(obj["depotFile"]);
+                    P4Exception.Throw(r.ErrorList);
+                    return null;
                 }
 
-                if (obj.ContainsKey("clientFile"))
+                if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
                 {
-                    cps = new ClientPath(obj["clientFile"]);
+                    return null;
                 }
 
-                if (obj.ContainsKey("rev"))
-                {
-                    int.TryParse(obj["rev"], out revision);
-                    rev = new Revision(revision);
-                }
+                List<File> value = new List<File>();
 
-                if (obj.ContainsKey("haveRev"))
-                {
-                    int.TryParse(obj["haveRev"], out revision);
-                    haveRev = new Revision(revision);
-                }
+                DepotPath dps = null;
+                ClientPath cps = null;
+                int revision = 0;
+                Revision rev = new Revision(0);
+                Revision haveRev = new Revision(0);
+                StringEnum<FileAction> action = null;
+                int change = -1;
+                FileType type = null;
+                DateTime submittime = DateTime.MinValue;
+                string user = string.Empty;
+                string client = string.Empty;
+                string stream = string.Empty;
 
-                if (obj.ContainsKey("action"))
+
+                foreach (P4.TaggedObject obj in r.TaggedOutput)
                 {
-                    action = obj["action"];
-                    // if the file is marked for add, some
-                    // commands will return a tagged field
-                    // of rev that is 1. This is not accurate
-                    // and can cause other commands that use
-                    // File to incorrectly run the command
-                    // on a file #1, which can result in
-                    // "no such file(s)." So, change rev to
-                    // null for files marked for add.
-                    if (action == "add")
+                    if (obj.ContainsKey("depotFile"))
                     {
-                        rev = null;
+                        dps = new DepotPath(obj["depotFile"]);
                     }
+
+                    if (obj.ContainsKey("clientFile"))
+                    {
+                        cps = new ClientPath(obj["clientFile"]);
+                    }
+
+                    if (obj.ContainsKey("rev"))
+                    {
+                        int.TryParse(obj["rev"], out revision);
+                        rev = new Revision(revision);
+                    }
+
+                    if (obj.ContainsKey("haveRev"))
+                    {
+                        int.TryParse(obj["haveRev"], out revision);
+                        haveRev = new Revision(revision);
+                    }
+
+                    if (obj.ContainsKey("action"))
+                    {
+                        action = obj["action"];
+                        // if the file is marked for add, some
+                        // commands will return a tagged field
+                        // of rev that is 1. This is not accurate
+                        // and can cause other commands that use
+                        // File to incorrectly run the command
+                        // on a file #1, which can result in
+                        // "no such file(s)." So, change rev to
+                        // null for files marked for add.
+                        if (action == "add")
+                        {
+                            rev = null;
+                        }
+                    }
+
+                    if (obj.ContainsKey("change"))
+                    {
+                        int.TryParse(obj["change"], out change);
+                    }
+
+                    if (obj.ContainsKey("type"))
+                    {
+                        type = new FileType(obj["type"]);
+                    }
+
+                    if (obj.ContainsKey("user"))
+                    {
+                        user = obj["user"];
+                    }
+
+                    if (obj.ContainsKey("client"))
+                    {
+                        client = obj["client"];
+                    }
+
+                    if (obj.ContainsKey("stream"))
+                    {
+                        stream = obj["stream"];
+                    }
+                    File f = new File(dps, cps, rev, haveRev, change, action, type, submittime, user, client, stream);
+                    value.Add(f);
                 }
 
-                if (obj.ContainsKey("change"))
-                {
-                    int.TryParse(obj["change"], out change);
-                }
-
-                if (obj.ContainsKey("type"))
-                {
-                    type = new FileType(obj["type"]);
-                }
-
-                if (obj.ContainsKey("user"))
-                {
-                    user = obj["user"];
-                }
-
-                if (obj.ContainsKey("client"))
-                {
-                    client = obj["client"];
-                }
-
-                if (obj.ContainsKey("stream"))
-                {
-                    stream = obj["stream"];
-                }
-                File f = new File(dps, cps, rev, haveRev, change, action, type, submittime, user, client, stream);
-                value.Add(f);
+                return value;
             }
-
-            return value;
-        }
         }
 
         /// <summary>
@@ -523,36 +523,36 @@ namespace Perforce.P4
             using (P4Command fstatCmd = new P4Command(this, "fstat", true, paths))
             {
                 P4CommandResult r = fstatCmd.Run(options);
-            if (r.Success != true)
-            {
-                P4Exception.Throw(r.ErrorList);
-                return null;
-            }
-
-            if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
-            {
-                return null;
-            }
-
-            List<FileMetaData> value = new List<FileMetaData>();
-
-                foreach (TaggedObject obj in r.TaggedOutput)
-            {
-                if ((obj.Count <= 2) && (obj.ContainsKey("desc")))
+                if (r.Success != true)
                 {
-                    // hack, but this not really a file, it's just a
-                    // the description of the change if -e option is
-                    // specified, so skip it
-                    continue;
+                    P4Exception.Throw(r.ErrorList);
+                    return null;
                 }
 
-                FileMetaData fmd = new FileMetaData();
-                fmd.FromFstatCmdTaggedData(obj);
-                value.Add(fmd);
-            }
+                if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
+                {
+                    return null;
+                }
 
-            return value;
-        }
+                List<FileMetaData> value = new List<FileMetaData>();
+
+                foreach (TaggedObject obj in r.TaggedOutput)
+                {
+                    if ((obj.Count <= 2) && (obj.ContainsKey("desc")))
+                    {
+                        // hack, but this not really a file, it's just a
+                        // the description of the change if -e option is
+                        // specified, so skip it
+                        continue;
+                    }
+
+                    FileMetaData fmd = new FileMetaData();
+                    fmd.FromFstatCmdTaggedData(obj);
+                    value.Add(fmd);
+                }
+
+                return value;
+            }
         }
 
         /// <summary>
@@ -851,28 +851,28 @@ namespace Perforce.P4
             using (P4Command fstatCmd = new P4Command(this, "files", true, FileSpec.ToEscapedStrings(filespecs)))
             {
                 P4CommandResult r = fstatCmd.Run(options);
-            if (r.Success != true)
-            {
-                P4Exception.Throw(r.ErrorList);
-                return null;
-            }
+                if (r.Success != true)
+                {
+                    P4Exception.Throw(r.ErrorList);
+                    return null;
+                }
 
-            if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
-            {
-                return null;
-            }
+                if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
+                {
+                    return null;
+                }
 
-            List<File> value = new List<File>();
+                List<File> value = new List<File>();
 
                 foreach (TaggedObject obj in r.TaggedOutput)
-            {
-                File val = new File();
-                val.ParseFilesCmdTaggedData(obj);
-                value.Add(val);
-            }
+                {
+                    File val = new File();
+                    val.ParseFilesCmdTaggedData(obj);
+                    value.Add(val);
+                }
 
-            return value;
-        }
+                return value;
+            }
         }
 
         /// <summary>
@@ -1014,21 +1014,21 @@ namespace Perforce.P4
             using (P4Command dirsCmd = new P4Command(this, "dirs", false, dirs))
             {
                 P4CommandResult r = dirsCmd.Run(options);
-            if (r.Success != true)
-            {
-                P4Exception.Throw(r.ErrorList);
-                return null;
-            }
+                if (r.Success != true)
+                {
+                    P4Exception.Throw(r.ErrorList);
+                    return null;
+                }
 
                 List<string> value = new List<string>();
 
                 foreach (P4ClientInfoMessage l in r.InfoOutput)
-            {
-                value.Add(l.Message);
-            }
+                {
+                    value.Add(l.Message);
+                }
 
-            return value;
-        }
+                return value;
+            }
         }
 
         /// <summary>
@@ -1187,34 +1187,34 @@ namespace Perforce.P4
             using (P4Command printCmd = new P4Command(this, "print", true, FileSpec.ToEscapedStrings(filespecs)))
             {
                 P4CommandResult r = printCmd.Run(options);
-            if (r.Success != true)
-            {
-                P4Exception.Throw(r.ErrorList);
-                return null;
-            }
-
-            IList<string> value = new List<string>();
-            if (r.TaggedOutput != null)
-            {
-                if ((options == null) ||
-                (options.ContainsKey("-q") == false))
+                if (r.Success != true)
                 {
-                        foreach (TaggedObject obj in r.TaggedOutput)
-                    {
-                        string path = string.Empty;
-                        string rev = string.Empty;
-                        if (obj.ContainsKey("depotFile"))
-                        {
-                            value.Add(obj["depotFile"]);
-                        }
-                    }
-
+                    P4Exception.Throw(r.ErrorList);
+                    return null;
                 }
-            }
 
-            value.Add(r.TextOutput);
-            return value;
-        }
+                IList<string> value = new List<string>();
+                if (r.TaggedOutput != null)
+                {
+                    if ((options == null) ||
+                    (options.ContainsKey("-q") == false))
+                    {
+                        foreach (TaggedObject obj in r.TaggedOutput)
+                        {
+                            string path = string.Empty;
+                            string rev = string.Empty;
+                            if (obj.ContainsKey("depotFile"))
+                            {
+                                value.Add(obj["depotFile"]);
+                            }
+                        }
+
+                    }
+                }
+
+                value.Add(r.TextOutput);
+                return value;
+            }
         }
 
         /// <summary>
@@ -1377,63 +1377,63 @@ namespace Perforce.P4
             using (P4Command printCmd = new P4Command(this, "print", true, FileSpec.ToEscapedStrings(filespecs)))
             {
                 P4CommandResult r = printCmd.Run(options);
-            if (r.Success != true)
-            {
-                P4Exception.Throw(r.ErrorList);
-                return null;
-            }
-
-            IList<object> value = new List<object>();
-            if (r.TaggedOutput != null)
-            {
-                if ((options == null) ||
-                (options.ContainsKey("-q") == false))
+                if (r.Success != true)
                 {
-                        foreach (TaggedObject obj in r.TaggedOutput)
-                    {
-                        string path = string.Empty;
-                        string revStr = string.Empty;
-                        int rev = -1;
-                        if (obj.ContainsKey("depotFile"))
-                        {
-                            string s = obj["depotFile"];
-                            int idx = s.LastIndexOf('#');
-                            if (idx > 0)
-                            {
-                                path = s.Substring(0, idx);
-                                revStr = s.Substring(idx + 1);
-                                int.TryParse(revStr, out rev);
-                            }
-                            else
-                            {
-                                path = s;
-                            }
+                    P4Exception.Throw(r.ErrorList);
+                    return null;
+                }
 
-                            if (rev >= 0)
+                IList<object> value = new List<object>();
+                if (r.TaggedOutput != null)
+                {
+                    if ((options == null) ||
+                    (options.ContainsKey("-q") == false))
+                    {
+                        foreach (TaggedObject obj in r.TaggedOutput)
+                        {
+                            string path = string.Empty;
+                            string revStr = string.Empty;
+                            int rev = -1;
+                            if (obj.ContainsKey("depotFile"))
                             {
-                                value.Add(FileSpec.DepotSpec(path, rev));
-                            }
-                            else
-                            {
-                                value.Add(FileSpec.DepotSpec(path));
+                                string s = obj["depotFile"];
+                                int idx = s.LastIndexOf('#');
+                                if (idx > 0)
+                                {
+                                    path = s.Substring(0, idx);
+                                    revStr = s.Substring(idx + 1);
+                                    int.TryParse(revStr, out rev);
+                                }
+                                else
+                                {
+                                    path = s;
+                                }
+
+                                if (rev >= 0)
+                                {
+                                    value.Add(FileSpec.DepotSpec(path, rev));
+                                }
+                                else
+                                {
+                                    value.Add(FileSpec.DepotSpec(path));
+                                }
                             }
                         }
+
                     }
-
                 }
-            }
 
-            if (r.BinaryOutput != null)
-            {
-                value.Add(r.BinaryOutput);
-            }
-            else
-            {
-                value.Add(r.TextOutput);
-            }
+                if (r.BinaryOutput != null)
+                {
+                    value.Add(r.BinaryOutput);
+                }
+                else
+                {
+                    value.Add(r.TextOutput);
+                }
 
-            return value;
-        }
+                return value;
+            }
         }
 
         /// <summary>
@@ -1607,189 +1607,189 @@ namespace Perforce.P4
             using (P4Command filesCmd = new P4Command(this, "filelog", true, FileSpec.ToEscapedStrings(filespecs)))
             {
                 P4CommandResult r = filesCmd.Run(options);
-            if (r.Success != true)
-            {
-                P4Exception.Throw(r.ErrorList);
-                return null;
-            }
+                if (r.Success != true)
+                {
+                    P4Exception.Throw(r.ErrorList);
+                    return null;
+                }
 
-            if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
-            {
-                return null;
-            }
+                if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
+                {
+                    return null;
+                }
 
-            IList<FileHistory> value = new List<FileHistory>();
+                IList<FileHistory> value = new List<FileHistory>();
 
                 bool dstMismatch = false;
-            string offset = string.Empty;
+                string offset = string.Empty;
 
-            if (Server != null && Server.Metadata != null)
-            {
-                offset = Server.Metadata.DateTimeOffset;
+                if (Server != null && Server.Metadata != null)
+                {
+                    offset = Server.Metadata.DateTimeOffset;
                     dstMismatch = FormBase.DSTMismatch(Server.Metadata);
-            }
+                }
 
                 foreach (TaggedObject obj in r.TaggedOutput)
-            {
-                int idx = 0;
-
-                while (true)
                 {
+                    int idx = 0;
+
+                    while (true)
+                    {
                         string key = string.Format("rev{0}", idx);
-                    int revision = -1;
+                        int revision = -1;
 
-                    if (obj.ContainsKey(key))
-                        int.TryParse(obj[key], out revision);
-                    else
-                        break;
+                        if (obj.ContainsKey(key))
+                            int.TryParse(obj[key], out revision);
+                        else
+                            break;
 
-                    int changelistid = -1;
+                        int changelistid = -1;
                         key = string.Format("change{0}", idx);
-                    if (obj.ContainsKey(key))
-                        int.TryParse(obj[key], out changelistid);
+                        if (obj.ContainsKey(key))
+                            int.TryParse(obj[key], out changelistid);
 
-                    StringEnum<FileAction> action = "None";
+                        StringEnum<FileAction> action = "None";
                         key = string.Format("action{0}", idx);
-                    if (obj.ContainsKey(key))
-                        action = obj[key];
+                        if (obj.ContainsKey(key))
+                            action = obj[key];
 
-                    DateTime date = new DateTime();
-                    long unixTime = 0;
+                        DateTime date = new DateTime();
+                        long unixTime = 0;
                         key = string.Format("time{0}", idx);
-                    if (obj.ContainsKey(key))
+                        if (obj.ContainsKey(key))
                             unixTime = long.Parse(obj[key]);
-                    DateTime UTC = FormBase.ConvertUnixTime(unixTime);
-                    DateTime GMT = new DateTime(UTC.Year, UTC.Month, UTC.Day, UTC.Hour, UTC.Minute, UTC.Second,
-                        DateTimeKind.Unspecified);
+                        DateTime UTC = FormBase.ConvertUnixTime(unixTime);
+                        DateTime GMT = new DateTime(UTC.Year, UTC.Month, UTC.Day, UTC.Hour, UTC.Minute, UTC.Second,
+                            DateTimeKind.Unspecified);
                         date = FormBase.ConvertFromUTC(GMT, offset, dstMismatch);
 
-                    string username = null;
+                        string username = null;
                         key = string.Format("user{0}", idx);
-                    if (obj.ContainsKey(key))
-                        username = obj[key];
+                        if (obj.ContainsKey(key))
+                            username = obj[key];
 
-                    string description = null;
+                        string description = null;
                         key = string.Format("desc{0}", idx);
-                    if (obj.ContainsKey(key))
-                        description = obj[key];
+                        if (obj.ContainsKey(key))
+                            description = obj[key];
 
-                    string digest = null;
+                        string digest = null;
                         key = string.Format("digest{0}", idx);
-                    if (obj.ContainsKey(key))
-                        digest = obj[key];
+                        if (obj.ContainsKey(key))
+                            digest = obj[key];
 
-                    long filesize = -1;
+                        long filesize = -1;
                         key = string.Format("fileSize{0}", idx);
-                    if (obj.ContainsKey(key))
-                        long.TryParse(obj[key], out filesize);
+                        if (obj.ContainsKey(key))
+                            long.TryParse(obj[key], out filesize);
 
-                    string clientname = null;
+                        string clientname = null;
                         key = string.Format("client{0}", idx);
-                    if (obj.ContainsKey(key))
-                        clientname = obj[key];
+                        if (obj.ContainsKey(key))
+                            clientname = obj[key];
 
-                    PathSpec depotpath = new DepotPath(obj["depotFile"]);
+                        PathSpec depotpath = new DepotPath(obj["depotFile"]);
 
-                    FileType filetype = null;
+                        FileType filetype = null;
                         key = string.Format("type{0}", idx);
-                    if (obj.ContainsKey(key))
-                        filetype = new FileType(obj[key]);
+                        if (obj.ContainsKey(key))
+                            filetype = new FileType(obj[key]);
 
-                    List<RevisionIntegrationSummary> integrationsummaries = new List<RevisionIntegrationSummary>();
+                        List<RevisionIntegrationSummary> integrationsummaries = new List<RevisionIntegrationSummary>();
 
-                    int idx2 = 0;
+                        int idx2 = 0;
                         key = string.Format("how{0},{1}", idx, idx2);
-                    while (obj.ContainsKey(key))
-                    {
-                        string how = obj[key];
+                        while (obj.ContainsKey(key))
+                        {
+                            string how = obj[key];
                             key = string.Format("file{0},{1}", idx, idx2);
-                        string frompath = obj[key];
+                            string frompath = obj[key];
 
                             key = string.Format("srev{0},{1}", idx, idx2);
-                        string srev = obj[key];
+                            string srev = obj[key];
 
-                        VersionSpec startrev = new Revision(-1);
+                            VersionSpec startrev = new Revision(-1);
 
-                        if (srev.StartsWith("#h")
-                            |
-                            srev.StartsWith("#n"))
-                        {
-                            if (srev.Contains("#none"))
+                            if (srev.StartsWith("#h")
+                                |
+                                srev.StartsWith("#n"))
                             {
-                                startrev = Revision.None;
-                            }
+                                if (srev.Contains("#none"))
+                                {
+                                    startrev = Revision.None;
+                                }
 
-                            if (srev.Contains("#have"))
-                            {
-                                startrev = Revision.Have;
-                            }
+                                if (srev.Contains("#have"))
+                                {
+                                    startrev = Revision.Have;
+                                }
 
-                            if (srev.Contains("#head"))
-                            {
-                                startrev = Revision.Head;
+                                if (srev.Contains("#head"))
+                                {
+                                    startrev = Revision.Head;
+                                }
                             }
-                        }
-                        else
-                        {
-                            srev = srev.Trim('#');
-                            int rev = Convert.ToInt16(srev);
-                            startrev = new Revision(rev);
-                        }
+                            else
+                            {
+                                srev = srev.Trim('#');
+                                int rev = Convert.ToInt16(srev);
+                                startrev = new Revision(rev);
+                            }
 
                             key = string.Format("erev{0},{1}", idx, idx2);
-                        string erev = obj[key];
+                            string erev = obj[key];
 
-                        VersionSpec endrev = new Revision(-1);
+                            VersionSpec endrev = new Revision(-1);
 
-                        if (erev.StartsWith("#h")
-                            |
-                            erev.StartsWith("#n"))
-                        {
-                            if (erev.Contains("#none"))
+                            if (erev.StartsWith("#h")
+                                |
+                                erev.StartsWith("#n"))
                             {
-                                endrev = Revision.None;
+                                if (erev.Contains("#none"))
+                                {
+                                    endrev = Revision.None;
+                                }
+
+                                if (srev.Contains("#have"))
+                                {
+                                    endrev = Revision.Have;
+                                }
+
+                                if (srev.Contains("#head"))
+                                {
+                                    endrev = Revision.Head;
+                                }
+                            }
+                            else
+                            {
+                                erev = erev.Trim('#');
+                                int rev = Convert.ToInt16(erev);
+                                endrev = new Revision(rev);
                             }
 
-                            if (srev.Contains("#have"))
-                            {
-                                endrev = Revision.Have;
-                            }
+                            RevisionIntegrationSummary integrationsummary = new RevisionIntegrationSummary(
+                                  new FileSpec(new DepotPath(frompath),
+                                  new VersionRange(startrev, endrev)), how);
 
-                            if (srev.Contains("#head"))
-                            {
-                                endrev = Revision.Head;
-                            }
-                        }
-                        else
-                        {
-                            erev = erev.Trim('#');
-                            int rev = Convert.ToInt16(erev);
-                            endrev = new Revision(rev);
-                        }
+                            integrationsummaries.Add(integrationsummary);
 
-                        RevisionIntegrationSummary integrationsummary = new RevisionIntegrationSummary(
-                              new FileSpec(new DepotPath(frompath),
-                              new VersionRange(startrev, endrev)), how);
-
-                        integrationsummaries.Add(integrationsummary);
-
-                        idx2++;
+                            idx2++;
                             key = string.Format("how{0},{1}", idx, idx2);
+                        }
+
+                        FileHistory fh = new FileHistory(revision, changelistid, action,
+                                date, username, filetype, description, digest, filesize, depotpath, clientname,
+                                integrationsummaries);
+
+                        value.Add(fh);
+
+                        idx++;
+
                     }
-
-                    FileHistory fh = new FileHistory(revision, changelistid, action,
-                            date, username, filetype, description, digest, filesize, depotpath, clientname,
-                            integrationsummaries);
-
-                    value.Add(fh);
-
-                    idx++;
-
                 }
-            }
 
-            return value;
-        }
+                return value;
+            }
         }
 
         /// <summary>
@@ -1992,24 +1992,24 @@ namespace Perforce.P4
             using (P4Command getDepotFileDiffs = new P4Command(this, "diff2", true, filespecleft, filespecright))
             {
                 P4CommandResult r = getDepotFileDiffs.Run(options);
-            if (r.Success != true)
-            {
-                P4Exception.Throw(r.ErrorList);
-                return null;
-            }
+                if (r.Success != true)
+                {
+                    P4Exception.Throw(r.ErrorList);
+                    return null;
+                }
 
                 if (r.TaggedOutput == null || r.TaggedOutput.Count <= 0)
-            {
-                return null;
-            }
+                {
+                    return null;
+                }
 
-            IList<DepotFileDiff> value = new List<DepotFileDiff>();
+                IList<DepotFileDiff> value = new List<DepotFileDiff>();
 
                 foreach (TaggedObject obj in r.TaggedOutput)
-            {
-                DepotFileDiff val = new DepotFileDiff();
+                {
+                    DepotFileDiff val = new DepotFileDiff();
                     val.FromGetDepotFileDiffsCmdTaggedOutput(obj, _connection, options, filespecleft, filespecright);
-                value.Add(val);
+                    value.Add(val);
                 }
 
                 return value;
@@ -2121,28 +2121,28 @@ namespace Perforce.P4
             using (P4Command GetFileDiffs = new P4Command(this, "diff", true, FileSpec.ToEscapedStrings(filespecs)))
             {
                 P4CommandResult r = GetFileDiffs.Run(options);
-            if (r.Success != true)
-            {
-                P4Exception.Throw(r.ErrorList);
-                return null;
-            }
+                if (r.Success != true)
+                {
+                    P4Exception.Throw(r.ErrorList);
+                    return null;
+                }
 
-            if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
-            {
-                return null;
-            }
+                if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
+                {
+                    return null;
+                }
 
-            IList<FileDiff> value = new List<FileDiff>();
+                IList<FileDiff> value = new List<FileDiff>();
 
                 foreach (TaggedObject obj in r.TaggedOutput)
-            {
-                FileDiff val = new FileDiff();
-                val.FromGetFileDiffsCmdTaggedOutput(obj, _connection, options);
-                value.Add(val);
-            }
+                {
+                    FileDiff val = new FileDiff();
+                    val.FromGetFileDiffsCmdTaggedOutput(obj, _connection, options);
+                    value.Add(val);
+                }
 
-            return value;
-        }
+                return value;
+            }
         }
 
 
@@ -2235,91 +2235,91 @@ namespace Perforce.P4
             {
 
                 P4CommandResult r = annotateCmd.Run(options);
-            if (r.Success != true)
-            {
-                P4Exception.Throw(r.ErrorList);
-                return null;
-            }
+                if (r.Success != true)
+                {
+                    P4Exception.Throw(r.ErrorList);
+                    return null;
+                }
 
-            if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
-            {
-                return null;
-            }
+                if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
+                {
+                    return null;
+                }
 
-            bool changelist = false;
-            string opts;
-            if (options != null)
-            {
-                opts = options.Keys.ToString();
-                if (opts.Contains("c"))
+                bool changelist = false;
+                string opts;
+                if (options != null)
+                {
+                    opts = options.Keys.ToString();
+                    if (opts.Contains("c"))
                     {
                         changelist = true;
                     }
-            }
+                }
 
-            string dp = null;
-            string line = null;
-            int lower = -1;
-            int upper = -1;
-            IList<FileAnnotation> value = new List<FileAnnotation>();
+                string dp = null;
+                string line = null;
+                int lower = -1;
+                int upper = -1;
+                IList<FileAnnotation> value = new List<FileAnnotation>();
 
                 foreach (TaggedObject obj in r.TaggedOutput)
-            {
-                if (obj.ContainsKey("depotFile"))
                 {
-                    dp = obj["depotFile"];
-                    line = null;
-                    lower = -1;
-                    upper = -1;
-                    continue;
-                }
-
-                if (obj.ContainsKey("lower"))
-                {
-                    int l = -1;
-                    int.TryParse(obj["lower"], out l);
-                    lower = l;
-                }
-
-                if (obj.ContainsKey("upper"))
-                {
-                    int u = -1;
-                    int.TryParse(obj["upper"], out u);
-                    upper = u;
-                }
-
-                if (obj.ContainsKey("data"))
-                {
-                    line = obj["data"];
-                }
-
-                if (dp != null
-                    &&
-                    line != null
-                    &&
-                    lower != -1
-                    &&
-                    upper != -1)
-                {
-                    FileSpec fs = new FileSpec();
-                    if (changelist == true)
+                    if (obj.ContainsKey("depotFile"))
                     {
+                        dp = obj["depotFile"];
+                        line = null;
+                        lower = -1;
+                        upper = -1;
+                        continue;
+                    }
+
+                    if (obj.ContainsKey("lower"))
+                    {
+                        int l = -1;
+                        int.TryParse(obj["lower"], out l);
+                        lower = l;
+                    }
+
+                    if (obj.ContainsKey("upper"))
+                    {
+                        int u = -1;
+                        int.TryParse(obj["upper"], out u);
+                        upper = u;
+                    }
+
+                    if (obj.ContainsKey("data"))
+                    {
+                        line = obj["data"];
+                    }
+
+                    if (dp != null
+                        &&
+                        line != null
+                        &&
+                        lower != -1
+                        &&
+                        upper != -1)
+                    {
+                        FileSpec fs = new FileSpec();
+                        if (changelist == true)
+                        {
                             fs = new FileSpec(new DepotPath(dp),
                                 new VersionRange(new ChangelistIdVersion(lower), new ChangelistIdVersion(upper)));
-                    }
-                    else
-                    {
+                        }
+                        else
+                        {
                             fs = new FileSpec(new DepotPath(dp),
                                 new VersionRange(new Revision(lower), new Revision(upper)));
+                        }
+
+                        FileAnnotation fa = new FileAnnotation(fs, line);
+                        value.Add(fa);
                     }
-
-                    FileAnnotation fa = new FileAnnotation(fs, line);
-                    value.Add(fa);
                 }
-            }
 
-            return value;
-        }
+                return value;
+            }
         }
 
 
@@ -2420,34 +2420,34 @@ namespace Perforce.P4
         {
             using (P4Command tagCmd = new P4Command(this, "tag", true, FileSpec.ToStrings(filespecs)))
             {
-            options["-l"] = labelid;
+                options["-l"] = labelid;
 
                 P4CommandResult r = tagCmd.Run(options);
-            if (r.Success != true)
-            {
-                P4Exception.Throw(r.ErrorList);
-                return null;
+                if (r.Success != true)
+                {
+                    P4Exception.Throw(r.ErrorList);
+                    return null;
+                }
+
+                if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
+                {
+                    return null;
+                }
+
+                IList<FileSpec> value = new List<FileSpec>();
+
+                foreach (P4.TaggedObject obj in r.TaggedOutput)
+                {
+                    string revision = obj["rev"];
+                    int rev = Convert.ToInt16(revision);
+                    VersionSpec version = new Revision(rev);
+                    DepotPath path = new DepotPath(obj["depotFile"]);
+                    FileSpec fs = new FileSpec(path, version);
+                    value.Add(fs);
+                }
+
+                return value;
             }
-
-            if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
-            {
-                return null;
-            }
-
-            IList<FileSpec> value = new List<FileSpec>();
-
-            foreach (P4.TaggedObject obj in r.TaggedOutput)
-            {
-                string revision = obj["rev"];
-                int rev = Convert.ToInt16(revision);
-                VersionSpec version = new Revision(rev);
-                DepotPath path = new DepotPath(obj["depotFile"]);
-                FileSpec fs = new FileSpec(path, version);
-                value.Add(fs);
-            }
-
-            return value;
-        }
         }
 
         /// <summary>
@@ -2532,35 +2532,35 @@ namespace Perforce.P4
             using (P4Command fixesCmd = new P4Command(this, "fixes", true, FileSpec.ToEscapedStrings(filespecs)))
             {
                 P4CommandResult r = fixesCmd.Run(options);
-            if (r.Success != true)
-            {
-                P4Exception.Throw(r.ErrorList);
-                return null;
-            }
-
-            if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
-            {
-                return null;
-            }
-
-            IList<Fix> value = new List<Fix>();
-
-                foreach (TaggedObject obj in r.TaggedOutput)
-            {
-                    bool dstMismatch = false;
-                string offset = string.Empty;
-
-                if (Server != null && Server.Metadata != null)
+                if (r.Success != true)
                 {
-                    offset = Server.Metadata.DateTimeOffset;
-                        dstMismatch = FormBase.DSTMismatch(Server.Metadata);
+                    P4Exception.Throw(r.ErrorList);
+                    return null;
                 }
 
-                    value.Add(Fix.FromFixesCmdTaggedOutput(obj, offset, dstMismatch));
-            }
+                if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
+                {
+                    return null;
+                }
 
-            return value;
-        }
+                IList<Fix> value = new List<Fix>();
+
+                foreach (TaggedObject obj in r.TaggedOutput)
+                {
+                    bool dstMismatch = false;
+                    string offset = string.Empty;
+
+                    if (Server != null && Server.Metadata != null)
+                    {
+                        offset = Server.Metadata.DateTimeOffset;
+                        dstMismatch = FormBase.DSTMismatch(Server.Metadata);
+                    }
+
+                    value.Add(Fix.FromFixesCmdTaggedOutput(obj, offset, dstMismatch));
+                }
+
+                return value;
+            }
         }
 
         /// <summary>
@@ -2704,30 +2704,30 @@ namespace Perforce.P4
         {
             using (P4Command grepCmd = new P4Command(this, "grep", true, FileSpec.ToEscapedStrings(filespecs)))
             {
-            options["-e"] = pattern;
+                options["-e"] = pattern;
                 P4CommandResult r = grepCmd.Run(options);
-            if (r.Success != true)
-            {
-                P4Exception.Throw(r.ErrorList);
-                return null;
-            }
+                if (r.Success != true)
+                {
+                    P4Exception.Throw(r.ErrorList);
+                    return null;
+                }
 
-            if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
-            {
-                return null;
-            }
+                if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
+                {
+                    return null;
+                }
 
-            IList<FileLineMatch> value = new List<FileLineMatch>();
+                IList<FileLineMatch> value = new List<FileLineMatch>();
 
                 foreach (TaggedObject obj in r.TaggedOutput)
-            {
-                FileLineMatch val = new FileLineMatch();
-                val.ParseGrepCmdTaggedData(obj);
-                value.Add(val);
-            }
+                {
+                    FileLineMatch val = new FileLineMatch();
+                    val.ParseGrepCmdTaggedData(obj);
+                    value.Add(val);
+                }
 
-            return value;
-        }
+                return value;
+            }
         }
 
         /// <summary>
@@ -2796,24 +2796,24 @@ namespace Perforce.P4
                 new P4Command(this, "integrated", true, FileSpec.ToEscapedStrings(filespecs)))
             {
                 P4CommandResult r = integratedCmd.Run(options);
-            if (r.Success != true)
-            {
-                P4Exception.Throw(r.ErrorList);
-                return null;
-            }
+                if (r.Success != true)
+                {
+                    P4Exception.Throw(r.ErrorList);
+                    return null;
+                }
 
-            if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
-            {
-                return null;
-            }
+                if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
+                {
+                    return null;
+                }
 
-            IList<FileIntegrationRecord> value = new List<FileIntegrationRecord>();
+                IList<FileIntegrationRecord> value = new List<FileIntegrationRecord>();
 
                 foreach (TaggedObject obj in r.TaggedOutput)
-            {
-                FileIntegrationRecord val = new FileIntegrationRecord();
-                val.ParseIntegratedCmdTaggedData(obj);
-                value.Add(val);
+                {
+                    FileIntegrationRecord val = new FileIntegrationRecord();
+                    val.ParseIntegratedCmdTaggedData(obj);
+                    value.Add(val);
                 }
 
                 return value;
@@ -2892,66 +2892,82 @@ namespace Perforce.P4
             using (P4Command protectsCmd = new P4Command(this, "protects", true, FileSpec.ToEscapedStrings(filespecs)))
             {
                 P4CommandResult r = protectsCmd.Run(options);
-            if (r.Success != true)
-            {
-                P4Exception.Throw(r.ErrorList);
-                return null;
-            }
-
-            if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
-            {
-                return null;
-            }
-
-            IList<ProtectionEntry> value = new List<ProtectionEntry>();
-
-            StringEnum<ProtectionMode> mode = null;
-            foreach (P4.TaggedObject obj in r.TaggedOutput)
-            {
-                string perm = obj["perm"];
-                if (perm.StartsWith("="))
+                if (r.Success != true)
                 {
-                    switch (perm)
+                    P4Exception.Throw(r.ErrorList);
+                    return null;
+                }
+
+                if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
+                {
+                    return null;
+                }
+
+                IList<ProtectionEntry> value = new List<ProtectionEntry>();
+
+                StringEnum<ProtectionMode> mode = null;
+                foreach (P4.TaggedObject obj in r.TaggedOutput)
+                {
+                    mode = RetrieveProtectionMode(obj["perm"]);
+
+                    StringEnum<EntryType> type = "User";
+                    if (obj.ContainsKey("isgroup"))
                     {
-                        case "=open":
-                            mode = ProtectionMode.OpenRights;
-                            break;
-                        case "=read":
-                            mode = ProtectionMode.ReadRights;
-                            break;
-                        case "=branch":
-                            mode = ProtectionMode.BranchRights;
-                            break;
-                        case "=write":
-                            mode = ProtectionMode.WriteRights;
-                            break;
-                        default:
-                            mode = null;
-                            break;
+                        type = "Group";
                     }
+
+                    string name = obj["user"];
+                    string host = obj["host"];
+                    string path = obj["depotFile"];
+                    bool unmap = obj.ContainsKey("unmap");
+                    ProtectionEntry pte = new ProtectionEntry(mode, type, name, host, path, unmap);
+
+                    value.Add(pte);
                 }
-                else
+
+                return value;
+            }
+        }
+
+        private static StringEnum<ProtectionMode> RetrieveProtectionMode(string perm)
+        {
+            StringEnum<ProtectionMode> mode;
+            if (perm.StartsWith("="))
+            {
+                switch (perm)
                 {
-                    mode = obj["perm"];
+                    case "=open":
+                        mode = ProtectionMode.OpenRights;
+                        break;
+                    case "=read":
+                        mode = ProtectionMode.ReadRights;
+                        break;
+                    case "=branch":
+                        mode = ProtectionMode.BranchRights;
+                        break;
+                    case "=write":
+                        mode = ProtectionMode.WriteRights;
+                        break;
+                    case "=readstreamspec":
+                        mode = ProtectionMode.ReadStreamSpecRights;
+                        break;
+                    case "=openstreamspec":
+                        mode = ProtectionMode.OpenStreamSpecRights;
+                        break;
+                    case "=writestreamspec":
+                        mode = ProtectionMode.WriteStreamSpecRights;
+                        break;
+                    default:
+                        mode = null;
+                        break;
                 }
-
-                StringEnum<EntryType> type = "User";
-                if (obj.ContainsKey("isgroup"))
-                {
-                    type = "Group";
-                }
-
-                string name = obj["user"];
-                string host = obj["host"];
-                string path = obj["depotFile"];
-                bool unmap = obj.ContainsKey("unmap");
-                ProtectionEntry pte = new ProtectionEntry(mode, type, name, host, path, unmap);
-
-                value.Add(pte);
+            }
+            else
+            {
+                mode = perm;
             }
 
-            return value;
-        }
+            return mode;
         }
 
         public ProtectionMode GetMaxProtectionAccess(IList<FileSpec> filespecs, Options options)
@@ -2960,53 +2976,28 @@ namespace Perforce.P4
             {
 
                 P4CommandResult r = protectsCmd.Run(options);
-            if (r.Success != true)
-            {
-                P4Exception.Throw(r.ErrorList);
-                return new ProtectionMode();
-            }
-
-            if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
-            {
-                return new ProtectionMode();
-            }
-
-            StringEnum<ProtectionMode> mode = null;
-                foreach (TaggedObject obj in r.TaggedOutput)
-            {
-                if (obj.ContainsKey("permMax"))
+                if (r.Success != true)
                 {
-                    string perm = obj["permMax"];
-                    if (perm.StartsWith("="))
+                    P4Exception.Throw(r.ErrorList);
+                    return new ProtectionMode();
+                }
+
+                if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
+                {
+                    return new ProtectionMode();
+                }
+
+                StringEnum<ProtectionMode> mode = null;
+                foreach (TaggedObject obj in r.TaggedOutput)
+                {
+                    if (obj.ContainsKey("permMax"))
                     {
-                        switch (perm)
-                        {
-                            case "=open":
-                                mode = ProtectionMode.OpenRights;
-                                break;
-                            case "=read":
-                                mode = ProtectionMode.ReadRights;
-                                break;
-                            case "=branch":
-                                mode = ProtectionMode.BranchRights;
-                                break;
-                            case "=write":
-                                mode = ProtectionMode.WriteRights;
-                                break;
-                            default:
-                                mode = null;
-                                break;
-                        }
-                    }
-                    else
-                    {
-                        mode = obj["permMax"];
+                        mode = RetrieveProtectionMode(obj["permMax"]);
                     }
                 }
-            }
 
-            return mode;
-        }
+                return mode;
+            }
         }
 
         /// <summary>
@@ -3070,38 +3061,38 @@ namespace Perforce.P4
             using (P4Command reviewsCmd = new P4Command(this, "reviews", true, FileSpec.ToEscapedStrings(filespecs)))
             {
                 P4CommandResult r = reviewsCmd.Run(options);
-            if (r.Success != true)
-            {
-                P4Exception.Throw(r.ErrorList);
-                return null;
-            }
+                if (r.Success != true)
+                {
+                    P4Exception.Throw(r.ErrorList);
+                    return null;
+                }
 
-            if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
-            {
-                return null;
-            }
+                if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
+                {
+                    return null;
+                }
 
-            List<User> value = new List<User>();
+                List<User> value = new List<User>();
 
                 foreach (TaggedObject obj in r.TaggedOutput)
-            {
-                string id = obj["user"];
-                string fullname = obj["name"];
-                string password = string.Empty;
-                string emailaddress = obj["email"];
-                DateTime updated = DateTime.MinValue;
-                DateTime accessed = DateTime.MinValue;
-                string jobview = string.Empty;
-                List<string> reviews = new List<string>();
-                UserType type = UserType.Standard;
+                {
+                    string id = obj["user"];
+                    string fullname = obj["name"];
+                    string password = string.Empty;
+                    string emailaddress = obj["email"];
+                    DateTime updated = DateTime.MinValue;
+                    DateTime accessed = DateTime.MinValue;
+                    string jobview = string.Empty;
+                    List<string> reviews = new List<string>();
+                    UserType type = UserType.Standard;
                     FormSpec spec = new FormSpec(null, null, null, null, null, null, null, null, null);
                     User user = new User(id, fullname, password, emailaddress, updated, accessed, jobview, "perforce",
                         reviews, type, spec);
-                value.Add(user);
-            }
+                    value.Add(user);
+                }
 
-            return value;
-        }
+                return value;
+            }
         }
 
         /// <summary>
@@ -3157,24 +3148,24 @@ namespace Perforce.P4
             using (P4Command specCmd = new P4Command(this, "spec", true, cmdArgs))
             {
                 P4CommandResult r = specCmd.Run(options);
-            if (r.Success != true)
-            {
-                P4Exception.Throw(r.ErrorList);
-                return null;
-            }
+                if (r.Success != true)
+                {
+                    P4Exception.Throw(r.ErrorList);
+                    return null;
+                }
 
-            if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
-            {
-                return null;
-            }
+                if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
+                {
+                    return null;
+                }
 
                 foreach (TaggedObject obj in r.TaggedOutput)
-            {
-                FormSpec val = FormSpec.FromSpecCmdTaggedOutput(obj);
-                return val;
-            }
+                {
+                    FormSpec val = FormSpec.FromSpecCmdTaggedOutput(obj);
+                    return val;
+                }
 
-            return null;
+                return null;
             }
         }
 
@@ -3552,49 +3543,49 @@ namespace Perforce.P4
             using (P4Command triggersCmd = new P4Command(this, "triggers", true))
             {
                 P4CommandResult r = triggersCmd.Run(options);
-            if (r.Success != true)
-            {
-                P4Exception.Throw(r.ErrorList);
-                return null;
-            }
+                if (r.Success != true)
+                {
+                    P4Exception.Throw(r.ErrorList);
+                    return null;
+                }
 
-            if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
-            {
-                return null;
-            }
+                if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
+                {
+                    return null;
+                }
 
-            List<Trigger> value = new List<Trigger>();
+                List<Trigger> value = new List<Trigger>();
 
                 foreach (TaggedObject obj in r.TaggedOutput)
-            {
-                System.Text.StringBuilder sb = new StringBuilder();
-                foreach (KeyValuePair<string, string> key in obj)
                 {
-                    sb.Remove(0, sb.Length);
-                    sb.AppendLine((string.Format("{0} {1}", key.Key.ToString(), key.Value)));
-                    string line = sb.ToString();
-                    if (line.StartsWith("Triggers"))
+                    System.Text.StringBuilder sb = new StringBuilder();
+                    foreach (KeyValuePair<string, string> key in obj)
                     {
-                        line = line.Trim();
-                        string[] entries = line.Split(' ');
-                        string name = entries[1];
-                        string ent = entries[2];
-                        ent = ent.Replace("-", "");
-                        StringEnum<TriggerType> type = ent;
-                        string path = entries[3];
-                        string command = entries[4] + " " + entries[5];
-                        string ord = entries[0];
-                        ord = ord.Remove(0, 8);
-                        int order = 0;
-                        order = Convert.ToInt16(ord);
-                        Trigger trig = new Trigger(name, order, type, path, command);
-                        value.Add(trig);
+                        sb.Remove(0, sb.Length);
+                        sb.AppendLine((string.Format("{0} {1}", key.Key.ToString(), key.Value)));
+                        string line = sb.ToString();
+                        if (line.StartsWith("Triggers"))
+                        {
+                            line = line.Trim();
+                            string[] entries = line.Split(' ');
+                            string name = entries[1];
+                            string ent = entries[2];
+                            ent = ent.Replace("-", "");
+                            StringEnum<TriggerType> type = ent;
+                            string path = entries[3];
+                            string command = entries[4] + " " + entries[5];
+                            string ord = entries[0];
+                            ord = ord.Remove(0, 8);
+                            int order = 0;
+                            order = Convert.ToInt16(ord);
+                            Trigger trig = new Trigger(name, order, type, path, command);
+                            value.Add(trig);
+                        }
                     }
                 }
-            }
 
-            return value;
-        }
+                return value;
+            }
         }
 
         /// <summary>
@@ -3657,36 +3648,36 @@ namespace Perforce.P4
             using (P4Command typemapCmd = new P4Command(this, "typemap", true, "-o"))
             {
                 P4CommandResult r = typemapCmd.Run();
-            if (r.Success != true)
-            {
-                P4Exception.Throw(r.ErrorList);
-                return null;
-            }
+                if (r.Success != true)
+                {
+                    P4Exception.Throw(r.ErrorList);
+                    return null;
+                }
 
-            if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
-            {
-                return null;
-            }
+                if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
+                {
+                    return null;
+                }
 
-            List<TypeMapEntry> value = new List<TypeMapEntry>();
+                List<TypeMapEntry> value = new List<TypeMapEntry>();
 
                 foreach (TaggedObject obj in r.TaggedOutput)
-            {
-                int ord = 0;
+                {
+                    int ord = 0;
                     string key = string.Format("TypeMap{0}", ord);
 
-                while (obj.ContainsKey(key))
-                {
-                    value.Add(new TypeMapEntry(obj[key]));
-                    ord++;
+                    while (obj.ContainsKey(key))
+                    {
+                        value.Add(new TypeMapEntry(obj[key]));
+                        ord++;
                         key = string.Format("TypeMap{0}", ord);
+                    }
+
+                    return value;
                 }
 
                 return value;
             }
-
-            return value;
-        }
         }
 
         /// <summary>
@@ -3818,7 +3809,7 @@ namespace Perforce.P4
         [Obsolete("Use GetProtectionTable()")]
         public IList<ProtectionEntry> GetProtectionTable(Options options)
         {
-           return GetProtectionTable();
+            return GetProtectionTable();
         }
 
         /// <summary>
@@ -3950,45 +3941,56 @@ namespace Perforce.P4
             using (P4Command protectCmd = new P4Command(this, "protect", true))
             {
                 P4CommandResult r = protectCmd.Run(options);
-            if (r.Success != true)
-            {
-                P4Exception.Throw(r.ErrorList);
-                return null;
-            }
+                if (r.Success != true)
+                {
+                    P4Exception.Throw(r.ErrorList);
+                    return null;
+                }
 
-            if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
-            {
-                return null;
-            }
+                if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
+                {
+                    return null;
+                }
 
-            List<ProtectionEntry> value = new List<ProtectionEntry>();
+                List<ProtectionEntry> value = new List<ProtectionEntry>();
 
                 foreach (TaggedObject obj in r.TaggedOutput)
-            {
-                System.Text.StringBuilder sb = new StringBuilder();
-                foreach (KeyValuePair<string, string> key in obj)
                 {
-                    sb.Remove(0, sb.Length);
-                        sb.AppendLine(string.Format("{0} {1}", key.Key.ToString(), key.Value));
-                    string line = sb.ToString();
-                    if (line.StartsWith("Protections"))
+                    System.Text.StringBuilder sb = new StringBuilder();
+                    foreach (KeyValuePair<string, string> key in
+                        obj.Where(o => !string.IsNullOrWhiteSpace(o.Value)))
                     {
-                        line = line.Trim();
-                        string[] entries = line.Split(' ');
-                        StringEnum<ProtectionMode> mode = entries[1];
-                        StringEnum<EntryType> type = entries[2];
-                        string grouporusername = entries[3];
-                        string host = entries[4];
-                        string path = entries[5];
-                        bool unmap = path.StartsWith("-") ? true : false;
-                        ProtectionEntry pe = new ProtectionEntry(mode, type, grouporusername, host, path, unmap);
-                        value.Add(pe);
+                        try
+                        {
+                            sb.Remove(0, sb.Length);
+                            sb.AppendLine(string.Format("{0} {1}", key.Key.ToString(), key.Value));
+                            string line = sb.ToString();
+                            if (line.StartsWith("Protections") &&
+                                ! line.StartsWith("ProtectionsComment"))
+                            {
+                                line = line.Trim();
+                                string[] entries = line.Split(' ');
+                                StringEnum<ProtectionMode> mode = RetrieveProtectionMode(entries[1]);
+                                StringEnum<EntryType> type = entries[2];
+                                string grouporusername = entries[3];
+                                string host = entries[4];
+                                string path = entries[5];
+                                bool unmap = path.StartsWith("-") ? true : false;
+                                ProtectionEntry pe = new ProtectionEntry(mode, type, grouporusername, host, path, unmap);
+                                value.Add(pe);
+                            }
+                        }
+                        catch(IndexOutOfRangeException ex)
+                        {
+                            LogFile.LogException("Index out of range exception: ", ex);
+                            continue;
+                        }
+                        
                     }
                 }
-            }
 
-            return value;
-        }
+                return value;
+            }
         }
 
         /// <summary>
@@ -4044,31 +4046,31 @@ namespace Perforce.P4
             using (P4Command countersCmd = new P4Command(this, "counters", true))
             {
                 P4CommandResult r = countersCmd.Run(options);
-            if (r.Success != true)
-            {
-                P4Exception.Throw(r.ErrorList);
-                return null;
-            }
+                if (r.Success != true)
+                {
+                    P4Exception.Throw(r.ErrorList);
+                    return null;
+                }
 
-            if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
-            {
-                return null;
-            }
+                if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
+                {
+                    return null;
+                }
 
-            IList<Counter> val = new List<Counter>();
+                IList<Counter> val = new List<Counter>();
 
                 foreach (TaggedObject obj in r.TaggedOutput)
-            {
-                string name = obj["counter"];
-                string value = obj["value"];
+                {
+                    string name = obj["counter"];
+                    string value = obj["value"];
 
-                Counter counter = new Counter(name, value);
+                    Counter counter = new Counter(name, value);
 
-                val.Add(counter);
+                    val.Add(counter);
+                }
+
+                return val;
             }
-
-            return val;
-        }
         }
 
 
@@ -4137,29 +4139,29 @@ namespace Perforce.P4
             using (P4Command counterCmd = new P4Command(_connection, "counter", true, name))
             {
                 P4CommandResult r = counterCmd.Run(options);
-            if (r.Success != true)
-            {
-                P4Exception.Throw(r.ErrorList);
-                return null;
-            }
+                if (r.Success != true)
+                {
+                    P4Exception.Throw(r.ErrorList);
+                    return null;
+                }
 
-            if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
-            {
-                return null;
-            }
+                if ((r.TaggedOutput == null) || (r.TaggedOutput.Count <= 0))
+                {
+                    return null;
+                }
 
                 foreach (TaggedObject obj in r.TaggedOutput)
 
-            {
-                string countername = obj["counter"];
-                string value = obj["value"];
+                {
+                    string countername = obj["counter"];
+                    string value = obj["value"];
 
-                Counter counter = new Counter(countername, value);
-                return counter;
+                    Counter counter = new Counter(countername, value);
+                    return counter;
+                }
+
+                return null;
             }
-
-            return null;
-        }
         }
 
         /// <summary>
@@ -4231,13 +4233,13 @@ namespace Perforce.P4
             using (P4Command Cmd = new P4Command(this, "counter", false, name))
             {
                 P4CommandResult r = Cmd.Run(options);
-            if (r.Success != true)
-            {
-                P4Exception.Throw(r.ErrorList);
-                return null;
-            }
+                if (r.Success != true)
+                {
+                    P4Exception.Throw(r.ErrorList);
+                    return null;
+                }
 
-            return r.InfoOutput;
+                return r.InfoOutput;
             }
         }
 

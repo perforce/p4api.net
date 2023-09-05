@@ -8,8 +8,6 @@ With the 2021.2 release, `P4API.NET` has been extended to support .NET CORE and 
 
 P4API.NET consists of a DLL written in C++ which contains the Perforce C++ API, which is wrapped by a layer of C# code which exports the .NET interface.
 
-The bridge code is dependent on P4API release 22.2 or above.
-
 Within this directory are several subprojects.  p4bridge, p4bridge-unit-test, p4bridgeStressTest, p4api.net and p4api.net-unit-test
 
 ## Getting to know your solutions

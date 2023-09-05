@@ -41,87 +41,87 @@ using System.IO;
 
 namespace Perforce.P4
 {
-	public partial class Repository
-	{
-		/// <summary>
-		/// Create a new group in the repository.
-		/// </summary>
-		/// <param name="group">Group specification for the new group</param>
-		/// <param name="options">The  '-i' flags are required when creating a new group</param>
-		/// <returns>The Group object if new group was created, null if creation failed</returns>
-		/// <remarks> The '-i' flag is added if not specified by the caller
-		/// <br/> 
-		/// <br/><b>p4 help group</b>
-		/// <br/> 
-		/// <br/>     group -- Change members of user group
-		/// <br/> 
-		/// <br/>     p4 group [-a|-A] name
-		/// <br/>     p4 group -d [-a] name
-		/// <br/>     p4 group -o name
-		/// <br/>     p4 group -i [-a|-A]
-		/// <br/> 
-		/// <br/> 	Create a group or modify the membership of an existing group.
-		/// <br/> 	A group can contain users and other groups. The group specification
-		/// <br/> 	is put into a temporary file and the editor (configured by the
-		/// <br/> 	environment variable $P4EDITOR) is invoked.
-		/// <br/> 
-		/// <br/> 	A group exists when it has any users or other groups in it, and
-		/// <br/> 	ceases to exist if all users and groups in it are removed.
-		/// <br/> 
-		/// <br/> 	Each group has MaxResults, MaxScanRows, and MaxLockTime fields,
-		/// <br/> 	which limit the resources committed to operations performed by
-		/// <br/> 	members of the group.  For these fields, 'unlimited' or 'unset'
-		/// <br/> 	means no limit for that	group.  An individual user's limit is the
-		/// <br/> 	highest of any group with a limit to which he belongs, unlimited if
-		/// <br/> 	any of his groups has 'unlimited' for that field, or unlimited
-		/// <br/> 	if he belongs to no group with a limit.  See 'p4 help maxresults'
-		/// <br/> 	for more information on MaxResults, MaxScanRows and MaxLockTime.
-		/// <br/> 
-		/// <br/> 	Each group also has a Timeout field, which specifies how long (in
-		/// <br/> 	seconds)  a 'p4 login' ticket remains valid.  A value of 'unset' or
-		/// <br/> 	'unlimited' is equivalent to no timeout. An individual's timeout is
-		/// <br/> 	the highest of any group with a limit to which he belongs, unlimited
-		/// <br/> 	if any of his groups has 'unlimited' for the timeout value, or
-		/// <br/> 	unlimited if he belongs to no group with a limit. See 'p4 help login'
-		/// <br/> 	for more information.
-		/// <br/> 
-		/// <br/> 	Each group has a PasswordTimeout field, which determines how long a
-		/// <br/> 	password remains valid for members of the group.
-		/// <br/> 
-		/// <br/> 	A group may be synchronized with an LDAP group by setting the three
-		/// <br/> 	fields: LdapConfig, LdapSearchQuery and LdapUserAttribute. This takes
-		/// <br/> 	the LDAP configuration (see 'p4 ldap') specified by LdapConfig and uses
-		/// <br/> 	it to execute the query stored by LdapSearchQuery. The LDAP attribute
-		/// <br/> 	specified by LdapUserAttribute is taken to be user's username and is
-		/// <br/> 	added to the group's user list. At least one group owner must be set if
-		/// <br/> 	these LDAP fields are used. If the LDAP server requires login for
-		/// <br/> 	read-only queries, then the LDAP configuration must contain valid bind
-		/// <br/> 	credentials in the LDAP spec's SearchBindDN and SearchPasswd fields
-		/// <br/> 
-		/// <br/> 	The -d flag deletes a group.
-		/// <br/> 
-		/// <br/> 	The -o flag writes the group specification to standard output. The
-		/// <br/> 	user's editor is not invoked.
-		/// <br/> 
-		/// <br/> 	The -i flag reads a group specification from standard input. The
-		/// <br/> 	user's editor is not invoked.  The new group specification replaces
-		/// <br/> 	the previous one.
-		/// <br/> 
-		/// <br/> 	The -a flag enables a user without 'super' access to modify the group
-		/// <br/> 	if that user is an 'owner' of that group. Group owners	are specified
-		/// <br/> 	in the 'Owners' field of the group spec.
-		/// <br/> 
-		/// <br/> 	The -A flag enables a user with 'admin' access to add a new group.
-		/// <br/> 	Existing groups may not be modified when this flag is used.
-		/// <br/> 
-		/// <br/> 	All commands that require access granted by 'p4 protect' consider a
-		/// <br/> 	user's groups when calculating access levels.
-		/// <br/> 
-		/// <br/> 	'p4 group' requires 'super' access granted by 'p4 protect' unless
-		/// <br/> 	invoked with the '-a' or '-A' flag by a qualified user.
-		/// <br/> 
-		/// <br/> 
-		/// </remarks>
+    public partial class Repository
+    {
+        /// <summary>
+        /// Create a new group in the repository.
+        /// </summary>
+        /// <param name="group">Group specification for the new group</param>
+        /// <param name="options">The  '-i' flags are required when creating a new group</param>
+        /// <returns>The Group object if new group was created, null if creation failed</returns>
+        /// <remarks> The '-i' flag is added if not specified by the caller
+        /// <br/> 
+        /// <br/><b>p4 help group</b>
+        /// <br/> 
+        /// <br/>     group -- Change members of user group
+        /// <br/> 
+        /// <br/>     p4 group [-a|-A] name
+        /// <br/>     p4 group -d [-a] name
+        /// <br/>     p4 group -o name
+        /// <br/>     p4 group -i [-a|-A]
+        /// <br/> 
+        /// <br/> 	Create a group or modify the membership of an existing group.
+        /// <br/> 	A group can contain users and other groups. The group specification
+        /// <br/> 	is put into a temporary file and the editor (configured by the
+        /// <br/> 	environment variable $P4EDITOR) is invoked.
+        /// <br/> 
+        /// <br/> 	A group exists when it has any users or other groups in it, and
+        /// <br/> 	ceases to exist if all users and groups in it are removed.
+        /// <br/> 
+        /// <br/> 	Each group has MaxResults, MaxScanRows, and MaxLockTime fields,
+        /// <br/> 	which limit the resources committed to operations performed by
+        /// <br/> 	members of the group.  For these fields, 'unlimited' or 'unset'
+        /// <br/> 	means no limit for that	group.  An individual user's limit is the
+        /// <br/> 	highest of any group with a limit to which he belongs, unlimited if
+        /// <br/> 	any of his groups has 'unlimited' for that field, or unlimited
+        /// <br/> 	if he belongs to no group with a limit.  See 'p4 help maxresults'
+        /// <br/> 	for more information on MaxResults, MaxScanRows and MaxLockTime.
+        /// <br/> 
+        /// <br/> 	Each group also has a Timeout field, which specifies how long (in
+        /// <br/> 	seconds)  a 'p4 login' ticket remains valid.  A value of 'unset' or
+        /// <br/> 	'unlimited' is equivalent to no timeout. An individual's timeout is
+        /// <br/> 	the highest of any group with a limit to which he belongs, unlimited
+        /// <br/> 	if any of his groups has 'unlimited' for the timeout value, or
+        /// <br/> 	unlimited if he belongs to no group with a limit. See 'p4 help login'
+        /// <br/> 	for more information.
+        /// <br/> 
+        /// <br/> 	Each group has a PasswordTimeout field, which determines how long a
+        /// <br/> 	password remains valid for members of the group.
+        /// <br/> 
+        /// <br/> 	A group may be synchronized with an LDAP group by setting the three
+        /// <br/> 	fields: LdapConfig, LdapSearchQuery and LdapUserAttribute. This takes
+        /// <br/> 	the LDAP configuration (see 'p4 ldap') specified by LdapConfig and uses
+        /// <br/> 	it to execute the query stored by LdapSearchQuery. The LDAP attribute
+        /// <br/> 	specified by LdapUserAttribute is taken to be user's username and is
+        /// <br/> 	added to the group's user list. At least one group owner must be set if
+        /// <br/> 	these LDAP fields are used. If the LDAP server requires login for
+        /// <br/> 	read-only queries, then the LDAP configuration must contain valid bind
+        /// <br/> 	credentials in the LDAP spec's SearchBindDN and SearchPasswd fields
+        /// <br/> 
+        /// <br/> 	The -d flag deletes a group.
+        /// <br/> 
+        /// <br/> 	The -o flag writes the group specification to standard output. The
+        /// <br/> 	user's editor is not invoked.
+        /// <br/> 
+        /// <br/> 	The -i flag reads a group specification from standard input. The
+        /// <br/> 	user's editor is not invoked.  The new group specification replaces
+        /// <br/> 	the previous one.
+        /// <br/> 
+        /// <br/> 	The -a flag enables a user without 'super' access to modify the group
+        /// <br/> 	if that user is an 'owner' of that group. Group owners	are specified
+        /// <br/> 	in the 'Owners' field of the group spec.
+        /// <br/> 
+        /// <br/> 	The -A flag enables a user with 'admin' access to add a new group.
+        /// <br/> 	Existing groups may not be modified when this flag is used.
+        /// <br/> 
+        /// <br/> 	All commands that require access granted by 'p4 protect' consider a
+        /// <br/> 	user's groups when calculating access levels.
+        /// <br/> 
+        /// <br/> 	'p4 group' requires 'super' access granted by 'p4 protect' unless
+        /// <br/> 	invoked with the '-a' or '-A' flag by a qualified user.
+        /// <br/> 
+        /// <br/> 
+        /// </remarks>
         /// <example>               
         ///     To create the group 'Mygroup' with the owner 'Bob' and a user 'Ted' 
         ///     when connected as super user:
@@ -149,42 +149,42 @@ namespace Perforce.P4
         ///     </code>
         /// </example>
         /// <seealso cref="GroupCmdFlags"/> 
-		public Group CreateGroup(Group group, Options options)
-		{
-			if (group == null)
-			{
-				throw new ArgumentNullException("group");
-			}
+        public Group CreateGroup(Group group, Options options)
+        {
+            if (group == null)
+            {
+                throw new ArgumentNullException("group");
+            }
 
             using (P4Command cmd = new P4Command(this, "group", true))
             {
-			cmd.DataSet = group.ToString();
+                cmd.DataSet = group.ToString(this.Connection.ApiLevel);
 
-			if (options == null)
-			{
-				options = new Options();
-			}
+                if (options == null)
+                {
+                    options = new Options();
+                }
 
-			options["-i"] = null;
+                options["-i"] = null;
 
-			P4CommandResult results = cmd.Run(options);
-			if (results.Success)
-			{
-				return group;
-			}
-			else
-			{
-				P4Exception.Throw(results.ErrorList);
-			}
+                P4CommandResult results = cmd.Run(options);
+                if (results.Success)
+                {
+                    return group;
+                }
+                else
+                {
+                    P4Exception.Throw(results.ErrorList);
+                }
 
-			return null;
-		}
+                return null;
+            }
         }
-		/// <summary>
-		/// Create a new group in the repository.
-		/// </summary>
-		/// <param name="group">Group specification for the new group</param>
-		/// <returns>The Group object if new group was created, null if creation failed</returns>
+        /// <summary>
+        /// Create a new group in the repository.
+        /// </summary>
+        /// <param name="group">Group specification for the new group</param>
+        /// <returns>The Group object if new group was created, null if creation failed</returns>
         /// <example>               
         ///     To create the group 'Mygroup' with the owner 'Bob' and a users 'Ted' and 'Alex':
         ///     <code>
@@ -198,15 +198,15 @@ namespace Perforce.P4
         ///         
         ///     </code>
         /// </example>
-		public Group CreateGroup(Group group)
-		{
-			return CreateGroup(group, null);
-		}
-		/// <summary>
-		/// Update the record for a group in the repository
-		/// </summary>
-		/// <param name="group">Group specification for the group being updated</param>
-		/// <returns>The Group object if new group was saved, null if creation failed</returns>
+        public Group CreateGroup(Group group)
+        {
+            return CreateGroup(group, null);
+        }
+        /// <summary>
+        /// Update the record for a group in the repository
+        /// </summary>
+        /// <param name="group">Group specification for the group being updated</param>
+        /// <returns>The Group object if new group was saved, null if creation failed</returns>
         /// <example>               
         ///     To add the user 'Carol' to the group 'Mygroup':
         ///     <code>
@@ -218,10 +218,10 @@ namespace Perforce.P4
         ///         
         ///     </code>
         /// </example>
-		public Group UpdateGroup(Group group)
-		{
-			return CreateGroup(group, null);
-		}
+        public Group UpdateGroup(Group group)
+        {
+            return CreateGroup(group, null);
+        }
         /// <summary>
         /// Update the record for a group in the repository
         /// </summary>
@@ -243,13 +243,13 @@ namespace Perforce.P4
         {
             return CreateGroup(group, options);
         }
-		/// <summary>
-		/// Get the record for an existing group from the repository.
-		/// </summary>
-		/// <param name="group">Group name</param>
-		/// <param name="options">The Owner Access flag (-a) needs to be used if a user 
+        /// <summary>
+        /// Get the record for an existing group from the repository.
+        /// </summary>
+        /// <param name="group">Group name</param>
+        /// <param name="options">The Owner Access flag (-a) needs to be used if a user 
         ///  without 'super' access is an 'owner' of that group.</param>
-		/// <returns>The Group object if new group was found, null if creation failed</returns>
+        /// <returns>The Group object if new group was found, null if creation failed</returns>
         /// <example>
         ///		To get the group 'everyone' when connected as a user with super access:
         ///		<code> 		
@@ -269,42 +269,42 @@ namespace Perforce.P4
         ///		</code>
         /// </example>
         /// <seealso cref="GroupCmdFlags"/> 
-		public Group GetGroup(string group, Options options)
-		{
-			if (group == null)
-			{
-				throw new ArgumentNullException("group");
-			}
+        public Group GetGroup(string group, Options options)
+        {
+            if (group == null)
+            {
+                throw new ArgumentNullException("group");
+            }
 
             using (P4Command cmd = new P4Command(this, "group", true, group))
             {
-			if (options == null)
-			{
-				options = new Options();
-			}
+                if (options == null)
+                {
+                    options = new Options();
+                }
 
-			options["-o"] = null;
+                options["-o"] = null;
 
-			P4CommandResult results = cmd.Run(options);
-			if (results.Success)
-			{
-				if ((results.TaggedOutput == null) || (results.TaggedOutput.Count <= 0))
-				{
-					return null;
-				}
+                P4CommandResult results = cmd.Run(options);
+                if (results.Success)
+                {
+                    if ((results.TaggedOutput == null) || (results.TaggedOutput.Count <= 0))
+                    {
+                        return null;
+                    }
 
-				Group value = new Group();
-				value.FromGroupCmdTaggedOutput((results.TaggedOutput[0]));
+                    Group value = new Group();
+                    value.FromGroupCmdTaggedOutput((results.TaggedOutput[0]));
 
-				return value;
-			}
-			else
-			{
-				P4Exception.Throw(results.ErrorList);
-			}
+                    return value;
+                }
+                else
+                {
+                    P4Exception.Throw(results.ErrorList);
+                }
 
-			return null;
-		}
+                return null;
+            }
         }
         /// <summary>
         /// Get the record for an existing group from the repository.
@@ -321,9 +321,9 @@ namespace Perforce.P4
         ///		</code>
         /// </example>
 		public Group GetGroup(string group)
-		{
-			return GetGroup(group, null);
-		}
+        {
+            return GetGroup(group, null);
+        }
         /// <summary>
         /// Get a list of groups from the repository
         /// </summary>
@@ -391,131 +391,131 @@ namespace Perforce.P4
         /// </example>
         /// <seealso cref="GroupsCmdFlags"/> 
         public IList<Group> GetGroups(Options options, params string[] groups)
-		{
+        {
             using (P4Command cmd = (groups?.Length ?? 0) > 0
                 ? new P4Command(this, "groups", true, groups)
                 : new P4Command(this, "groups", true))
-			{
-			P4CommandResult results = cmd.Run(options);
-			if (results.Success)
-			{
-				if ((results.TaggedOutput == null) || (results.TaggedOutput.Count <= 0))
-				{
-					return null;
-				}
+            {
+                P4CommandResult results = cmd.Run(options);
+                if (results.Success)
+                {
+                    if ((results.TaggedOutput == null) || (results.TaggedOutput.Count <= 0))
+                    {
+                        return null;
+                    }
 
-				List<Group> value = new List<Group>();
-				Dictionary<string, Group> map = new Dictionary<string, Group>();
-				foreach (TaggedObject obj in results.TaggedOutput)
-				{
-					string groupName = obj["group"];
-					Group group = null;
-					if (map.ContainsKey(groupName))
-					{
-						group = map[groupName];
-					}
-					else
-					{
-						group = new Group(groupName);
+                    List<Group> value = new List<Group>();
+                    Dictionary<string, Group> map = new Dictionary<string, Group>();
+                    foreach (TaggedObject obj in results.TaggedOutput)
+                    {
+                        string groupName = obj["group"];
+                        Group group = null;
+                        if (map.ContainsKey(groupName))
+                        {
+                            group = map[groupName];
+                        }
+                        else
+                        {
+                            group = new Group(groupName);
 
-						int v = -1;
-						if (obj.ContainsKey("maxResults"))
-						{
-							int.TryParse(obj["maxResults"], out v);
-						}
+                            int v = -1;
+                            if (obj.ContainsKey("maxResults"))
+                            {
+                                int.TryParse(obj["maxResults"], out v);
+                            }
 
-						group.MaxResults = v;
+                            group.MaxResults = v;
 
-						v = -1;
-						if (obj.ContainsKey("maxScanRows"))
-						{
-							int.TryParse(obj["maxScanRows"], out v);
-						}
+                            v = -1;
+                            if (obj.ContainsKey("maxScanRows"))
+                            {
+                                int.TryParse(obj["maxScanRows"], out v);
+                            }
 
-						group.MaxScanRows = v;
+                            group.MaxScanRows = v;
 
-						v = -1;
-						if (obj.ContainsKey("maxLockTime"))
-						{
-							int.TryParse(obj["maxLockTime"], out v);
-						}
+                            v = -1;
+                            if (obj.ContainsKey("maxLockTime"))
+                            {
+                                int.TryParse(obj["maxLockTime"], out v);
+                            }
 
-						group.MaxLockTime = v;
+                            group.MaxLockTime = v;
 
-						v = -1;
-						if (obj.ContainsKey("timeout"))
-						{
-							int.TryParse(obj["timeout"], out v);
-						}
+                            v = -1;
+                            if (obj.ContainsKey("timeout"))
+                            {
+                                int.TryParse(obj["timeout"], out v);
+                            }
 
-						group.TimeOut = v;
+                            group.TimeOut = v;
 
-						v = -1;
-						if (obj.ContainsKey("passTimeout"))
-						{
-							int.TryParse(obj["passTimeout"], out v);
-						}
+                            v = -1;
+                            if (obj.ContainsKey("passTimeout"))
+                            {
+                                int.TryParse(obj["passTimeout"], out v);
+                            }
 
-						group.MaxResults = v;
+                            group.MaxResults = v;
 
-						map[groupName] = group;
-						value.Add(group);
-					}
+                            map[groupName] = group;
+                            value.Add(group);
+                        }
 
-					string user = null;
-					if (obj.ContainsKey("user"))
-					{
-						user = obj["user"];
-					}
-					else
-					{
-						// no user name, can't continue
-					}
+                        string user = null;
+                        if (obj.ContainsKey("user"))
+                        {
+                            user = obj["user"];
+                        }
+                        else
+                        {
+                            // no user name, can't continue
+                        }
 
-					if ((obj.ContainsKey("isUser")) && (obj["isUser"] == "1"))
-					{
-						if (group.UserNames == null)
-						{
-							group.UserNames = new List<string>();
-						}
+                        if ((obj.ContainsKey("isUser")) && (obj["isUser"] == "1"))
+                        {
+                            if (group.UserNames == null)
+                            {
+                                group.UserNames = new List<string>();
+                            }
 
-						group.UserNames.Add(user);
-					}
+                            group.UserNames.Add(user);
+                        }
 
-					if ((obj.ContainsKey("isOwner")) && (obj["isOwner"] == "1"))
-					{
-						if (group.OwnerNames == null)
-						{
-							group.OwnerNames = new List<string>();
-						}
+                        if ((obj.ContainsKey("isOwner")) && (obj["isOwner"] == "1"))
+                        {
+                            if (group.OwnerNames == null)
+                            {
+                                group.OwnerNames = new List<string>();
+                            }
 
-						group.OwnerNames.Add(user);
-					}
+                            group.OwnerNames.Add(user);
+                        }
 
-					if ((obj.ContainsKey("isSubGroup")) && (obj["isSubGroup"] == "1"))
-					{
-						if (group.SubGroups == null)
-						{
-							group.SubGroups = new List<string>();
-						}
+                        if ((obj.ContainsKey("isSubGroup")) && (obj["isSubGroup"] == "1"))
+                        {
+                            if (group.SubGroups == null)
+                            {
+                                group.SubGroups = new List<string>();
+                            }
 
-						group.SubGroups.Add(user);
-					}
-				}
+                            group.SubGroups.Add(user);
+                        }
+                    }
 
-				return value;
-			}
-               
-				P4Exception.Throw(results.ErrorList);
+                    return value;
+                }
+
+                P4Exception.Throw(results.ErrorList);
 
                 return null;
-			}
-		}
+            }
+        }
 
-		/// <summary>
-		/// Delete a group from the repository
-		/// </summary>
-		/// <param name="group">The group to be deleted</param>
+        /// <summary>
+        /// Delete a group from the repository
+        /// </summary>
+        /// <param name="group">The group to be deleted</param>
         /// <param name="options">The -a flag is needed to delete
         ///  a group when the user is an owner but not a superuser</param>
         /// <example>
@@ -539,29 +539,29 @@ namespace Perforce.P4
         ///		</code>
         /// </example>
         /// <seealso cref="GroupCmdFlags"/> 
-		public void DeleteGroup(Group group, Options options)
-		{
-			if (group == null)
-			{
-				throw new ArgumentNullException("group");
-			}
+        public void DeleteGroup(Group group, Options options)
+        {
+            if (group == null)
+            {
+                throw new ArgumentNullException("group");
+            }
 
             using (P4Command cmd = new P4Command(this, "group", true, group.Id))
             {
 
-			if (options == null)
-			{
-				options = new Options();
-			}
+                if (options == null)
+                {
+                    options = new Options();
+                }
 
-			options["-d"] = null;
+                options["-d"] = null;
 
-			P4CommandResult results = cmd.Run(options);
-			if (results.Success == false)
-			{
-				P4Exception.Throw(results.ErrorList);
-			}
-		}
-	}
-}
+                P4CommandResult results = cmd.Run(options);
+                if (results.Success == false)
+                {
+                    P4Exception.Throw(results.ErrorList);
+                }
+            }
+        }
+    }
 }

@@ -551,34 +551,46 @@ namespace Perforce.P4
         /// Format of a user specification used to save a user to the server
         /// </summary>
         private static String GroupSpecFormat =
-                                                    $"Group:\t{{0}}{Environment.NewLine}" +
-                                                    $"{Environment.NewLine}" +
-                                                    $"Description:\t{{1}}{Environment.NewLine}" +
-                                                    $"{Environment.NewLine}" +
-                                                    $"MaxResults:\t{{2}}{Environment.NewLine}" +
-                                                    $"{Environment.NewLine}" +
-                                                    $"MaxScanRows:\t{{3}}{Environment.NewLine}" +
-                                                    $"{Environment.NewLine}" +
-                                                    $"MaxLockTime:\t{{4}}{Environment.NewLine}" +
-                                                    $"{Environment.NewLine}" +
-                                                    $"MaxOpenFiles:\t{{5}}{Environment.NewLine}" +
-                                                    $"{Environment.NewLine}" +
-                                                    $"MaxMemory:\t{{6}}{Environment.NewLine}" +
-                                                    $"{Environment.NewLine}" +
-                                                    $"Timeout:\t{{7}}{Environment.NewLine}" +
-                                                    $"{Environment.NewLine}" +
-                                                    $"{{8}}" +
-                                                    $"Subgroups:{Environment.NewLine}{{9}}" +
-                                                    $"{Environment.NewLine}" +
-                                                    $"Owners:{Environment.NewLine}{{10}}" +
-                                                    $"{Environment.NewLine}" +
-                                                    $"Users:{Environment.NewLine}{{11}}";
+            $"Group:\t{{0}}{Environment.NewLine}" +
+            $"{Environment.NewLine}" +
+            $"MaxResults:\t{{1}}{Environment.NewLine}" +
+            $"{Environment.NewLine}" +
+            $"MaxScanRows:\t{{2}}{Environment.NewLine}" +
+            $"{Environment.NewLine}" +
+            $"MaxLockTime:\t{{3}}{Environment.NewLine}" +
+            $"{Environment.NewLine}" +
+            $"MaxOpenFiles:\t{{4}}{Environment.NewLine}" +
+            $"{Environment.NewLine}" +
+            $"Timeout:\t{{5}}{Environment.NewLine}" +
+            $"{Environment.NewLine}" +
+            $"{{6}}" +
+            $"Subgroups:{Environment.NewLine}{{7}}" +
+            $"{Environment.NewLine}" +
+            $"Owners:{Environment.NewLine}{{8}}" +
+            $"{Environment.NewLine}" +
+            $"Users:{Environment.NewLine}{{9}}";
+
+        private static String GroupSpecFormat55 =
+            $"{Environment.NewLine}" +
+            $"Description:\t{{10}}{Environment.NewLine}" +
+            $"{Environment.NewLine}" +
+            $"MaxMemory:\t{{11}}{Environment.NewLine}";
 
         /// <summary>
         /// Convert to specification in server format
         /// </summary>
         /// <returns>The specification for the group</returns>
         override public String ToString()
+        {
+            return this.ToString(0);
+        }
+
+        /// <summary>
+        /// Convert to specification in server format
+        /// </summary>
+        /// <param name="apiLevel">Server protocol</param>
+        /// <returns>The specification for the group</returns>
+        public String ToString(int apiLevel)
         {
             String subgroupsView = String.Empty;
             if (SubGroups != null)
@@ -604,16 +616,25 @@ namespace Perforce.P4
                     usersView += $"\t{UserNames[idx]}{Environment.NewLine}";
                 }
             }
-            String value = String.Format(GroupSpecFormat, Id,
-                Description,
+
+            // Server protocol for release 2022.2 is 55
+            var groupSpecFormat = apiLevel >= 55 || apiLevel == 0 ?
+                GroupSpecFormat + GroupSpecFormat55 :
+                GroupSpecFormat;
+
+            String value = String.Format(groupSpecFormat,
+                Id,
                 (MaxResults > 0) ? MaxResults.ToString() : string.Empty,
                 (MaxScanRows > 0) ? MaxScanRows.ToString() : string.Empty,
                 (MaxLockTime > 0) ? MaxLockTime.ToString() : string.Empty,
                 (MaxOpenFiles > 0) ? MaxOpenFiles.ToString() : string.Empty,
-                (MaxMemory > 0) ? MaxMemory.ToString() : string.Empty,
                 (TimeOut > 0) ? TimeOut.ToString() : string.Empty,
                 (PasswordTimeout > 0) ? "PasswordTimeout:\t" + PasswordTimeout.ToString() + $"{Environment.NewLine}" + $"{Environment.NewLine}" : string.Empty,
-                subgroupsView, ownersView, usersView);
+                subgroupsView,
+                ownersView,
+                usersView,
+                Description,
+                (MaxMemory > 0) ? MaxMemory.ToString() : string.Empty);
 
             return value;
         }

@@ -1427,6 +1427,17 @@ namespace Perforce.P4
         public event CommandEchoDelegate CommandEcho;
 
         /// <summary>
+        /// Delegate used to commands along with response time as they are executed.
+        /// </summary>
+        /// <param name="data">Command line along with response time executed by the command</param>
+        public delegate void ResponseTimeEchoDelegate(String data);
+
+        /// <summary>
+        /// Broadcast event for text results
+        /// </summary>
+        public event ResponseTimeEchoDelegate ResponseTimeEcho;
+
+        /// <summary>
         /// Broadcast a the command line (cmd and args) on the CommandEcho event
         /// </summary>
         /// <remarks>
@@ -1450,6 +1461,35 @@ namespace Perforce.P4
                     }
                 }
                 CommandEcho(commandLine);
+            }
+        }
+
+        /// <summary>
+        /// Broadcast a the command line (cmd, args and response time) on the ResponseTimeEcho event
+        /// </summary>
+        /// <remarks>
+        /// Used to echo an executed command line with response time back to the client
+        /// </remarks>
+        /// <param name="cmd">The P4 command.</param>
+        /// <param name="args">The flags and parameters for the command.</param>
+        /// <param name="responseTime">Response time taken to fetch the results.</param>
+        public void EchoResponseTime(string cmd, StringList args, TimeSpan responseTime)
+        {
+            if (ResponseTimeEcho != null)
+            {
+                string commandLine = cmd;
+                if (args != null)
+                {
+                    for (int idx = 0; idx < args.Count; idx++)
+                    {
+                        if (args[idx] != null)
+                        {
+                            commandLine += " " + args[idx];
+                        }
+                    }
+                }
+
+                ResponseTimeEcho(string.Format("Time taken to fetch result of '{0}': {1} ", commandLine, responseTime));
             }
         }
 

@@ -23,7 +23,7 @@ namespace p4api.net.unit.test
         private static Logger logger = LogManager.GetCurrentClassLogger();
         private UnitTestConfiguration configuration;
         private string TestDir = "";
-       
+
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
@@ -86,7 +86,7 @@ namespace p4api.net.unit.test
                 var cptype = (Utilities.CheckpointType)i;
                 Process p4d = null;
                 Repository rep = null;
-                
+
                 try
                 {
                     p4d = Utilities.DeployP4TestServer(TestDir, 2, cptype);
@@ -180,14 +180,14 @@ namespace p4api.net.unit.test
                         options["-c"] = "admin_space2";
                         using (P4Command cmd = new P4Command(con, "unload", true, null))
                         {
-                        try
-                        {
-                            cmd.Run(options);
-                        }
-                        catch
-                        {
+                            try
+                            {
+                                cmd.Run(options);
+                            }
+                            catch
+                            {
 
-                        }
+                            }
                         }
 
                         GetDepotFilesCmdOptions opts =
@@ -263,14 +263,14 @@ namespace p4api.net.unit.test
 
                         using (P4Command cmd = new P4Command(con, "archive", true, "//depot/TheirCode/..."))
                         {
-                        try
-                        {
-                            cmd.Run(options);
-                        }
-                        catch (P4Exception)
-                        {
+                            try
+                            {
+                                cmd.Run(options);
+                            }
+                            catch (P4Exception)
+                            {
 
-                        }
+                            }
                         }
 
                         GetDepotFilesCmdOptions opts =
@@ -336,7 +336,7 @@ namespace p4api.net.unit.test
 
                 Server server = new Server(new ServerAddress(uri));
                 rep = new Repository(server);
-                Utilities.SetClientRoot(rep,  TestDir, cptype, ws_client, false);
+                Utilities.SetClientRoot(rep, TestDir, cptype, ws_client, false);
 
                 using (Connection con = rep.Connection)
                 {
@@ -360,14 +360,14 @@ namespace p4api.net.unit.test
 
                     using (P4Command cmd = new P4Command(con, "archive", true, "//depot/TheirCode/..."))
                     {
-                    try
-                    {
-                        cmd.Run(options);
-                    }
-                    catch (P4Exception)
-                    {
+                        try
+                        {
+                            cmd.Run(options);
+                        }
+                        catch (P4Exception)
+                        {
 
-                    }
+                        }
                     }
 
                     FileSpec fs = new FileSpec(new DepotPath("//depot/TheirCode/Silly.bmp"), null);
@@ -375,7 +375,7 @@ namespace p4api.net.unit.test
                     lfs.Add(fs);
 
                     IList<FileMetaData> fmd = rep.GetFileMetaData(lfs, null);
-                    Assert.AreEqual(FileAction.Archive,fmd[0].HeadAction);
+                    Assert.AreEqual(FileAction.Archive, fmd[0].HeadAction);
                 }
             }
             finally
@@ -623,7 +623,7 @@ namespace p4api.net.unit.test
                 p4d = Utilities.DeployP4TestServer(TestDir, 2, cptype);
                 Assert.IsNotNull(p4d, "Setup Failure");
 
-            Server server = new Server(new ServerAddress(uri));
+                Server server = new Server(new ServerAddress(uri));
                 rep = new Repository(server);
 
                 using (Connection con = rep.Connection)
@@ -684,7 +684,7 @@ namespace p4api.net.unit.test
                 p4d = Utilities.DeployP4TestServer(TestDir, 13, cptype);
                 Assert.IsNotNull(p4d, "Setup Failure");
 
-            Server server = new Server(new ServerAddress(uri));
+                Server server = new Server(new ServerAddress(uri));
                 rep = new Repository(server);
 
                 using (Connection con = rep.Connection)
@@ -754,14 +754,14 @@ namespace p4api.net.unit.test
                 var cptype = (Utilities.CheckpointType)i;
                 Process p4d = null;
                 Repository rep = null;
-                
+
                 try
                 {
-                   p4d = Utilities.DeployP4TestServer(TestDir, 12, cptype);
+                    p4d = Utilities.DeployP4TestServer(TestDir, 12, cptype);
                     Assert.IsNotNull(p4d, "Setup Failure");
 
                     Server server = new Server(new ServerAddress(uri));
-                   rep = new Repository(server);
+                    rep = new Repository(server);
 
                     using (Connection con = rep.Connection)
                     {
@@ -910,7 +910,7 @@ namespace p4api.net.unit.test
 
                     Server server = new Server(new ServerAddress(uri));
                     rep = new Repository(server);
-                    
+
                     Utilities.SetClientRoot(rep, TestDir, cptype, ws_client, false);
 
                     using (Connection con = rep.Connection)
@@ -1195,7 +1195,7 @@ namespace p4api.net.unit.test
             {
                 p4d = Utilities.DeployP4TestServer(TestDir, 6, cptype);
                 Assert.IsNotNull(p4d, "Setup Failure");
-                
+
                 Server server = new Server(new ServerAddress(uri));
                 rep = new Repository(server);
                 Utilities.SetClientRoot(rep, TestDir, cptype, ws_client, false);
@@ -1380,14 +1380,14 @@ namespace p4api.net.unit.test
                         options["-c"] = "admin_space2";
                         using (P4Command cmd = new P4Command(con, "unload", true, null))
                         {
-                        try
-                        {
-                            cmd.Run(options);
-                        }
-                        catch
-                        {
+                            try
+                            {
+                                cmd.Run(options);
+                            }
+                            catch
+                            {
 
-                        }
+                            }
                         }
 
                         GetFileMetaDataCmdOptions opts = new GetFileMetaDataCmdOptions(GetFileMetadataCmdFlags.InUnloadDepot,
@@ -1457,14 +1457,14 @@ namespace p4api.net.unit.test
 
                         using (P4Command cmd = new P4Command(con, "attribute", true, "//depot/MyCode/ReadMe.txt"))
                         {
-                        try
-                        {
-                            cmd.Run(options);
-                        }
-                        catch
-                        {
+                            try
+                            {
+                                cmd.Run(options);
+                            }
+                            catch
+                            {
 
-                        }
+                            }
                         }
 
                         SubmitCmdOptions submitOpts = new SubmitCmdOptions(SubmitFilesCmdFlags.None, 0, null,
@@ -1539,14 +1539,14 @@ namespace p4api.net.unit.test
 
                         using (P4Command cmd = new P4Command(con, "attribute", true, "//depot/MyCode/ReadMe.txt"))
                         {
-                        try
-                        {
-                            cmd.Run(options);
-                        }
-                        catch
-                        {
+                            try
+                            {
+                                cmd.Run(options);
+                            }
+                            catch
+                            {
 
-                        }
+                            }
                         }
 
                         options["-n"] = "anotherone";
@@ -1554,14 +1554,14 @@ namespace p4api.net.unit.test
 
                         using (P4Command cmd1 = new P4Command(con, "attribute", true, "//depot/MyCode/ReadMe.txt"))
                         {
-                        try
-                        {
+                            try
+                            {
                                 cmd1.Run(options);
-                        }
-                        catch
-                        {
+                            }
+                            catch
+                            {
 
-                        }
+                            }
                         }
 
                         SubmitCmdOptions submitOpts = new SubmitCmdOptions(SubmitFilesCmdFlags.None, 0, null,
@@ -1635,14 +1635,14 @@ namespace p4api.net.unit.test
 
                         using (P4Command cmd = new P4Command(con, "attribute", true, "//depot/MyCode/ReadMe.txt"))
                         {
-                        try
-                        {
-                            cmd.Run(options);
-                        }
-                        catch
-                        {
+                            try
+                            {
+                                cmd.Run(options);
+                            }
+                            catch
+                            {
 
-                        }
+                            }
                         }
 
                         SubmitCmdOptions submitOpts = new SubmitCmdOptions(SubmitFilesCmdFlags.None, 0, null,
@@ -1695,7 +1695,7 @@ namespace p4api.net.unit.test
 
                     Server server = new Server(new ServerAddress(uri));
                     rep = new Repository(server);
-                    
+
                     Utilities.SetClientRoot(rep, TestDir, cptype, ws_client, false);
 
                     using (Connection con = rep.Connection)
@@ -1717,14 +1717,14 @@ namespace p4api.net.unit.test
 
                         using (P4Command cmd = new P4Command(con, "attribute", true, "//depot/MyCode/ReadMe.txt"))
                         {
-                        try
-                        {
-                            cmd.Run(options);
-                        }
-                        catch
-                        {
+                            try
+                            {
+                                cmd.Run(options);
+                            }
+                            catch
+                            {
 
-                        }
+                            }
                         }
 
                         options["-n"] = "anotherone";
@@ -1732,14 +1732,14 @@ namespace p4api.net.unit.test
 
                         using (P4Command cmd1 = new P4Command(con, "attribute", true, "//depot/MyCode/ReadMe.txt"))
                         {
-                        try
-                        {
+                            try
+                            {
                                 cmd1.Run(options);
-                        }
-                        catch
-                        {
+                            }
+                            catch
+                            {
 
-                        }
+                            }
                         }
 
                         options["-n"] = "anotheroney";
@@ -1747,14 +1747,14 @@ namespace p4api.net.unit.test
 
                         using (P4Command cmd2 = new P4Command(con, "attribute", true, "//depot/MyCode/ReadMe.txt"))
                         {
-                        try
-                        {
+                            try
+                            {
                                 cmd2.Run(options);
-                        }
-                        catch
-                        {
+                            }
+                            catch
+                            {
 
-                        }
+                            }
                         }
 
                         SubmitCmdOptions submitOpts = new SubmitCmdOptions(SubmitFilesCmdFlags.None, 0, null,
@@ -1790,7 +1790,7 @@ namespace p4api.net.unit.test
         [TestMethod()]
         public void GetFileMetaDataAttributePropagateTest()
         {
-            string uri =configuration.ServerPort;
+            string uri = configuration.ServerPort;
             string user = "admin";
             string pass = string.Empty;
             string ws_client = "admin_space";
@@ -1807,7 +1807,7 @@ namespace p4api.net.unit.test
 
                     Server server = new Server(new ServerAddress(uri));
                     rep = new Repository(server);
-                    
+
                     Utilities.SetClientRoot(rep, TestDir, cptype, ws_client, false);
 
                     using (Connection con = rep.Connection)
@@ -1829,14 +1829,14 @@ namespace p4api.net.unit.test
 
                         using (P4Command cmd = new P4Command(con, "attribute", true, "//depot/MyCode/ReadMe.txt"))
                         {
-                        try
-                        {
-                            cmd.Run(options);
-                        }
-                        catch
-                        {
+                            try
+                            {
+                                cmd.Run(options);
+                            }
+                            catch
+                            {
 
-                        }
+                            }
                         }
 
                         options["-p"] = null;
@@ -1845,14 +1845,14 @@ namespace p4api.net.unit.test
 
                         using (P4Command cmd1 = new P4Command(con, "attribute", true, "//depot/MyCode/ReadMe.txt"))
                         {
-                        try
-                        {
+                            try
+                            {
                                 cmd1.Run(options);
-                        }
-                        catch
-                        {
+                            }
+                            catch
+                            {
 
-                        }
+                            }
                         }
 
                         SubmitCmdOptions submitOpts = new SubmitCmdOptions(SubmitFilesCmdFlags.None, 0, null,
@@ -1932,12 +1932,12 @@ namespace p4api.net.unit.test
 
                 Server server = new Server(new ServerAddress(uri));
                 rep = new Repository(server);
-                
-                Utilities.SetClientRoot(rep,TestDir,cptype,ws_client,false);
-                
+
+                Utilities.SetClientRoot(rep, TestDir, cptype, ws_client, false);
+
                 var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
                 var adminSpace = System.IO.Path.Combine(clientRoot, ws_client);
-                
+
                 using (Connection con = rep.Connection)
                 {
                     con.UserName = user;
@@ -2027,8 +2027,8 @@ namespace p4api.net.unit.test
                 Assert.IsNotNull(p4d, "Setup Failure");
 
                 Server server = new Server(new ServerAddress(uri));
-               rep = new Repository(server);
-               Utilities.SetClientRoot(rep, TestDir, cptype, ws_client, false);
+                rep = new Repository(server);
+                Utilities.SetClientRoot(rep, TestDir, cptype, ws_client, false);
 
                 using (Connection con = rep.Connection)
                 {
@@ -2039,7 +2039,7 @@ namespace p4api.net.unit.test
                     bool connected = con.Connect(null);
                     Assert.IsTrue(connected);
                     Assert.AreEqual(con.Status, ConnectionStatus.Connected);
-                
+
 
                     FileSpec fs = new FileSpec(new DepotPath("//depot/MyCode/ReadMe.txt"), null);
 
@@ -2946,7 +2946,298 @@ namespace p4api.net.unit.test
                 rep?.Dispose();
             }
         }
-        
+
+        /// <summary>
+        /// A test for GetProtectionTableWithCommentTest,
+        /// where comments are present in Protection table
+        /// </summary>
+        [TestMethod()]
+        public void GetProtectionTableWithCommentTest()
+        {
+            string uri = configuration.ServerPort;
+            string user = "admin";
+            string pass = string.Empty;
+            string ws_client = "admin_space";
+
+            for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
+            {
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
+                try
+                {
+                    p4d = Utilities.DeployP4TestServer(TestDir, 4, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
+
+                    using (Connection con = rep.Connection)
+                    {
+                        con.UserName = user;
+                        con.Client = new Client();
+                        con.Client.Name = ws_client;
+
+                        bool connected = con.Connect(null);
+                        Assert.IsTrue(connected);
+                        Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+
+                        // Modify protection table to include comments
+                        using (P4Command cmd = new P4Command(con, "protect", true, "-i"))
+                        {
+                            cmd.DataSet =
+@"Protections:
+        ## Comment 0
+        write user * * //...
+        super user admin * //... ## Comment inline 1
+        list group everyone * //Modifiers/...
+        ## Comment 2
+        admin user Alex * //MyCode2/ReadMe.txt
+        ## Comment 3";
+
+                            P4CommandResult results = cmd.Run();
+                        }
+
+                        // Assert actual entries with comments
+                        using (P4Command cmd = new P4Command(con, "protect", true, "-o"))
+                        {
+                            P4CommandResult results = cmd.Run();
+                            Assert.IsNotNull(results.TaggedOutput);
+                            Assert.AreEqual(14, results.TaggedOutput[0].Count);
+                        }
+
+                        // Assert comments and blank lines are filtered,
+                        // and only valid entries are returned.
+                        IList<ProtectionEntry> target = rep.GetProtectionTable();
+                        Assert.IsNotNull(target);
+                        Assert.AreEqual(4, target.Count);
+
+                        // Assert one of the entry as sanity check
+                        bool foundit = false;
+                        foreach (ProtectionEntry pte in target)
+                        {
+                            if (pte.Mode == ProtectionMode.Admin
+                                &&
+                                pte.Type == EntryType.User
+                                &&
+                                pte.Name == "Alex"
+                                &&
+                                pte.Host == "*"
+                                &&
+                                pte.Path == "//MyCode2/ReadMe.txt")
+                            {
+                                foundit = true;
+                                break;
+                            }
+
+                        }
+                        Assert.IsTrue(foundit);
+
+                    }
+                }
+                finally
+                {
+                    Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
+                }
+            }
+        }
+
+        /// <summary>
+        /// A test for GetProtectionTable With Specific Rights present
+        /// </summary>
+        [TestMethod()]
+        public void GetProtectionTableWithSpecificRightsTest()
+        {
+            string uri = configuration.ServerPort;
+            string user = "admin";
+            string pass = string.Empty;
+            string ws_client = "admin_space";
+
+            for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
+            {
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
+                try
+                {
+                    p4d = Utilities.DeployP4TestServer(TestDir, 4, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
+
+                    using (Connection con = rep.Connection)
+                    {
+                        con.UserName = user;
+                        con.Client = new Client();
+                        con.Client.Name = ws_client;
+
+                        bool connected = con.Connect(null);
+                        Assert.IsTrue(connected);
+                        Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+
+                        // Modify protection table to include comments
+                        using (P4Command cmd = new P4Command(con, "protect", true, "-i"))
+                        {
+                            cmd.DataSet =
+@"Protections:
+        write user * * //...
+        super user admin * //...
+        =open user useropen * //.../open
+        =read user userread * //.../read
+        =branch user userbranch * //.../branch
+        =write user userwrite * //.../write";
+
+                            P4CommandResult results = cmd.Run();
+                        }
+
+                        var protectionEntries = rep.GetProtectionTable();
+                        Assert.IsNotNull(protectionEntries);
+                        Assert.AreEqual(6, protectionEntries.Count);
+
+                        // Assert all entries are found
+                        var specificRightFoundCount = 0;
+                        foreach (var protectionEntry in protectionEntries)
+                        {
+                            // Using username to validate protection mode associated
+                            // As for the sake of unit test a particular user is assigned for each mode
+                            switch(protectionEntry.Name)
+                            {
+                                case "useropen":
+                                    Assert.AreEqual(ProtectionMode.OpenRights , protectionEntry.Mode);
+                                    specificRightFoundCount++;
+                                    break;
+                                case "userread":
+                                    Assert.AreEqual(ProtectionMode.ReadRights, protectionEntry.Mode);
+                                    specificRightFoundCount++;
+                                    break;
+                                case "userbranch":
+                                    Assert.AreEqual(ProtectionMode.BranchRights, protectionEntry.Mode);
+                                    specificRightFoundCount++;
+                                    break;
+                                case "userwrite":
+                                    Assert.AreEqual(ProtectionMode.WriteRights, protectionEntry.Mode);
+                                    specificRightFoundCount++;
+                                    break;
+                            }
+                        }
+
+                        Assert.AreEqual(4, specificRightFoundCount);
+                    }
+                }
+                finally
+                {
+                    Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
+                }
+            }
+        }
+
+        /// <summary>
+        /// A test for GetProtectionTable With Stream Rights present
+        /// </summary>
+        [TestMethod()]
+        public void GetProtectionTableWithStreamRightsTest()
+        {
+            string uri = configuration.ServerPort;
+            string user = "admin";
+            string pass = string.Empty;
+            string ws_client = "admin_space";
+
+            for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
+            {
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
+                try
+                {
+                    p4d = Utilities.DeployP4TestServer(TestDir, 4, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
+
+                    using (Connection con = rep.Connection)
+                    {
+                        con.UserName = user;
+                        con.Client = new Client();
+                        con.Client.Name = ws_client;
+
+                        bool connected = con.Connect(null);
+                        Assert.IsTrue(connected);
+                        Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+
+                        // Modify protection table to include comments
+                        using (P4Command cmd = new P4Command(con, "protect", true, "-i"))
+                        {
+                            cmd.DataSet =
+@"Protections:
+        write user * * //...
+        super user admin * //...
+        readstreamspec user userreadstreamspec * //.../readstreamspec
+        openstreamspec user useropenstreamspec * //.../openstreamspec
+        writestreamspec user userwritestreamspec * //.../writestreamspec
+        =readstreamspec user userreadstreamspecrights * //.../readstreamspecrights
+        =openstreamspec user useropenstreamspecrights * //.../openstreamspecrights
+        =writestreamspec user userwritestreamspecrights * //.../writestreamspecrights";
+
+                            P4CommandResult results = cmd.Run();
+                        }
+
+                        var protectionEntries = rep.GetProtectionTable();
+                        Assert.IsNotNull(protectionEntries);
+                        Assert.AreEqual(8, protectionEntries.Count);
+
+                        // Assert all entries are found
+                        var specificRightFoundCount = 0;
+                        foreach (var protectionEntry in protectionEntries)
+                        {
+                            // Using username to validate protection mode associated
+                            // As for the sake of unit test a particular user is assigned for each mode
+                            switch (protectionEntry.Name)
+                            {
+                                case "userreadstreamspec":
+                                    Assert.AreEqual(ProtectionMode.ReadStreamSpec, protectionEntry.Mode);
+                                    specificRightFoundCount++;
+                                    break;
+                                case "useropenstreamspec":
+                                    Assert.AreEqual(ProtectionMode.OpenStreamSpec, protectionEntry.Mode);
+                                    specificRightFoundCount++;
+                                    break;
+                                case "userwritestreamspec":
+                                    Assert.AreEqual(ProtectionMode.WriteStreamSpec, protectionEntry.Mode);
+                                    specificRightFoundCount++;
+                                    break;
+                                case "userreadstreamspecrights":
+                                    Assert.AreEqual(ProtectionMode.ReadStreamSpecRights, protectionEntry.Mode);
+                                    specificRightFoundCount++;
+                                    break;
+                                case "useropenstreamspecrights":
+                                    Assert.AreEqual(ProtectionMode.OpenStreamSpecRights, protectionEntry.Mode);
+                                    specificRightFoundCount++;
+                                    break;
+                                case "userwritestreamspecrights":
+                                    Assert.AreEqual(ProtectionMode.WriteStreamSpecRights, protectionEntry.Mode);
+                                    specificRightFoundCount++;
+                                    break;
+                            }
+                        }
+
+                        Assert.AreEqual(6, specificRightFoundCount);
+                    }
+                }
+                finally
+                {
+                    Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
+                }
+            }
+        }
+
         /// <summary>
         ///A test for GetTriggerTable
         ///</summary>
@@ -3445,7 +3736,7 @@ namespace p4api.net.unit.test
 
             Process p4d = null;
             Repository rep = null;
-            
+
             try
             {
                 p4d = Utilities.DeployP4TestServer(TestDir, 4, cptype, TestContext.TestName);
@@ -3455,7 +3746,7 @@ namespace p4api.net.unit.test
                 rep = new Repository(server);
 
                 string clientDir = Utilities.TestClientRoot(TestDir, cptype);
-                Utilities.SetClientRoot(rep, TestDir, cptype, ws_client,false);
+                Utilities.SetClientRoot(rep, TestDir, cptype, ws_client, false);
 
                 using (Connection con = rep.Connection)
                 {
@@ -4516,14 +4807,14 @@ namespace p4api.net.unit.test
                             string expected = Utilities.FixLineFeeds(
                                 "a7 4\nA change... on Fri Jun 24 16:22:05 PDT 2011\n\nA change... on Fri Jun 24 16:22:07 PDT 2011\n\n");
                             string actual = Utilities.FixLineFeeds(target[0].Diff);
-                            Assert.AreEqual(expected, actual,"on non unicode server");
+                            Assert.AreEqual(expected, actual, "on non unicode server");
                         }
                         else
                         {
                             string expected = Utilities.FixLineFeeds(
                                 "a7 4\nA change... on Mon Jun 27 15:02:42 PDT 2011\n\nA change... on Mon Jun 27 15:02:42 PDT 2011\n\n");
                             string actual = Utilities.FixLineFeeds(target[0].Diff);
-                            Assert.AreEqual(expected, actual,"on unicode server");
+                            Assert.AreEqual(expected, actual, "on unicode server");
                         }
                     }
                 }
@@ -4580,7 +4871,7 @@ namespace p4api.net.unit.test
                             string expected = Utilities.FixLineFeeds(
                                 "***************\n*** 1,7 ****\n--- 1,11 ----\n  that\n  that\n  thatA Change on Mon May 16 16:01:35 PDT 2011\n  \n  A Change on Tue May 24 14:04:57 PDT 2011-changes to a-\n  A Change on Tue May 24 14:06:00 PDT 2011-changes to a, again-\n  A Change on Tue May 24 14:28:53 PDT 2011-changes to a alone (again)-\n+ A change... on Fri Jun 24 16:22:05 PDT 2011\n+ \n+ A change... on Fri Jun 24 16:22:07 PDT 2011\n+ \n");
                             string actual = Utilities.FixLineFeeds(target[0].Diff);
-                            Assert.AreEqual(expected, actual,"on non unicode server");
+                            Assert.AreEqual(expected, actual, "on non unicode server");
                         }
                         else
                         {
@@ -4697,14 +4988,14 @@ namespace p4api.net.unit.test
                             string expected = Utilities.FixLineFeeds(
                                 "@@ -1,7 +1,11 @@\n that\n that\n thatA Change on Mon May 16 16:01:35 PDT 2011\n \n A Change on Tue May 24 14:04:57 PDT 2011-changes to a-\n A Change on Tue May 24 14:06:00 PDT 2011-changes to a, again-\n A Change on Tue May 24 14:28:53 PDT 2011-changes to a alone (again)-\n+A change... on Fri Jun 24 16:22:05 PDT 2011\n+\n+A change... on Fri Jun 24 16:22:07 PDT 2011\n+\n");
                             string actual = Utilities.FixLineFeeds(target[0].Diff);
-                            Assert.AreEqual(expected, actual,"on non unicode server");
+                            Assert.AreEqual(expected, actual, "on non unicode server");
                         }
                         else
                         {
                             string expected = Utilities.FixLineFeeds(
                                 "@@ -1,7 +1,11 @@\n that\n that\n thatA Change on Mon May 16 16:01:35 PDT 2011\n \n A Change on Tue May 24 14:04:57 PDT 2011-changes to a-\n A Change on Tue May 24 14:06:00 PDT 2011-changes to a, again-\n A Change on Tue May 24 14:28:53 PDT 2011-changes to a alone (again)-\n+A change... on Mon Jun 27 15:02:42 PDT 2011\n+\n+A change... on Mon Jun 27 15:02:42 PDT 2011\n+\n");
                             string actual = Utilities.FixLineFeeds(target[0].Diff);
-                            Assert.AreEqual(expected, actual,"on a unicode server");
+                            Assert.AreEqual(expected, actual, "on a unicode server");
                         }
                     }
                 }
@@ -4762,14 +5053,14 @@ namespace p4api.net.unit.test
                             string expected = Utilities.FixLineFeeds(
                                 "7a8,11\n> A change... on Fri Jun 24 16:22:05 PDT 2011\n> \n> A change... on Fri Jun 24 16:22:07 PDT 2011\n> \n");
                             string actual = Utilities.FixLineFeeds(target[0].Diff);
-                            Assert.AreEqual(expected, actual,"on non unicode server");
+                            Assert.AreEqual(expected, actual, "on non unicode server");
                         }
                         else
                         {
                             string expected = Utilities.FixLineFeeds(
                                 "7a8,11\n> A change... on Mon Jun 27 15:02:42 PDT 2011\n> \n> A change... on Mon Jun 27 15:02:42 PDT 2011\n> \n");
                             string actual = Utilities.FixLineFeeds(target[0].Diff);
-                            Assert.AreEqual(expected, actual,"on non unicode server");
+                            Assert.AreEqual(expected, actual, "on non unicode server");
                         }
                     }
                 }
@@ -4827,14 +5118,14 @@ namespace p4api.net.unit.test
                             string expected = Utilities.FixLineFeeds(
                                 "7a8,11\n> A change... on Fri Jun 24 16:22:05 PDT 2011\n> \n> A change... on Fri Jun 24 16:22:07 PDT 2011\n> \n");
                             string actual = Utilities.FixLineFeeds(target[0].Diff);
-                            Assert.AreEqual(expected, actual,"on non unicode server");
+                            Assert.AreEqual(expected, actual, "on non unicode server");
                         }
                         else
                         {
                             string expected = Utilities.FixLineFeeds(
                                 "7a8,11\n> A change... on Mon Jun 27 15:02:42 PDT 2011\n> \n> A change... on Mon Jun 27 15:02:42 PDT 2011\n> \n");
                             string actual = Utilities.FixLineFeeds(target[0].Diff);
-                            Assert.AreEqual(expected, actual,"on unicode server");
+                            Assert.AreEqual(expected, actual, "on unicode server");
                         }
                     }
                 }
@@ -4863,7 +5154,7 @@ namespace p4api.net.unit.test
                 var cptype = (Utilities.CheckpointType)i;
                 Process p4d = null;
                 Repository rep = null;
-                
+
                 try
                 {
                     p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype, TestContext.TestName);
@@ -4892,14 +5183,14 @@ namespace p4api.net.unit.test
                             string expected = Utilities.FixLineFeeds(
                                 "7a8,11\n> A change... on Fri Jun 24 16:22:05 PDT 2011\n> \n> A change... on Fri Jun 24 16:22:07 PDT 2011\n> \n");
                             string actual = Utilities.FixLineFeeds(target[0].Diff);
-                            Assert.AreEqual(expected,actual,"non unicode server");
+                            Assert.AreEqual(expected, actual, "non unicode server");
                         }
                         else
                         {
                             string expected = Utilities.FixLineFeeds(
                                 "7a8,11\n> A change... on Mon Jun 27 15:02:42 PDT 2011\n> \n> A change... on Mon Jun 27 15:02:42 PDT 2011\n> \n");
                             string actual = Utilities.FixLineFeeds(target[0].Diff);
-                            Assert.AreEqual(expected,actual,"unicode server");
+                            Assert.AreEqual(expected, actual, "unicode server");
                         }
                     }
                 }
@@ -5042,18 +5333,18 @@ namespace p4api.net.unit.test
                                 "< A Change on Tue May 24 14:28:53 PDT 2011-changes to a alone (again)-\n---\n> It's Secret!");
                             string actual = Utilities.FixLineFeeds(target[0].Diff);
                             Assert.AreEqual(expected, actual, "on non unicode server");
-            }
+                        }
                         else
                         {
                             string expected = Utilities.FixLineFeeds(
                                 "1,3c1\n< that\n< that\n< thatA Change on Mon May 16 16:01:35 PDT 2011\n---\n" +
-                                "> Don't Read This!\n5,7c3\n< A Change on Tue May 24 14:04:57 PDT 2011-changes to a-\n" + 
-                                "< A Change on Tue May 24 14:06:00 PDT 2011-changes to a, again-\n" + 
+                                "> Don't Read This!\n5,7c3\n< A Change on Tue May 24 14:04:57 PDT 2011-changes to a-\n" +
+                                "< A Change on Tue May 24 14:06:00 PDT 2011-changes to a, again-\n" +
                                 "< A Change on Tue May 24 14:28:53 PDT 2011-changes to a alone (again)-\n---\n> It's Secret!");
                             string actual = Utilities.FixLineFeeds(target[0].Diff);
                             Assert.AreEqual(expected, actual, "on unicode server");
                         }
-        }
+                    }
                 }
                 finally
                 {
@@ -5107,14 +5398,14 @@ namespace p4api.net.unit.test
                             string expected = Utilities.FixLineFeeds(
                                 "7a8,11\n> A change... on Fri Jun 24 16:22:05 PDT 2011\n> \n> A change... on Fri Jun 24 16:22:07 PDT 2011\n> \n");
                             string actual = Utilities.FixLineFeeds(target[0].Diff);
-                            Assert.AreEqual(expected, actual,"on non unicode server");
+                            Assert.AreEqual(expected, actual, "on non unicode server");
                         }
                         else
                         {
                             string expected = Utilities.FixLineFeeds(
                                 "7a8,11\n> A change... on Mon Jun 27 15:02:42 PDT 2011\n> \n> A change... on Mon Jun 27 15:02:42 PDT 2011\n> \n");
                             string actual = Utilities.FixLineFeeds(target[0].Diff);
-                            Assert.AreEqual(expected, actual,"on unicode server");
+                            Assert.AreEqual(expected, actual, "on unicode server");
                         }
                     }
                 }
@@ -5202,7 +5493,7 @@ namespace p4api.net.unit.test
                             { new MapEntry(MapType.Ditto, new DepotPath("//depot/MyCode/..."), new ClientPath("//ditto-client/MyCode1/...")) },
                             { new MapEntry(MapType.Ditto, new DepotPath("//depot/MyCode/..."), new ClientPath("//ditto-client/MyCode2/...")) }
                         };
-                        
+
                         FileSpec fs = new FileSpec(new ClientPath("//ditto-client/..."), null);
                         con.Client.ViewMap = paths;
                         con.Client.Root = clientRoot;
@@ -5212,8 +5503,8 @@ namespace p4api.net.unit.test
 
                         using (P4Command cmd = new P4Command(con, "have", true, null))
                         {
-                        P4CommandResult results = cmd.Run();
-                        Assert.IsNotNull(results.TaggedOutput);
+                            P4CommandResult results = cmd.Run();
+                            Assert.IsNotNull(results.TaggedOutput);
                         }
 
                         Client newClient = rep.GetClient(ws_client);

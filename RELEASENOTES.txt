@@ -74,7 +74,9 @@ Compatibility Statements
         Server Compatibility
 
           You can use this release of P4API.NET with any release of the
-          Perforce server at or later than 2018.1
+          Perforce server at or later than 2018.1, but to ensure maximum
+          compatibility, it is recommended that you use it with the
+          corresponding Perforce server release
 
         API Compatibility
 
@@ -131,12 +133,48 @@ Key to symbols used in change notes below.
         *** -- requires new p4d server program
 
 --------------------------------------------------------------------------
+
+New functionality in 2023.1 Patch 1
+
+        #2473015 (Job #116680) *
+            The CreateClient() method is now backward compatible and no longer
+            throws exceptions while communicating with servers older than 2023.1
+
+        #2483848 (Job #116774) *
+            The CreateGroup() method is now backward compatible and the
+            MaxMemory and Description fields are appropriately handled while
+            communicating with servers older than 2022.2
+
+        #2479149, #2480450 (Job #116928) *
+            Added a new method named 'ToServerCompatibleString' to the
+            ProtectionMode & ProtectionType enums. This method translates the
+            protection modes and group/user indicator in the ProtectionMode
+            object to server compatible strings. E.g. 'ReadRights' is translated
+            to '=read' and 'Write' is translated to 'write' among others. Refer
+            to the P4API.NET reference for more details
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2023.1 Patch 1
+
+        #2475194, #2475153 (Job #116804, #116653) *
+            The GetProtectionTable() method now parses the comments in the
+            protections table without returning an exception
+
+        #2477940, #2477263 (Job #116806, #116653) *
+            Fixed the issue where the GetProtectionTable() method incorrectly
+            returned 'List' as the Protection Mode entry for specific rights
+            (e.g. '=read') 
+
+--------------------------------------------------------------------------
+
 New functionality in 2023.1 (2023.1/2456134) (2023/06/20)
 
         #2446898, #2447440, #2447458 (Job #115785) * **
             Updated P4API.NET to support 2023.1 release of Helix Core
 
 --------------------------------------------------------------------------
+
 New functionality in 2022.2 Patch 1 (2022.2/2432799) (2023/04/24)
 
         #2431166 (Job #115331) *
