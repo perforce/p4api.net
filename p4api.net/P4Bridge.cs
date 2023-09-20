@@ -59,7 +59,7 @@ namespace Perforce.P4
         {
             IntPtr libHandle = IntPtr.Zero;
 
-            string assemblyDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            string assemblyDirectory = AppContext.BaseDirectory;
 
             // Look first in the location we expect for the nuget package,
             // if not found, look within the Assembly runtime directory
