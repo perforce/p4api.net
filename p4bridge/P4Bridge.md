@@ -24,10 +24,10 @@ The p4bridge is cross platform, and (in windows) supports multiple builds from t
 
 Location | Type of P4API      | Download Location
 ---------| -------------------|-----------------
-../p4api_release | x64 windows static release | [P4API x64 static](http://ftp.perforce.com/perforce/r23.1/bin.ntx64/p4api_vs2017_static_openssl3.zip)
-../p4api_debug | x64 windows static debug | [P4API x64 static debug](http://ftp.perforce.com/perforce/r23.1/bin.ntx64/p4api_vs2017_static_vsdebug_openssl3.zip)
-../p4api_x86_release | x86 windows static release |[P4API x86 static](http://ftp.perforce.com/perforce/r23.1/bin.ntx86/p4api_vs2017_static_openssl3.zip)  
-../p4api_x86_debug | x86 windows static debug |[P4API x86 static debug](http://ftp.perforce.com/perforce/r23.1/bin.ntx86/p4api_vs2017_static_vsdebug_openssl3.zip)
+../p4api_release | x64 windows static release | [P4API x64 static](http://ftp.perforce.com/perforce/r23.1/bin.ntx64/p4api_vs2019_static_openssl3.zip)
+../p4api_debug | x64 windows static debug | [P4API x64 static debug](http://ftp.perforce.com/perforce/r23.1/bin.ntx64/p4api_vs2019_static_vsdebug_openssl3.zip)
+../p4api_x86_release | x86 windows static release |[P4API x86 static](http://ftp.perforce.com/perforce/r23.1/bin.ntx86/p4api_vs2019_static_openssl3.zip)  
+../p4api_x86_debug | x86 windows static debug |[P4API x86 static debug](http://ftp.perforce.com/perforce/r23.1/bin.ntx86/p4api_vs2019_static_vsdebug_openssl3.zip)
 ../p4api | linux (all) | [P4API for linux](http://ftp.perforce.com/perforce/r23.1/bin.linux26x86_64/p4api-glibc2.3-openssl3.tgz)
 ../p4api | osx (all) | [P4API for osx](http://ftp.perforce.com/perforce/r23.1/bin.macosx105x86_64/p4api-openssl3.tgz)
 
@@ -46,7 +46,7 @@ OpenSSL binaries can be downloaded from here: [OpenSSL Downloads](https://wiki.o
 ## About Presets and Build Directories
 
  Cmake presets are stored in [CMakePresets.json](CMakePresets.json)
- This file may need some editing to configure build specific options (like compiler location)
+ This file may need some editing to configure build specific options (like compiler location). Ensure that for Windows OS, Visual Studio compiler version matches with the version of the P4API and OpenSSL artifacts used.
 
 Every preset uses a unique build directory under ./out as seen in the table below
 

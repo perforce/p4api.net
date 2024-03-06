@@ -35,8 +35,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Perforce.P4
 {
@@ -239,6 +237,19 @@ namespace Perforce.P4
             set { _parentView = value; }
         }
 
+        public string DepotPath { get; set; }
+
+        public string ViewPath {  get; set; }
+
+        private StringEnum<MapType> _pathType;
+
+        public MapType PathType
+        {
+            get { return _pathType; }
+            set { _pathType = (MapType)value; }
+        }
+
+        public string PathSource { get; set; }
         #endregion
 
         private void PopulateCommonFields(TaggedObject objectInfo)
@@ -321,6 +332,31 @@ namespace Perforce.P4
             {
                 _parentView = (objectInfo["ParentView"]);
                 specDef.Remove("ParentView");
+            }
+
+            if (objectInfo.ContainsKey("DepotPath"))
+            {
+                DepotPath = objectInfo["DepotPath"];
+                specDef.Remove("DepotPath");
+            }
+
+            if (objectInfo.ContainsKey("ViewPath"))
+            {
+                ViewPath = objectInfo["ViewPath"];
+                specDef.Remove("ViewPath");
+            }
+
+            if (objectInfo.ContainsKey("PathType"))
+            {
+                String pathType = objectInfo["PathType"];
+                _pathType = pathType;
+                specDef.Remove("PathType");
+            }
+
+            if (objectInfo.ContainsKey("PathSource"))
+            {
+                PathSource = objectInfo["PathSource"];
+                specDef.Remove("PathSource");
             }
         }
 

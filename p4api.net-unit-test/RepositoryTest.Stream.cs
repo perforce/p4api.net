@@ -3,6 +3,10 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading;
+using System.IO;
+using Stream = Perforce.P4.Stream;
+using System.Collections;
 
 namespace p4api.net.unit.test
 {
@@ -1924,7 +1928,7 @@ Comments:
                     Options streamEditOptions = new Options(EditFilesCmdFlags.StreamEdit, editChange.Id, null);
                     con.Client.EditFiles(streamEditOptions);
 
-                    IList<File> opened = rep.GetOpenedFiles(null, new Options());
+                    IList<Perforce.P4.File> opened = rep.GetOpenedFiles(null, new Options());
                     Assert.AreEqual(id, opened[0].Stream.ToString());
 
                     Options streamRevertOptions = new Options(RevertFilesCmdFlags.StreamRevert, editChange.Id);
@@ -2158,6 +2162,120 @@ Comments:
             finally
             {
                 Utilities.RemoveTestServer(p4d, TestDir);
+            }
+        }
+
+        [TestMethod()]
+        [DataRow("//Rocket/MAIN/...", "ValidDepotPath", DisplayName = "Valid Depot Path in ViewMatch argument")]
+        [DataRow("//Rocket/rel1/core/gui/control1.c", "InvalidDepotPath",DisplayName = "Invalid Depot Path in ViewMatch argument")]
+        //[DataRow("-//Rocket/rel1/core/gui/control.c","ExcludedDepotPath", DisplayName = "Excluded Depot Path in ViewMatch argument")]
+        public void StreamsCommandViewMatchArgumentTest(string depotPath, string testCaseScenario)
+        {
+            string uri = configuration.ServerPort;
+            string user = "admin";
+            string pass = string.Empty;
+            string ws_client = "admin_space";
+
+            for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
+            {
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
+                try
+                {
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+
+                    rep = new Repository(server);
+
+                    using (Connection con = rep.Connection)
+                    {
+                        con.UserName = user;
+                        con.Client = new Client();
+                        con.Client.Name = ws_client;
+
+                        var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
+                        var adminSpace = Path.Combine(clientRoot, "admin_space");
+                        Directory.CreateDirectory(adminSpace);
+
+                        Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
+                        
+                        bool connected = con.Connect(null);
+
+                        Assert.IsTrue(connected);
+
+                        Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+
+
+                        switch(testCaseScenario)
+                        {
+                            case "ValidDepotPath":
+                                IList<Perforce.P4.Stream> streamsResult = rep.GetStreams(new Options(StreamsCmdFlags.None, null, null, null, 5, depotPath));
+
+                                Assert.IsNotNull(streamsResult);
+                                Assert.AreEqual("//Rocket/MAIN/...", streamsResult[0].DepotPath);
+
+                                break;
+                            case "InvalidDepotPath":
+                                IList<Perforce.P4.Stream> streamsResult1 = rep.GetStreams(new Options(StreamsCmdFlags.None, null, null, null, 5, depotPath));
+                                Assert.IsNull(streamsResult1);
+                                break;
+                            case "ExcludedDepotPath":
+                                Stream s = new Stream();
+                                string targetId = "//Rocket/rel1";
+                                s.Id = targetId;
+                                s.Type = StreamType.Release;
+                                s.Options = new StreamOptionEnum(StreamOption.Locked | StreamOption.NoToParent);
+                                s.Parent = new DepotPath("//Rocket/main");
+                                s.Name = "Release1";
+
+                                // Paths
+                                s.Paths = new ViewMap();
+                                MapEntry p1 = new MapEntry(MapType.Share, new DepotPath("..."), null);
+                                s.Paths.Add(p1);
+                                MapEntry p2 = new MapEntry(MapType.Import, new DepotPath("core/..."), null);
+                                s.Paths.Add(p2);
+                                MapEntry p3 = new MapEntry(MapType.StreamPathExclude, new DepotPath("core/gui/..."), null);
+                                s.Paths.Add(p3);
+
+                                s.OwnerName = "admin";
+                                s.Description = "release stream for first release";
+
+
+                                Stream newStream = rep.CreateStream(s);
+
+                                con.Client.Stream = "//Rocket/rel1";
+
+                                //Since we are executing excluded path test, we do not have any mapping available at client workspace. Hence we need to run this command at server root.
+                                con.Client.Root = Utilities.TestServerRoot(TestDir, cptype).Replace("\\","/");
+
+                                rep.UpdateClient(con.Client);
+
+                                IList<Perforce.P4.Stream> s1 = rep.GetStreams(new Options(StreamsCmdFlags.None, null, null, null, 5, depotPath));
+
+                                Assert.IsNotNull(s1);
+
+                                Assert.AreEqual(1, s1?.Count);
+                                Assert.AreEqual(newStream.Id, s1[0]?.Id);
+                                Assert.AreEqual("//Rocket/rel1/...", s1[0]?.DepotPath);
+                                Assert.AreEqual("...", s1[0]?.ViewPath );
+                                Assert.AreEqual(MapType.Share, s1[0]?.PathType);
+                                Assert.AreEqual("//Rocket/rel1", s1[0]?.PathSource);
+
+                                break;
+
+                        }
+                      
+                    }
+                }
+                finally
+                {
+                    Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
+                }
             }
         }
     }

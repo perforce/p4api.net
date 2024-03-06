@@ -1,7 +1,7 @@
                            Release Notes for
                 P4API.NET, the Helix P4API for .NET
 
-                          Version 2023.1
+                          Version 2023.2
 
 Introduction
 
@@ -80,8 +80,8 @@ Compatibility Statements
 
         API Compatibility
 
-          This release of P4API.NET requires the 2023.1 Helix Core API
-          (2023.1/2442900) for C/C++ (P4API), built with Visual Studio 2019 or 
+          This release of P4API.NET requires the 2023.2 Helix Core API
+          (2023.2/2519561) for C/C++ (P4API), built with Visual Studio 2019 or 
           later.
 
         C#/.NET Compatibility
@@ -134,7 +134,23 @@ Key to symbols used in change notes below.
 
 --------------------------------------------------------------------------
 
-New functionality in 2023.1 Patch 1
+New functionality in 2023.2 (2023.2/2553501) (2024/02/07)
+
+        #2526799 (Job #117566) * **
+            Updated P4API.NET to support 2023.2 release of Helix Core
+
+        #2539918 (Job #117014) * **
+            Added support for 'Support Traits Depot' feature for fstat command
+
+        #2539918 (Job #117015) * **
+            Added support for 'Support Traits Depot' feature for attribute command 
+
+        #2546194 (Job #117018) * **
+            Added support for --viewmatch argument in streams command
+
+--------------------------------------------------------------------------
+
+New functionality in 2023.1 Patch 1 (2023.1/2484623) (2023/09/05)
 
         #2473015 (Job #116680) *
             The CreateClient() method is now backward compatible and no longer
@@ -155,7 +171,7 @@ New functionality in 2023.1 Patch 1
 
 --------------------------------------------------------------------------
 
-Bugs fixed in 2023.1 Patch 1
+Bugs fixed in 2023.1 Patch 1 (2023.1/2484623) (2023/09/05)
 
         #2475194, #2475153 (Job #116804, #116653) *
             The GetProtectionTable() method now parses the comments in the
@@ -172,6 +188,14 @@ New functionality in 2023.1 (2023.1/2456134) (2023/06/20)
 
         #2446898, #2447440, #2447458 (Job #115785) * **
             Updated P4API.NET to support 2023.1 release of Helix Core
+
+--------------------------------------------------------------------------
+
+New functionality in 2022.2 Patch 2 (2022.2/2545965) (2024/01/30)
+
+        (Job #118909) *
+            This release is built against P4API (2022.2/2531894),
+            to address possible vulnerability: CVE-2023-5759.
 
 --------------------------------------------------------------------------
 

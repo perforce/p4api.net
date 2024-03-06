@@ -506,6 +506,7 @@ namespace p4api.net.unit.test
                     d.Type = DepotType.Remote;
                     d.Map = "RemoteDepot/...";
                     d.StreamDepth = "//StreamDepot/1";
+                    d.Address = new ServerAddress(con.getP4Server().Port);
 
                     rep.CreateDepot(d);
 
@@ -549,8 +550,6 @@ namespace p4api.net.unit.test
 
                     rep.CreateDepot(d);
 
-                    rep.CreateDepot(d);
-
                     d = new Depot();
                     d.Id = "GraphDepot";
                     d.Description = "created by perforce";
@@ -560,7 +559,7 @@ namespace p4api.net.unit.test
                     d.StreamDepth = "//StreamDepot/1";
 
                     rep.CreateDepot(d);
-                    
+
                     IList<Depot> dlist = rep.GetDepots();
 
                     Assert.IsTrue(dlist[0].Type.Equals(DepotType.Archive));

@@ -10287,7 +10287,12 @@ namespace Perforce.P4
         ///  -U     displays information about unload files in
         ///         the unload depot (see 'p4 help unload').
         /// </summary>
-        InUnloadDepot = 0x400000
+        InUnloadDepot = 0x400000,
+        /// < summary >
+        /// ‘-On'   output attribute value’s storage location set by 'p4 attribute'
+        ///         using [-T0|-T1] options.(see 'p4 help attribute') 
+        /// </summary>
+        AttributesProp = 0x800000
     }
 
     /// <summary>
@@ -10569,6 +10574,11 @@ namespace Perforce.P4
                 this["-U"] = null;
             }
 
+            if ((flags & GetFileMetadataCmdFlags.AttributesProp) != 0)
+            {
+                this["-On"] = null;
+            }
+
             if (String.IsNullOrEmpty(filter) != true)
             {
                 this["-F"] = filter;
@@ -10729,7 +10739,10 @@ namespace Perforce.P4
         /// <br/> 	                '-e &lt;change&gt; -Rs', on the shelved change
         /// <br/> 
         /// <br/> 	        -Os     exclude client-related data from output
-        /// <br/> 
+        /// <br/>
+        /// <br/>           -On     output attribute value’s storage location set by 'p4 attribute'
+        /// <br/>                   using [-T0|-T1] options.(see 'p4 help attribute') 
+        /// </br>
         /// <br/> 	The -R option limits output to specific files:
         /// <br/> 
         /// <br/> 	        -Rc     files mapped in the client view

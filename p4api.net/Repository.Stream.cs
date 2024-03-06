@@ -35,12 +35,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Perforce.P4
 {
-	public partial class Repository
+    public partial class Repository
     {
     	/// <summary>
 		/// Create a new stream in the repository.
@@ -573,7 +571,7 @@ namespace Perforce.P4
         /// <br/>
         /// <br/>     streams -- Display list of streams
         /// <br/>
-        /// <br/>     p4 streams [-U -F filter -T fields -m max] [streamPath ...]
+        /// <br/>     p4 streams [-U -F filter -T fields -m max]  --viewmatch [streamPath ...]
         /// <br/>
         /// <br/> 	Reports the list of all streams currently known to the system.  If
         /// <br/> 	a 'streamPath' argument is specified, the list of streams is limited
@@ -602,6 +600,10 @@ namespace Perforce.P4
         /// <br/> 	The -m max flag limits output to the first 'max' number of streams.
         /// <br/>
         /// <br/> 	The -U flag lists unloaded task streams (see 'p4 help unload').
+        /// <br/>
+        /// <br/> 	The --viewmatch flag returns the stream name, depot path,
+        /// <br/> 	and stream view path of the streams that have views containing
+        /// <br/> 	the given depot files.
         /// <br/>
         /// <br/>
         /// </remarks>

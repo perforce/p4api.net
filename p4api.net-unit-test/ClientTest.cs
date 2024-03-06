@@ -4921,5 +4921,247 @@ namespace p4api.net.unit.test
 				}
 			}
 		}
-	}
+
+        /// <summary>
+        /// Test creation of new attribute on file and displays attributes using fstat command to check usage of new configurable trait.storagedepot.min.
+        /// </summary>
+        [TestMethod()]
+        [DynamicData(nameof(GetAttributeAndFstatTestData), DynamicDataSourceType.Method)]
+        public void AttributeAndFstatTest(int config_trait_storagedepot_min, string attributeName, object attributeValue, GetFileMetadataCmdFlags getFileMetadataCmdFlags, string expectedValue, bool useDbTraitTable = false)
+        {
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
+
+            string uri = configuration.ServerPort;
+            string user = "admin";
+            string pass = string.Empty;
+            string ws_client = "admin_space";
+
+
+            for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
+            {
+                Process p4d = null;
+                Repository rep = null;
+                try
+                {
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
+                    var adminSpace = Path.Combine(clientRoot, "admin_space");
+                    Directory.CreateDirectory(adminSpace);
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
+
+                    using (Connection con = rep.Connection)
+                    {
+                        con.UserName = user;
+                        con.Client = new Client();
+                        con.Client.Name = ws_client;
+
+                        Assert.AreEqual(con.Status, ConnectionStatus.Disconnected);
+                        Assert.AreEqual(con.Server.State, ServerState.Unknown);
+                        Assert.IsTrue(con.Connect(null));
+                        Assert.AreEqual(con.Server.State, ServerState.Online);
+                        Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+                        Assert.AreEqual("admin", con.Client.OwnerName);
+
+                        var codePath = Path.Combine(clientRoot, "admin_space", "MyCode");
+
+                        Directory.CreateDirectory(codePath);
+
+                        FileSpec fs = FileSpec.DepotSpec("//depot/MyCode/ReadMe.txt");
+
+                        bool setRv;
+
+                        if (config_trait_storagedepot_min >= 0)
+                        {
+                            logger.Debug("Set new configurable trait.storagedepot.min");
+                            setRv = P4ConfigureSetAttributeStorageConfigurable(con, config_trait_storagedepot_min);
+                            Assert.IsTrue(setRv);
+                        }
+
+                        logger.Debug("Checkout file {0} to set attribute.", fs.DepotPath.Path);
+
+                        using (P4Command editCmd = new P4Command(rep, "edit", true, fs.DepotPath.Path))
+                        {
+
+                            P4CommandResult attributeResult = editCmd.Run();
+
+                        }
+
+                        logger.Debug("Adding new Attribute to the file {0}", fs.DepotPath.Path);
+
+                        using (P4Command attributeCmd = new P4Command(rep, "attribute", true, fs.DepotPath.Path))
+                        {
+
+                            Options opts = new Options();
+                            opts["-f"] = null;
+                            opts["-n"] = attributeName;
+                            opts["-v"] = attributeValue.ToString();
+
+                            if (useDbTraitTable)
+                            {
+                                opts["-T0"] = null;
+                            }
+
+                            if (config_trait_storagedepot_min < 0)
+                            {
+                                opts["-T1"] = null;
+                            }
+
+                            string value = "";
+
+                            try
+                            {
+                                //run command and get results
+                                P4CommandResult results = attributeCmd.Run(opts);
+                                results.TaggedOutput[0].TryGetValue("status", out value);
+                            }
+                            catch (Exception ex)
+                            {
+                                // Check if we got expected exception while trying to add attribute using -T1 flag without setting new configurable. 
+                                Assert.AreEqual(ex.Message, expectedValue);
+                            }
+
+                            if (config_trait_storagedepot_min >= 0)
+                            {
+                                // confirm if attribute is added successfully to the file.
+                                Assert.AreEqual(value, "set");
+                                Options ops = new Options();
+                                switch (getFileMetadataCmdFlags)
+                                {
+                                    case GetFileMetadataCmdFlags.Attributes:
+                                        ops["-Oa"] = null;
+                                        break;
+
+                                    case GetFileMetadataCmdFlags.AttributesProp:
+                                        ops["-On"] = null;
+                                        break;
+                                }
+
+                                IList<FileMetaData> actual = rep.GetFileMetaData(ops, fs);
+
+                                Assert.AreEqual(true, actual?.Count > 0);
+                                object attributeActualValue;
+                                Assert.IsTrue(actual[0].Attributes.ContainsKey(attributeName));
+                                Assert.IsTrue(actual[0].Attributes.TryGetValue(attributeName, out attributeActualValue));
+
+                                switch (getFileMetadataCmdFlags)
+                                {
+                                    // -Oa flag
+                                    case GetFileMetadataCmdFlags.Attributes:
+                                        Assert.AreEqual(opts["-v"], attributeActualValue);
+                                        break;
+
+                                    // -On flag 
+                                    case GetFileMetadataCmdFlags.AttributesProp:
+                                        Assert.AreEqual(expectedValue, attributeActualValue);
+                                        break;
+                                }
+                            }
+                            logger.Debug("Finished fstat");
+                        }
+                    }
+                }
+                finally
+                {
+                    Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
+                }
+
+                cptype = Utilities.CheckpointType.U;
+            }
+        }
+
+        /// <summary>
+        /// Configure the server to set trait.storagedepot.min
+        /// Log in as "admin" and run "p4 configure set trait.storagedepot.min = value"
+        /// </summary>
+        /// <param name="con">Connection to server</param>
+        /// <param name="value">If set to a value greater than 0, the value of a newly created attribute is stored in the trait depot if its size in bytes matches or exceeds the setting of this configurable.</param>
+        /// <returns>true if no error</returns>
+        private bool P4ConfigureSetAttributeStorageConfigurable(Connection con, int value)
+        {
+            string oldUser = con.UserName;
+            con.UserName = "admin";
+            con.Login("");
+
+            // Tell the server to support parallel
+            string[] args = { "set", "trait.storagedepot.min=" + value };
+            using (var cmd = new P4Command(con, "configure", false, args))
+            {
+                var cmdr = cmd.Run(new Options());
+                // now force a reconnect, or p4d might not use the new config
+                con.getP4Server().Reconnect();
+
+                con.UserName = oldUser;
+                return cmdr.Success;
+            }
+        }
+
+        /// <summary>
+        /// Method is used by MSTest holds test data.
+        /// </summary>
+        /// <returns>Returns IEnumerable collection of test data</returns>
+        private static IEnumerable<object[]> GetAttributeAndFstatTestData()
+        {
+            // config_trait_storagedepot_min : trait.storagedepot.min=0
+            // attributeName: attribute name : FileID
+            // attributeValue: attribute value : 10
+            // getFileMetadataCmdFlags: fstat command flag : -Oa
+            // expectedValue: expected value from command result: 10 
+            yield return new object[]
+            {
+                0,
+                "FileID",
+                10,
+                GetFileMetadataCmdFlags.Attributes,
+                "10"
+            };
+            yield return new object[]
+            {
+                 1,
+                 "InitialFileSize",
+                 100,
+                 GetFileMetadataCmdFlags.AttributesProp,
+                 ".p4traits"
+            };
+            yield return new object[]
+            {
+                  -3,
+                  "fileVersion",
+                  100,
+                  GetFileMetadataCmdFlags.AttributesProp,
+                  "Trait depot storage has not been configured by 'trait.storagedepot.min'. This value must be greater than 0 to enable trait depot storage.\n"
+            };
+            yield return new object[]
+            {
+                 3,
+                 "IsFileReadOnly",
+                 1,
+                 GetFileMetadataCmdFlags.AttributesProp,
+                 "db.traits"
+            };
+            yield return new object[]
+            {
+                 3,
+                 "FileSize",
+                 "4000KB",
+                 GetFileMetadataCmdFlags.AttributesProp,
+                 ".p4traits"
+            };
+            yield return new object[]
+            {
+                 2,
+                 "FileUsers",
+                 "admin,super user",
+                 GetFileMetadataCmdFlags.AttributesProp,
+                 "db.traits",
+                 true
+            };
+        }
+    }
 }

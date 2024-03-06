@@ -430,6 +430,9 @@ namespace Perforce.P4
         /// <br/>
         /// <br/> 	        -Os     exclude client-related data from output
         /// <br/>
+        /// <br/>           -On     output attribute value’s storage location set by 'p4 attribute'
+        /// <br/>                   using [-T0|-T1] options.(see 'p4 help attribute') 
+        /// <br/>
         /// <br/> 	The -R option limits output to specific files:
         /// <br/>
         /// <br/> 	        -Rc     files mapped in the client view
@@ -682,6 +685,9 @@ namespace Perforce.P4
 		/// <br/> 	                '-e &lt;change&gt; -Rs', on the shelved change
 		/// <br/>
 		/// <br/> 	        -Os     exclude client-related data from output
+        /// <br/>
+        /// <br/>           -On     output attribute value’s storage location set by 'p4 attribute'
+        /// <br/>                   using [-T0|-T1] options.(see 'p4 help attribute') 
 		/// <br/>
 		/// <br/> 	The -R option limits output to specific files:
 		/// <br/>
