@@ -1,14 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace Perforce.P4
 {
-	/// <summary>
-	/// The address of the Perforce server.
-	/// </summary>
-	public class ServerAddress
+    /// <summary>
+    /// The address of the Perforce server.
+    /// </summary>
+    public class ServerAddress
 	{
         /// <summary>
         /// Construct ServerAddress from string
@@ -120,23 +119,459 @@ namespace Perforce.P4
 		public DateTime Date { get; private set; }
 	}
 
-	/// <summary>
-	/// The Perforce server's license information.
-	/// </summary>
-	public class ServerLicense
-	{
-		public ServerLicense(int users, DateTime expires)
+ 
+    /// <summary>
+    /// The Perforce server's license information.
+    /// </summary>
+    public class ServerLicense 
+    {
+        public ServerLicense()
+        {
+        }
+
+        public ServerLicense(int users, DateTime expires)
 		{
 			Users = users;
 			Expires = expires;
 		}
-		public int Users { get; private set; }
-		public DateTime Expires { get; private set; }
-	}
-	/// <summary>
-	/// Defines useful metadata about a Perforce server.
-	/// </summary>
-	public class ServerMetaData
+
+        #region License Specification Properties
+        /// <summary>
+        /// The license key.
+        /// </summary>
+        public string License {  get; private set; }
+
+        /// <summary>
+        /// Date at which the license expires.
+        /// </summary>
+        public long LicenseExpires { get; private set; }
+
+        /// <summary>
+        /// Date at which support expires.
+        /// </summary>
+        public long SupportExpires { get; private set; }
+
+        /// <summary>
+        /// Customer to whom this license is granted.
+        /// </summary>
+        public string Customer { get; private set; }
+
+        /// <summary>
+        /// Application that can use this license.
+        /// </summary>
+        public string Application { get; private set; }
+
+
+        /// <summary>
+        /// IP/Port address for license.
+        /// </summary>
+        public string IPaddress { get; private set; }
+
+        /// <summary>
+        /// Platform for which license is generated.
+        /// </summary>
+        public string Platform { get; private set; }
+
+        /// <summary>
+        ///  Number of supported clients.
+        /// </summary>
+        public string Clients { get; private set; }
+
+        /// <summary>
+        /// ExtraCapabilities of license.
+        /// </summary>
+        public IList<string> ExtraCapabilities {  get; private set; }
+
+        private String ExtraCapabilitiesStr
+        {
+            get
+            {
+                String value = String.Empty;
+                if ((ExtraCapabilities != null) && (ExtraCapabilities.Count > 0))
+                {
+                    for (int idx = 0; idx < ExtraCapabilities.Count; idx++)
+                    {
+                        value += ExtraCapabilities[idx] + $"{Environment.NewLine}";
+                    }
+                }
+                return value;
+            }
+        }
+
+        #endregion License Specification Properties
+
+        public int Users { get; private set; }
+        public DateTime Expires { get; private set; }
+
+        #region License -u properties
+        /// <summary>
+        /// Boolean indicating if Server is licensed or not.
+        /// </summary>
+        public bool IsLicensed { get; private set; }
+
+        /// <summary>
+        /// Number of active clients.
+        /// </summary>
+        public string ClientCount { get; private set; }
+
+        /// <summary>
+        /// Maximum number of clients those can use the license.
+        /// </summary>
+        public string ClientLimit { get; private set; }
+
+        /// <summary>
+        /// Number of files.
+        /// </summary>
+        public string FileCount { get; private set; }
+
+        /// <summary>
+        /// Maximum number of files those can be added under current license.
+        /// </summary>
+        public string FileLimit {  get; private set; }
+
+        /// <summary>
+        /// Active number of users using the license.
+        /// </summary>
+        public string UserCount {  get; private set; }
+
+        /// <summary>
+        /// Maximum number of users those can use the license.
+        /// </summary>
+        public string UserLimit {  get; private set; }
+
+        /// <summary>
+        /// Active number of Repos using the license.
+        /// </summary>
+        public string RepoCount { get; private set; }
+
+        /// <summary>
+        /// Maximum number of Repos allowed under current license.
+        /// </summary>
+        public string RepoLimit { get; private set; }
+
+        /// <summary>
+        /// Remaining time for license expiration.
+        /// </summary>
+        public long LicenseTimeRemaining {  get; private set; }
+
+        #endregion License -u properties
+
+        #region License -L properties
+
+        public List<ServerIPMACaddress> ServerIPMACAddresses { get;  set; }
+
+        #endregion License -L properties
+
+        // Raw output from command in case fields are added in the future
+        public TaggedObject RawData { get; private set; }
+       
+
+        private FormBase _baseForm;
+
+        public void FromServerLicenseCmdTaggedOutput(TaggedObject objectInfo)
+        {
+            RawData = objectInfo;
+
+            #region Populate values from p4 license -o command
+
+            if (objectInfo.ContainsKey("License"))
+            {
+                License = objectInfo["License"];
+            }
+
+            if (objectInfo.ContainsKey("License-Expires"))
+            {
+                long parsedDate;
+                long.TryParse(objectInfo["License-Expires"], out parsedDate);
+                LicenseExpires = parsedDate;
+            }
+
+            if (objectInfo.ContainsKey("Support-Expires"))
+            {
+                long parsedDate;
+                long.TryParse(objectInfo["Support-Expires"], out parsedDate);
+                SupportExpires = parsedDate;
+            }
+
+            if (objectInfo.ContainsKey("Customer"))
+            {
+                Customer = objectInfo["Customer"];
+            }
+
+            if (objectInfo.ContainsKey("Application"))
+            {
+                Customer = objectInfo["Application"];
+            }
+
+            if (objectInfo.ContainsKey("IPaddress"))
+            {
+                IPaddress= objectInfo["IPaddress"];
+            }
+
+            if (objectInfo.ContainsKey("Clients"))
+            {
+                Clients = objectInfo["Clients"];
+            }
+
+            if (objectInfo.ContainsKey("Users"))
+            {
+                int users;
+                int.TryParse(objectInfo["Users"], out users);
+                Users = users;
+            }
+
+            int idx = 0;
+            String key = String.Format("ExtraCapabilities{0}", idx);
+            if (objectInfo.ContainsKey(key))
+            {
+                ExtraCapabilities = new List<String>();
+                while (objectInfo.ContainsKey(key))
+                {
+                    ExtraCapabilities.Add(objectInfo[key]);
+                    idx++;
+                    key = String.Format("ExtraCapabilities{0}", idx);
+                }
+            }
+
+            #endregion
+
+            #region Populate values from p4 license -u
+
+            if (objectInfo.ContainsKey("isLicensed"))
+            {
+                IsLicensed = objectInfo["isLicensed"].ToString().Equals("yes",StringComparison.OrdinalIgnoreCase) ? true : false;
+            }
+
+            if (objectInfo.ContainsKey("userCount"))
+            {
+                UserCount = objectInfo["userCount"];
+            }
+
+            if (objectInfo.ContainsKey("userLimit"))
+            {
+                UserLimit = objectInfo["userLimit"];
+            }
+
+            if (objectInfo.ContainsKey("clientCount"))
+            {
+                ClientCount = objectInfo["clientCount"];
+            }
+
+            if (objectInfo.ContainsKey("clientLimit"))
+            {
+                ClientLimit = objectInfo["clientLimit"];
+            }
+
+
+            if (objectInfo.ContainsKey("fileCount"))
+            {
+                FileCount = objectInfo["fileCount"];
+            }
+
+            if (objectInfo.ContainsKey("fileLimit"))
+            {
+                FileLimit = objectInfo["fileLimit"];
+            }
+
+            if (objectInfo.ContainsKey("repoCount"))
+            {
+                RepoCount = objectInfo["repoCount"];
+            }
+
+            if (objectInfo.ContainsKey("repoLimit"))
+            {
+                RepoLimit = objectInfo["repoLimit"];
+            }
+
+            if ( objectInfo.ContainsKey("licenseExpires"))
+            {
+                long parsedDate;
+                long.TryParse(objectInfo["licenseExpires"], out parsedDate);
+                LicenseExpires = parsedDate;
+            }
+
+            if (objectInfo.ContainsKey("licenseTimeRemaining"))
+            {
+                long parsedDate;
+                long.TryParse(objectInfo["licenseTimeRemaining"], out parsedDate);
+                LicenseTimeRemaining = parsedDate;
+            }
+
+            if (objectInfo.ContainsKey("supportExpires"))
+            {
+                long parsedDate;
+                long.TryParse(objectInfo["supportExpires"], out parsedDate);
+                SupportExpires = parsedDate;
+            }
+
+
+            #endregion
+
+        }
+
+        private static String ServerLicenseSpecFormat =
+                                                    "License:\t{0}\n" +
+                                                    "\n" +
+                                                    "License-Expires:\t{1}\t\n" +
+                                                    "\n" +
+                                                    "Support-Expires:\t{2}\t\n" +
+                                                    "\n" +
+                                                    "Customer:\t{3}\n" +
+                                                    "\n" +
+                                                    "Application:\t{4}\n" +
+                                                    "\n" +
+                                                    "IPAddress:\t{5}\n" +
+                                                    "\n" +
+                                                    "Platform:\t{6}\n" +
+                                                    "\n" +
+                                                    "Clients:\t{7}\n" +
+                                                    "\n" +
+                                                    "Users:\t{8}\n" +
+                                                    "\n" +
+                                                    "ExtraCapabilities:\n" +
+                                                    "\t{9}\n";
+
+
+
+        /// <summary>
+        /// Parse a license spec
+        /// </summary>
+        /// <param name="spec"></param>
+        /// <returns>true if parse successful</returns>
+        public bool Parse(String spec)
+        {
+            _baseForm = new FormBase();
+            _baseForm.Parse(spec); // parse the values into the underlying dictionary
+
+            if (_baseForm.ContainsKey("License"))
+            {
+                License = _baseForm["License"] as string;
+            }
+
+            if (_baseForm.ContainsKey("License-Expires"))
+            {
+                string dateTimeString = _baseForm["License-Expires"] as string;
+                string[] dateTimeArray = dateTimeString.Split(' ');
+                long parsedDate;
+                long.TryParse(dateTimeArray[0], out parsedDate);
+                LicenseExpires = parsedDate;
+            }
+
+            if (_baseForm.ContainsKey("Support-Expires"))
+            {
+                string dateTimeString = _baseForm["Support-Expires"] as string;
+                string[] dateTimeArray = dateTimeString.Split(' ');
+                long parsedDate;
+                long.TryParse(dateTimeArray[0], out parsedDate);
+                SupportExpires = parsedDate;
+            }
+
+            if (_baseForm.ContainsKey("Customer"))
+            {
+                Customer = _baseForm["Customer"] as string;
+            }
+
+            if (_baseForm.ContainsKey("Application"))
+            {
+                Customer = _baseForm["Application"] as string;
+            }
+
+            if (_baseForm.ContainsKey("IPaddress"))
+            {
+                IPaddress = _baseForm["IPaddress"] as string;
+            }
+
+            if (_baseForm.ContainsKey("Clients"))
+            {
+                Clients = _baseForm["Clients"] as string;
+            }
+
+            if (_baseForm.ContainsKey("Users"))
+            {
+                int users;
+                int.TryParse(_baseForm["Users"] as string , out users);
+                Users = users;
+            }
+
+            if (_baseForm.ContainsKey("ExtraCapabilities"))
+            {
+                if (_baseForm["ExtraCapabilities"] is SimpleList<string>)
+                {
+                    ExtraCapabilities = (List<string>)((SimpleList<string>)_baseForm["ExtraCapabilities"]);
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Format as a license spec
+        /// </summary>
+        /// <returns>String description of license file contents</returns>
+        override public String ToString()
+        {
+            String tmpAltRootsStr = String.Empty;
+            if (!String.IsNullOrEmpty(ExtraCapabilitiesStr))
+            {
+                tmpAltRootsStr = FormBase.FormatMultilineField(ExtraCapabilitiesStr.ToString());
+            }
+            String value = String.Format(ServerLicenseSpecFormat, License,
+                LicenseExpires, SupportExpires,
+                Customer, Application, IPaddress, Platform,Clients,Users, tmpAltRootsStr);
+            return value;
+        }
+    }
+
+    /// <summary>
+    /// The interface information for server license.
+    /// </summary>
+    public class ServerIPMACaddress
+    {
+        public string Interface { get; set; }
+        public string IPV4Address { get; set; }
+        public string IPV6Address { get; set; }
+        public string MACAddress { get; set; }
+    }
+
+    /// <summary>
+    /// Extenstion class for ServerIPMACadress to populate interface information.
+    /// </summary>
+    static class ServerIPMACadressExtensions
+
+    {
+        public static void PopulateInterfaceDetailsFromTaggedOutput(this ServerIPMACaddress serverIPMACadress, TaggedObject objectInfo)
+        {
+            if (objectInfo != null)
+            {
+                if (objectInfo.ContainsKey("interface"))
+                {
+                    serverIPMACadress.Interface = objectInfo["interface"];
+                }
+
+                if (objectInfo.ContainsKey("ipv4Address"))
+                {
+                    serverIPMACadress.IPV4Address = objectInfo["ipv4Address"];
+                }
+
+                if (objectInfo.ContainsKey("ipv6Address"))
+                {
+                    serverIPMACadress.IPV6Address = objectInfo["ipv6Address"];
+                }
+
+                if (objectInfo.ContainsKey("macAddress"))
+                {
+                    serverIPMACadress.MACAddress = objectInfo["macAddress"];
+                }
+
+            }
+
+        }
+    }
+
+    /// <summary>
+    /// Defines useful metadata about a Perforce server.
+    /// </summary>
+    public class ServerMetaData
 	{
 		public ServerMetaData()
 		{

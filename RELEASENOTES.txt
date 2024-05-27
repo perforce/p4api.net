@@ -134,6 +134,16 @@ Key to symbols used in change notes below.
 
 --------------------------------------------------------------------------
 
+New functionality in 2023.2 Patch 1 (2023.2/2585793) (2024/04/16)
+
+        #2574099 (Job #113810) * **
+            Added support for renameclient feature
+
+        #2581518,2582417,2582434 (Job #109430) * ** ***
+            Added support for p4 license command options -i,-u,-o and -L.
+			
+--------------------------------------------------------------------------
+
 New functionality in 2023.2 (2023.2/2553501) (2024/02/07)
 
         #2526799 (Job #117566) * **

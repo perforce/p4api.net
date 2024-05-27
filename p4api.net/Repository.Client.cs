@@ -1607,5 +1607,74 @@ namespace Perforce.P4
                 }
             }
         }
+
+
+        /// <summary>
+        /// Renames client/workspace in the repository and also modifies all applicable places with new name.
+        /// </summary>
+        /// <param name="oldClientName">Existing client/workspace name.</param>
+        /// <param name="newClientName">New client/workspace name which is to be replaced with old name.</param>
+        /// <returns>Returns outcome of renameclient command from server.</returns>
+        /// <remarks> 
+        /// <br/> 
+        /// <br/><b>p4 help renameclient</b>
+        /// <br/> 
+        /// <br/>     renameclient -- Rename a client throughout the database
+        /// <br/>     renameworkspace -- synonym for 'renameclient'
+        /// <br/> 
+        /// <br/>     p4 renameclient --from=old --to=new
+        /// <br/>      
+        /// <br/> 	    'p4 renameclient' renames a client, modifying relevant database
+        /// <br/> 	    records which reference the client as needed.
+        /// <br/> 	
+        /// <br/> 	    This includes pending and shelved changes created by the client,
+        /// <br/> 	    any files that the user has opened or shelved, any fixes that the
+        /// <br/> 	    user made to jobs associated with pending changes, files on the
+        /// <br/> 	    client's have list, and the client record itself. Note that this
+        /// <br/> 	    command does not modify submitted changes nor fixes that are
+        /// <br/> 	    associated with submitted changelists.The intent of this
+        /// <br/> 	    command is to create a new client, migrate all existing work
+        /// <br/> 	    in progress to that new client, and then delete the old client.
+        /// <br/> 	
+        /// <br/> 	    The client name is not changed in descriptive text fields (such as job
+        /// <br/> 	    descriptions, change descriptions, or workspace descriptions). The
+        /// <br/> 	    client is modified only where it appears as a field or as part of a
+        /// <br/> 	    client path of a database record.
+        /// <br/> 	    This command will add an entry to the spec depot for the new client,
+        /// <br/> 	    and will add a deletion entry for the old client.
+        /// <br/> 	
+        /// <br/> 	    This command does not process unloaded clients, so any unloaded
+        /// <br/> 	    client to be renamed should be reloaded first.
+        /// <br/> 	
+        /// <br/> 	    This command is not supported for use with partitioned or readonly
+        /// <br/> 	    clients, clients with opened streams, or clients with promoted shelved
+        /// <br/> 	    changes.The client cannot be renamed to a client that already exists.
+        /// <br/> 	
+        /// <br/> 	    'p4 renameclient' by default requires 'admin' access granted
+        /// <br/> 	    by 'p4 protect', or must be the owner of the client to be renamed.
+        /// <br/> 	    The 'run.renameclient.allow' configurable can be used to restrict
+        /// <br/> 	    users that can run the 'p4 renameclient' command.
+        /// <br/>   
+        /// </remarks>
+        public string RenameClient(string oldClientName, string newClientName)
+        {
+            using (P4Command cmd = new P4Command(this, "renameclient", true))
+            {
+                Options options = new Options();
+
+                options["--from"] = oldClientName;
+
+                options["--to"] = newClientName;
+
+                P4CommandResult commandResult = cmd.Run(options);
+
+                if (commandResult.Success == false)
+                {
+                    P4Exception.Throw(commandResult.ErrorList);
+                }
+
+                return commandResult.InfoOutput.FirstOrDefault().Message;
+            }
+        }
     }
 }
