@@ -59,7 +59,19 @@ namespace Perforce.P4
         {
             IntPtr libHandle = IntPtr.Zero;
 
-            string assemblyDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            string assemblyDirectory;
+            var assemblyLocation = Assembly.GetExecutingAssembly().Location;
+            if (!string.IsNullOrEmpty(assemblyLocation))
+            {
+                assemblyDirectory = Path.GetDirectoryName(assemblyLocation);
+            }
+            else
+            {
+                // p4api.net is part of a single-file bundle
+                // IL3000: Avoid accessing Assembly file path when publishing as a single file
+                // https://learn.microsoft.com/en-us/dotnet/core/deploying/single-file/warnings/il3000
+                assemblyDirectory = AppContext.BaseDirectory;
+            }
 
             // Look first in the location we expect for the nuget package,
             // if not found, look within the Assembly runtime directory
