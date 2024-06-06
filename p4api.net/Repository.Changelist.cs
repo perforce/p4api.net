@@ -1293,7 +1293,7 @@ namespace Perforce.P4
         public IList<Changelist> GetChangelists(Options options, params FileSpec[] files)
 		{
             using (P4Command cmd = (files?.Length ?? 0) > 0
-                ? new P4Command(this, "changes", true, FileSpec.ToEscapedStrings(files))
+                ? new P4Command(this, "changes", true, FileSpec.ToStrings(files))
                 : new P4Command(this, "changes", true))
 			{
 
