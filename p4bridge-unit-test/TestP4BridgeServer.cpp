@@ -947,7 +947,7 @@ bool TestP4BridgeServer::TestSetVars()
     int value = 38;
 
     const char* name1 = "server";
-    const char* value1 = "57";    // 2018.2=(46)  2020.2=(51) 2021.1=(52) 2021.2=(53) 2022.2=(55) 2023.1=(56) 
+    const char* value1 = "58";    // 2018.2=(46)  2020.2=(51) 2021.1=(52) 2021.2=(53) 2022.2=(55) 2023.1=(56) 2023.2=(57) 
     // see "server protocol levels" in Helix Core Server Administrator Guide
     // https://www.perforce.com/manuals/p4sag/Content/P4SAG/protocol-levels.html
 

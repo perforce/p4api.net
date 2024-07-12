@@ -50,12 +50,21 @@ namespace Perforce.P4
 			(
 			FileType filetype,
 			string path
-			)
+			) : this(filetype, path, string.Empty )
 		{
-			FileType = filetype;
-			Path = path;
 		}
 
+        public TypeMapEntry
+            (
+            FileType filetype,
+            string path,
+            string comment
+            )
+        {
+            FileType = filetype;
+            Path = path;
+            Comment = comment;
+        }
         /// <summary>
         /// Construct a line in the typemap from a string
         /// </summary>
@@ -76,15 +85,37 @@ namespace Perforce.P4
 		public string Path { get; set; }
 
         /// <summary>
+        /// Property to access Comment of this entry
+        /// </summary>
+		public string Comment { get; set; }
+
+        /// <summary>
         /// Decode a serialized typemap entry 
         /// </summary>
         /// <param name="spec">string containing typemap entry</param>
 		public void Parse(string spec)
 		{
-			int idx = spec.IndexOf(' ');
-			string ftstr = spec.Substring(0, idx);
-			this.FileType = new FileType(ftstr);
-			this.Path = spec.Substring(idx + 1);
+            String comment = string.Empty;
+
+            if ((spec.Length > 0) && (spec.Contains("#")))
+            {
+                comment = spec.Substring(spec.IndexOf("#"));
+                spec = spec.Substring(0, spec.IndexOf("#"));
+            }
+
+            if(!string.IsNullOrEmpty(comment))
+            {
+                this.Comment = comment;
+            }
+
+            if (!string.IsNullOrEmpty(spec))
+            {
+                int idx = spec.IndexOf(' ');
+                string ftstr = spec.Substring(0, idx);
+                this.FileType = new FileType(ftstr);
+                this.Path = spec.Substring(idx + 1);
+            }
+
 		}
 
         /// <summary>

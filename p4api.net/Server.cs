@@ -692,22 +692,23 @@ namespace Perforce.P4
 				Version = new ServerVersion(product,platform, major,minor,date);
 			}
 
-
-
-
-			if (objectInfo.ContainsKey("serverLicence"))
+			if (objectInfo.ContainsKey("serverLicense"))
 			{
-				string lic = objectInfo["serverLicence"];
-				string[] info = lic.Split(' ');
-				int users;
-				int.TryParse(info[0], out users);
-				DateTime expires;
-				DateTime.TryParse(info[2], out expires);
-				License = new ServerLicense(users, expires);
+				string lic = objectInfo["serverLicense"];
+                //Populate license information only if it's available.
+                if (!string.IsNullOrEmpty(lic) && !lic.Equals("none"))
+                {
+                    string[] info = lic.Split(' ');
+                    int users;
+                    int.TryParse(info[0], out users);
+                    DateTime expires;
+                    DateTime.TryParse(info[2], out expires);
+                    License = new ServerLicense(users, expires);
+                }
 			}
 
-			if (objectInfo.ContainsKey("serverLicenceIp"))
-				LicenseIp = objectInfo["serverLicenceIp"];
+			if (objectInfo.ContainsKey("serverLicense-ip"))
+				LicenseIp = objectInfo["serverLicense-ip"];
 
 			if (objectInfo.ContainsKey("caseHandling"))
 			{

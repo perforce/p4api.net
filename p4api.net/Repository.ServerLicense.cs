@@ -77,7 +77,7 @@ namespace Perforce.P4
 
                     ServerLicense value = new ServerLicense();
 
-                    List<ServerIPMACadress> serverIPMACadresses = new List<ServerIPMACadress>();
+                    List<ServerIPMACaddress> serverIPMACaddresses = new List<ServerIPMACaddress>();
 
                     foreach (TaggedObject obj in results.TaggedOutput)
                     {
@@ -85,9 +85,9 @@ namespace Perforce.P4
                         {
                             if (obj.ContainsKey("interface"))
                             {
-                                ServerIPMACadress serverIPMACadress = new ServerIPMACadress();
-                                serverIPMACadress.PopulateInterfaceDetailsFromTaggedOutput(obj);
-                                serverIPMACadresses.Add(serverIPMACadress);
+                                ServerIPMACaddress serverIPMACaddress = new ServerIPMACaddress();
+                                serverIPMACaddress.PopulateInterfaceDetailsFromTaggedOutput(obj);
+                                serverIPMACaddresses.Add(serverIPMACaddress);
                             }
                             else
                             {
@@ -96,9 +96,9 @@ namespace Perforce.P4
                         }
                     }
 
-                    if(serverIPMACadresses?.Count > 0)
+                    if(serverIPMACaddresses?.Count > 0)
                     {
-                        value.ServerIPMACAddresses = serverIPMACadresses; ;
+                        value.ServerIPMACAddresses = serverIPMACaddresses; ;
                     }
 
                     return value;

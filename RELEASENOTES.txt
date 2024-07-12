@@ -1,7 +1,7 @@
                            Release Notes for
                 P4API.NET, the Helix P4API for .NET
 
-                          Version 2023.2
+                          Version 2024.1
 
 Introduction
 
@@ -14,19 +14,6 @@ Introduction
         marked by its change number. Any build includes (1) all bug fixes
         of all previous releases and (2) all bug fixes of the current
         release up to the bug fix change level.
-
---------------------------------------------------------------------------
-
-Important End-of-Life Notice
-
-    Cross platform support was provided with the 2021.2 release of P4API.NET.
-    Since then, 4 different Nuget packages were published ('p4api.net.core',
-    'p4api.net', 'p4api.net.x64' and 'p4api.net.x86'). But as 'p4api.net' 
-    contains all the necessary libraries to work on all these 4 platforms, there
-    is no need for 4 different packages. Hence, this major release marks these
-    packages - 'p4api.net.core', 'p4api.net.x64' and 'p4api.net.x86' - as 
-    deprecated. We recommend using the 'p4api.net' package to avoid deprecation
-    warnings
 
 --------------------------------------------------------------------------
 
@@ -80,8 +67,8 @@ Compatibility Statements
 
         API Compatibility
 
-          This release of P4API.NET requires the 2023.2 Helix Core API
-          (2023.2/2519561) for C/C++ (P4API), built with Visual Studio 2019 or 
+          This release of P4API.NET requires the 2024.1 Helix Core API
+          (2024.1/2596294) for C/C++ (P4API), built with Visual Studio 2019 or 
           later.
 
         C#/.NET Compatibility
@@ -100,7 +87,7 @@ Compatibility Statements
             Windows 10
             Windows Server 2019
             Windows Server 2022
-          Mac OS X
+          Mac OS 
             MacOS 12.2
           Linux
             Ubuntu 20.04
@@ -116,14 +103,6 @@ Compatibility Statements
           Unless otherwise stated below, this release of P4API.NET is compatible
           with previous releases from Perforce Software.
 
-        Known Limitations
-
-          The p4api.net.chm help file that is distributed with
-          p4api.net64.zip, p4api.net86.zip, and p4api.net-src.zip needs
-          to be Unblocked by clicking on the file->Properties and checking
-          the [] Unblock checkbox. Otherwise no content will appear when
-          the file is opened.
-
 --------------------------------------------------------------------------
 
 Key to symbols used in change notes below.
@@ -133,7 +112,41 @@ Key to symbols used in change notes below.
         *** -- requires new p4d server program
 
 --------------------------------------------------------------------------
+New functionality in 2024.1 (2024.1/2618274) (2024/06/27)
 
+        #2603564 (Job #120832) * ** ***
+            Updated P4API.NET to support 2024.1 release of Helix Core.
+            
+        #2616734,#2617678 (Job #120831) * ** ***
+            Added support for comments in Client,Label,Typemap and Branch spec.
+
+        #2614334,#2614783 (Job #116235) * 
+            P4API.NET will not publish deprecated nuget packages from this release.
+            
+        #2614333 (Job #120452) * ** ***
+            Updated enums for ErrorSubSytem to be in sync with Helix Core server.
+
+--------------------------------------------------------------------------
+Bugs fixed in 2024.1 (2024.1/2618274) (2024/06/27)
+
+        #2612692 (Job #117990) *
+            Fixed issue where user was not able to revert file in case of 
+            SSL enabled unicode server.
+            
+        #2599924,#2599979 (Job #119273) *
+            Fixed the issue where License properties was not being populated. 
+
+        #2600004 (Job #120543) *
+            Refactored code for performance improvement in case of exception handling.
+            
+        #2600957 (Job #120754) *
+            Fixed issue to use correct file path separator depending on OS at runtime.
+
+        #2614782,#2615007,#2614780 (Job #121125,#121320,#121321) *
+            This fix addresses vulnerabilties CVE-2024-21907,CVE-2019-0820 and 
+            CVE-2018-8292
+            
+--------------------------------------------------------------------------
 New functionality in 2023.2 Patch 1 (2023.2/2585793) (2024/04/16)
 
         #2574099 (Job #113810) * **
@@ -141,7 +154,7 @@ New functionality in 2023.2 Patch 1 (2023.2/2585793) (2024/04/16)
 
         #2581518,2582417,2582434 (Job #109430) * ** ***
             Added support for p4 license command options -i,-u,-o and -L.
-			
+            
 --------------------------------------------------------------------------
 
 New functionality in 2023.2 (2023.2/2553501) (2024/02/07)

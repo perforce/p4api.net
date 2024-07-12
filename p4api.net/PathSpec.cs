@@ -1,13 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Perforce.P4
 {
-	/// <summary>
-	/// Describes the path and path type in a file spec.
-	/// </summary>
-	public abstract class PathSpec
+    /// <summary>
+    /// Describes the path and path type in a file spec.
+    /// </summary>
+    public abstract class PathSpec
 	{
         /// <summary>
         /// Default Constructor
@@ -90,15 +89,24 @@ namespace Perforce.P4
 		protected string NormalizeLocal(string path)
 		{
 			string val = "";
-			if (path != null)
-			{
-				val = path.Trim('"', ' ');
-#if _WINDOWS
-				val = val.Replace('/', '\\');
-#else
-				val = val.Replace('\\', '/');
-#endif
-			}		
+            if (path != null)
+            {
+                val = path.Trim('"', ' ');
+
+                PlatformID platform = Environment.OSVersion.Platform;
+
+                //Construct paths based on environment where code is being executed.
+                switch (platform)
+                {
+                    case PlatformID.Win32NT:
+                        val = val.Replace('/', '\\');
+                        break;
+                    case PlatformID.Unix:
+                    case PlatformID.MacOSX:
+                        val = val.Replace('\\', '/');
+                        break;
+                }
+            }		
 			return val;
 		}
 

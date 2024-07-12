@@ -75,7 +75,7 @@ namespace p4api.net.unit.test
 		public void ClientOptionEnumConstructorTest()
 		{
 			ClientOptionEnum target = new ClientOptionEnum(v0);
-			Assert.AreEqual(target, ClientOption.None);
+			Assert.AreEqual<ClientOption>(target, ClientOption.None);
 			Assert.AreEqual(ClientOption.None, target & ClientOption.AllWrite);
 			Assert.AreEqual(ClientOption.None, target & ClientOption.Clobber);
 			Assert.AreEqual(ClientOption.None, target & ClientOption.Compress);
@@ -85,7 +85,7 @@ namespace p4api.net.unit.test
             Assert.AreEqual(ClientOption.None, target & ClientOption.AltSync);
 
             target = new ClientOptionEnum(v42);
-			Assert.AreNotEqual(ClientOption.None, target);
+			Assert.AreNotEqual<ClientOption>(ClientOption.None, target);
 			Assert.AreNotEqual(ClientOption.None, target & ClientOption.AllWrite);
 			Assert.AreEqual(ClientOption.None, target & ClientOption.Clobber);
 			Assert.AreNotEqual(ClientOption.None, target & ClientOption.Compress);
@@ -95,7 +95,7 @@ namespace p4api.net.unit.test
             Assert.AreEqual(ClientOption.None, target & ClientOption.AltSync);
 
             target = new ClientOptionEnum(v21);
-			Assert.AreNotEqual(ClientOption.None, target);
+			Assert.AreNotEqual<ClientOption>(ClientOption.None, target);
 			Assert.AreEqual(ClientOption.None, target & ClientOption.AllWrite);
 			Assert.AreNotEqual(ClientOption.None, target & ClientOption.Clobber);
 			Assert.AreEqual(ClientOption.None, target & ClientOption.Compress);
@@ -105,7 +105,7 @@ namespace p4api.net.unit.test
             Assert.AreEqual(ClientOption.None, target & ClientOption.AltSync);
 
             target = new ClientOptionEnum(v64);
-			Assert.AreNotEqual(ClientOption.None, target);
+			Assert.AreNotEqual<ClientOption>(ClientOption.None, target);
 			Assert.AreNotEqual(ClientOption.None, target & ClientOption.AllWrite);
 			Assert.AreNotEqual(ClientOption.None, target & ClientOption.Clobber);
 			Assert.AreNotEqual(ClientOption.None, target & ClientOption.Compress);
@@ -132,7 +132,7 @@ namespace p4api.net.unit.test
 		{
 			ClientOptionEnum target = new ClientOptionEnum(ClientOption.None);
 			target.Parse(v0);
-			Assert.AreEqual(target, ClientOption.None);
+			Assert.AreEqual<ClientOption>(target, ClientOption.None);
 			Assert.AreEqual(ClientOption.None, target & ClientOption.AllWrite);
 			Assert.AreEqual(ClientOption.None, target & ClientOption.Clobber);
 			Assert.AreEqual(ClientOption.None, target & ClientOption.Compress);
@@ -141,7 +141,7 @@ namespace p4api.net.unit.test
 			Assert.AreEqual(ClientOption.None, target & ClientOption.RmDir);
 
 			target.Parse(v42);
-			Assert.AreNotEqual(ClientOption.None, target);
+			Assert.AreNotEqual<ClientOption>(ClientOption.None, target);
 			Assert.AreNotEqual(ClientOption.None, target & ClientOption.AllWrite);
 			Assert.AreEqual(ClientOption.None, target & ClientOption.Clobber);
 			Assert.AreNotEqual(ClientOption.None, target & ClientOption.Compress);
@@ -150,7 +150,7 @@ namespace p4api.net.unit.test
 			Assert.AreEqual(ClientOption.None, target & ClientOption.RmDir);
 
 			target.Parse(v21);
-			Assert.AreNotEqual(ClientOption.None, target);
+			Assert.AreNotEqual<ClientOption>(ClientOption.None, target);
 			Assert.AreEqual(ClientOption.None, target & ClientOption.AllWrite);
 			Assert.AreNotEqual(ClientOption.None, target & ClientOption.Clobber);
 			Assert.AreEqual(ClientOption.None, target & ClientOption.Compress);
@@ -159,7 +159,7 @@ namespace p4api.net.unit.test
 			Assert.AreNotEqual(ClientOption.None, target & ClientOption.RmDir);
 
 			target.Parse(v64);
-			Assert.AreNotEqual(ClientOption.None, target);
+			Assert.AreNotEqual<ClientOption>(ClientOption.None, target);
 			Assert.AreNotEqual(ClientOption.None, target & ClientOption.AllWrite);
 			Assert.AreNotEqual(ClientOption.None, target & ClientOption.Clobber);
 			Assert.AreNotEqual(ClientOption.None, target & ClientOption.Compress);

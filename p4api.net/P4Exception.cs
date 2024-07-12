@@ -122,18 +122,7 @@ namespace Perforce.P4
 			errorLevel = nLevel;
 			message = nMessage;
 			nextError = null;
-
-			cmdLine = cmd;
-			if (args != null)
-			{
-				for (int idx = 0; idx < args.Length; idx++)
-				{
-					if (string.IsNullOrEmpty(args[idx]) == false)
-					{
-						cmdLine += " " + args[idx];
-					}
-				}
-			}
+            cmdLine = BuildCmdLineString(cmd, args);
 		}
 
 		/// <summary>
@@ -160,19 +149,8 @@ namespace Perforce.P4
 			errorLevel = error.SeverityLevel;
 			message = error.ErrorMessage;
 			nextError = null;
-
-			cmdLine = cmd;
-			if (args != null)
-			{
-				for (int idx = 0; idx < args.Length; idx++)
-				{
-					if (string.IsNullOrEmpty(args[idx]) == false)
-					{
-						cmdLine += " " + args[idx];
-					}
-				}
-			}
-		}
+            cmdLine = BuildCmdLineString(cmd, args);
+        }
 
 		/// <summary>
 		/// Create a list of new P4Exceptions
@@ -204,18 +182,10 @@ namespace Perforce.P4
 		{
 			if (errors.Count < 1)
 				return;
-			cmdLine = cmd;
-			if (args != null)
-			{
-				for (int idx = 0; idx < args.Length; idx++)
-				{
-					if (string.IsNullOrEmpty(args[idx]) == false)
-					{
-						cmdLine += " " + args[idx];
-					}
-				}
-			}
-			errorLevel = errors[0].SeverityLevel;
+
+            cmdLine = BuildCmdLineString(cmd, args);
+
+            errorLevel = errors[0].SeverityLevel;
 			errorCode = errors[0].ErrorCode;
 			message = errors[0].ErrorMessage;
 			P4Exception currentException = this;
@@ -258,17 +228,7 @@ namespace Perforce.P4
 		{
 			if (errors.Count < 1)
 				return;
-			cmdLine = cmd;
-			if (args != null)
-			{
-				for (int idx = 0; idx < args.Length; idx++)
-				{
-					if (string.IsNullOrEmpty(args[idx]) == false)
-					{
-						cmdLine += " " + args[idx];
-					}
-				}
-			}
+			cmdLine = BuildCmdLineString(cmd, args);
 			errorLevel = errors[0].SeverityLevel;
 			errorCode = errors[0].ErrorCode;
 			message = errors[0].ErrorMessage;
@@ -393,6 +353,32 @@ namespace Perforce.P4
 					throw new P4Exception(cmd, args, errors, details);
 			}
 		}
+
+        /// <summary>
+        /// Constructs a command line string by concatenating
+        /// a base command with an array of arguments.
+        /// </summary>
+        /// <param name="cmd">The base command to start with.</param>
+        /// <param name="args">An array of arguments to append to the command.</param>
+        /// <returns></returns>
+        private string BuildCmdLineString(string cmd, string[] args)
+        {
+            StringBuilder cmdLineArguments = new StringBuilder(cmd);
+
+            if (args != null)
+            {
+                foreach (var arg in args)
+                {
+                    if (!string.IsNullOrEmpty(arg))
+                    {
+                        cmdLineArguments.Append(" ").Append(arg);
+                    }
+                }
+            }
+
+            return cmdLineArguments.ToString();
+        }
+
 	}
     /// <summary>
     /// Specialized Exception for lost connection

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Xml.Linq;
 
 namespace Perforce.P4
 {
@@ -3669,14 +3670,38 @@ namespace Perforce.P4
 
                 foreach (TaggedObject obj in r.TaggedOutput)
                 {
-                    int ord = 0;
-                    string key = string.Format("TypeMap{0}", ord);
-
-                    while (obj.ContainsKey(key))
+                    int idx = 0;
+                    string key = $"TypeMap{idx}";
+                    string comment = $"TypeMapComment{idx}";
+                    if (obj.TryGetValue(key, out var keyValue))
                     {
-                        value.Add(new TypeMapEntry(obj[key]));
-                        ord++;
-                        key = string.Format("TypeMap{0}", ord);
+                        while (true)
+                        {
+                            if (obj.TryGetValue(comment, out var commentValue))
+                            {
+                                if (!string.IsNullOrEmpty(commentValue))
+                                {
+                                    value.Add(new TypeMapEntry( keyValue + commentValue));
+                                }
+                                else if (!string.IsNullOrEmpty(keyValue))
+                                {
+                                    value.Add(new TypeMapEntry(keyValue));
+                                }
+                            }
+                            else if (!string.IsNullOrEmpty(keyValue))
+                            {
+                                value.Add(new TypeMapEntry(keyValue));
+                            }
+
+                            idx++;
+                            key = $"TypeMap{idx}";
+                            comment = $"TypeMapComment{idx}";
+
+                            if (!obj.TryGetValue(key, out keyValue))
+                            {
+                                break;
+                            }
+                        }
                     }
 
                     return value;
