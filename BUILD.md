@@ -8,8 +8,6 @@ With the 2021.2 release, `P4API.NET` has been extended to support .NET CORE and 
 
 P4API.NET consists of a DLL written in C++ which contains the Perforce C++ API, which is wrapped by a layer of C# code which exports the .NET interface.
 
-The bridge code is dependent on P4API release 21.2 or above.
-
 Within this directory are several subprojects.  p4bridge, p4bridge-unit-test, p4bridgeStressTest, p4api.net and p4api.net-unit-test
 
 ## Getting to know your solutions
@@ -52,10 +50,10 @@ The *p4bridge*, *p4bridge-unit-test* and *p4bridgeStressTest* projects require c
 The default installation of cmake on ubuntu will require updating.
 to update to the latest version on ubuntu, follow package updating instructions here: [CMake APT repository](https://apt.kitware.com)
 
-### Getting the P4API and openssl 1.1.1 libraries
+### Getting the P4API and openssl 3 libraries
 
 We've included some sample setup scripts for copying the P4API and openssl libraries into their expected source subdirectories.  They are found in the root p4api.net directory.
-look for *setuplibrary.bat*, *setuplibrary_linux.sh* and *setuplibrary_osx.sh*
+look for [setuplibrary.bat](./setuplibrary.bat), [setuplibrary_linux.sh](./setuplibrary_linux.sh) and [setuplibrary_osx.sh](./setuplibrary_osx.sh)
 
 These scripts are just examples, they represent what I had to do to get my environment to work correctly, they will need to be edited to work in your environment.
 
@@ -146,4 +144,4 @@ Deploy this package to a local test repository with:
 ### List packages in the local test repository
 
 `nuget list -Source c:\dev\local-nuget -PreRelease p4api.net`
-returns: *2021.2.xxx.yyyy*
+returns: *2022.2.xxx.yyyy*

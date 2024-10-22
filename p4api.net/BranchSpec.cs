@@ -37,6 +37,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Xml.Linq;
 
 namespace Perforce.P4
 {
@@ -251,22 +252,7 @@ namespace Perforce.P4
 			else
 				Locked = false;
 
-			int idx = 0;
-			string key = String.Format("View{0}", idx);
-			if (objectInfo.ContainsKey(key))
-			{
-				ViewMap = new ViewMap();
-				while (objectInfo.ContainsKey(key))
-				{
-					ViewMap.Add(objectInfo[key]);
-					idx++;
-					key = String.Format("View{0}", idx);
-				}
-			}
-			else
-			{
-				ViewMap = null;
-			}
+            ViewMap = Utility.GetViewMapEntries(objectInfo);
 		}
 		#endregion
 
@@ -423,7 +409,7 @@ namespace Perforce.P4
       						$"{Environment.NewLine}" +
       						$"Options:\t{{5}}{Environment.NewLine}" +
       						$"{Environment.NewLine}" +
-      						$"View:{Environment.NewLine}\t{{6}}{Environment.NewLine}";
+      						$"View:{Environment.NewLine}\t{{6}}\n";
 
 
 		/// <summary>
@@ -433,8 +419,10 @@ namespace Perforce.P4
 		override public String ToString()
 		{
 			String viewStr = String.Empty;
-			if (ViewMap != null)
-				viewStr = ViewMap.ToString().Replace($"{Environment.NewLine}", $"{Environment.NewLine}\t").Trim();
+            if (ViewMap != null)
+            {
+                viewStr = ViewMap.ToString().Replace($"{Environment.NewLine}", $"\n\t").Trim();
+            }
 		    String OptionsStr = string.Empty;
             if (Locked)
             {

@@ -275,6 +275,15 @@ namespace Perforce.P4
             remove { if (connectionEstablished()) { getP4Server().CommandEcho -= value; } }
         }
 
+        /// <summary>
+        /// Handler for Response Time Echo
+        /// </summary>
+        public event P4Server.ResponseTimeEchoDelegate ResponseTimeEcho
+        {
+            add { if (connectionEstablished()) { getP4Server().ResponseTimeEcho += value; } }
+            remove { if (connectionEstablished()) { getP4Server().ResponseTimeEcho -= value; } }
+        }
+
         private Client client;
         private string username;
         private string _cwd;

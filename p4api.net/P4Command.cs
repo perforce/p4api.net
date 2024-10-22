@@ -37,6 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
@@ -417,19 +418,24 @@ namespace Perforce.P4
 				{
 					StringList paramList = flags + args;
 
-					pServer.EchoCommand(cmd, paramList);
+                    pServer.EchoCommand(cmd, paramList);
 
-					while (true)
+                    while (true)
 					{
 						//retries--;
 						try
 						{
-							success = pServer.RunCommand(	cmd,
+                            var responseTime = Stopwatch.StartNew();
+
+                            success = pServer.RunCommand(	cmd,
 															CommandId,
 															tagged,
 															paramList,
 															paramList == null ? 0 : paramList.Count);
-							break;
+
+                            responseTime.Stop();
+                            pServer.EchoResponseTime(cmd, paramList, responseTime.Elapsed);
+                            break;
 						}
 						catch (P4Exception ex)
 						{

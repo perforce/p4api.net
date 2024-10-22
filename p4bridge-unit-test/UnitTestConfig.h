@@ -9,7 +9,7 @@
 #endif
 
 #if defined(OS_MACOSX)
-#define P4D "/Users/admin/p4d/r21.2/p4d"
+#define P4D "/Users/admin/p4d/r24.1/p4d"
 #define TAR "/usr/bin/tar"
 #define MYTESTDIR "/tmp/mytestdirbridge"
 #define MYTESTDIR8 "/tmp/mytestdirbridge8"

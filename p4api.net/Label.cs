@@ -185,22 +185,7 @@ namespace Perforce.P4
             else
                 Locked = false;
 
-            int idx = 0;
-            string key = String.Format("View{0}", idx);
-            if (objectInfo.ContainsKey(key))
-            {
-                ViewMap = new ViewMap();
-                while (objectInfo.ContainsKey(key))
-                {
-                    ViewMap.Add(objectInfo[key]);
-                    idx++;
-                    key = String.Format("View{0}", idx);
-                }
-            }
-            else
-            {
-                ViewMap = null;
-            }
+            ViewMap = Utility.GetViewMapEntries(objectInfo);
         }
         #endregion
 
@@ -348,7 +333,7 @@ namespace Perforce.P4
                 + "{6}" 
                 + "{7}" 
                 + "View:" + Environment.NewLine 
-                + "\t{8}" + Environment.NewLine;
+                + "\t{8}\n";
 
 
         /// <summary>
@@ -359,7 +344,9 @@ namespace Perforce.P4
         {
             String viewStr = String.Empty;
             if (ViewMap != null)
-                viewStr = ViewMap.ToString().Replace($"{Environment.NewLine}", $"{Environment.NewLine}\t").Trim();            
+            {
+                viewStr = ViewMap.ToString().Replace($"{Environment.NewLine}", $"\n\t").Trim();
+            }
             String OptionsStr = string.Empty;
 			if (Locked)
 			{

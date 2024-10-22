@@ -36,12 +36,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.IO;
 using System.Timers;
 using System.Threading;
-using System.Diagnostics;
 
 namespace Perforce.P4
 {
@@ -469,8 +467,7 @@ namespace Perforce.P4
             {
                 CurrentEncodeing = P4Encoding.utf8;
 
-                //SetCharacterSet(Charset[(int)CurrentEncodeing], Charset[(int)P4Encoding.utf16bom]);
-                SetCharacterSet("utf8", "utf16");
+                SetCharacterSet("utf8", "utf8");
             }
             apiLevel = P4Bridge.APILevel(pServer);
             requiresLogin = P4Bridge.UseLogin(pServer);
@@ -1427,6 +1424,17 @@ namespace Perforce.P4
         public event CommandEchoDelegate CommandEcho;
 
         /// <summary>
+        /// Delegate used to commands along with response time as they are executed.
+        /// </summary>
+        /// <param name="data">Command line along with response time executed by the command</param>
+        public delegate void ResponseTimeEchoDelegate(String data);
+
+        /// <summary>
+        /// Broadcast event for text results
+        /// </summary>
+        public event ResponseTimeEchoDelegate ResponseTimeEcho;
+
+        /// <summary>
         /// Broadcast a the command line (cmd and args) on the CommandEcho event
         /// </summary>
         /// <remarks>
@@ -1438,18 +1446,26 @@ namespace Perforce.P4
         {
             if (CommandEcho != null)
             {
-                string commandLine = cmd;
-                if (args != null)
-                {
-                    for (int idx = 0; idx < args.Count; idx++)
-                    {
-                        if (args[idx] != null)
-                        {
-                            commandLine += " " + args[idx];
-                        }
-                    }
-                }
+                string commandLine = BuildCmdLineString(cmd, args);
                 CommandEcho(commandLine);
+            }
+        }
+
+        /// <summary>
+        /// Broadcast a the command line (cmd, args and response time) on the ResponseTimeEcho event
+        /// </summary>
+        /// <remarks>
+        /// Used to echo an executed command line with response time back to the client
+        /// </remarks>
+        /// <param name="cmd">The P4 command.</param>
+        /// <param name="args">The flags and parameters for the command.</param>
+        /// <param name="responseTime">Response time taken to fetch the results.</param>
+        public void EchoResponseTime(string cmd, StringList args, TimeSpan responseTime)
+        {
+            if (ResponseTimeEcho != null)
+            {
+                string commandLine = BuildCmdLineString(cmd, args);
+                ResponseTimeEcho(string.Format("Time taken to fetch result of '{0}': {1} ", commandLine, responseTime));
             }
         }
 
@@ -2120,6 +2136,31 @@ namespace Perforce.P4
         {
             // Note that this only works if pServer is current disconnected or you reconnect after this call
             P4Bridge.SetProtocol(pServer, key, val);
+        }
+
+        /// <summary>
+        /// Constructs a command line string by concatenating
+        /// a base command with an array of arguments.
+        /// </summary>
+        /// <param name="cmd">The base command to start with.</param>
+        /// <param name="args">An array of arguments to append to the command.</param>
+        /// <returns></returns>
+        private string BuildCmdLineString(string cmd, StringList args)
+        {
+            StringBuilder cmdLineArguments = new StringBuilder(cmd);
+
+            if (args != null)
+            {
+                foreach (var arg in args)
+                {
+                    if (!string.IsNullOrEmpty(arg))
+                    {
+                        cmdLineArguments.Append(" ").Append(arg);
+                    }
+                }
+            }
+
+            return cmdLineArguments.ToString();
         }
     }
 }

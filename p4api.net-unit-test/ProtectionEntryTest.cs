@@ -113,10 +113,20 @@ namespace p4api.net.unit.test
 			Assert.AreEqual(expected, actual);
 		}
 
-		/// <summary>
-		///A test for Mode
+        /// <summary>
+		///A test for Type ToServerCompatibleString
 		///</summary>
 		[TestMethod()]
+        public void TypeToServerCompatibleStringTest()
+        {
+            Assert.AreEqual("user", EntryType.User.ToServerCompatibleString());
+            Assert.AreEqual("group", EntryType.Group.ToServerCompatibleString());
+        }
+
+        /// <summary>
+        ///A test for Mode
+        ///</summary>
+        [TestMethod()]
 		public void ModeTest()
 		{
 			ProtectionMode mode = new ProtectionMode(); // TODO: Initialize to an appropriate value
@@ -132,10 +142,37 @@ namespace p4api.net.unit.test
 			Assert.AreEqual(expected, actual);
 		}
 
-		/// <summary>
-		///A test for Path
+        /// <summary>
+		///A test for Mode ToServerCompatibleString
 		///</summary>
 		[TestMethod()]
+        public void ModeToServerCompatibleStringTest()
+        {
+            Assert.AreEqual("list", ProtectionMode.List.ToServerCompatibleString());
+            Assert.AreEqual("read", ProtectionMode.Read.ToServerCompatibleString());
+            Assert.AreEqual("open", ProtectionMode.Open.ToServerCompatibleString());
+            Assert.AreEqual("write", ProtectionMode.Write.ToServerCompatibleString());
+            Assert.AreEqual("admin", ProtectionMode.Admin.ToServerCompatibleString());
+            Assert.AreEqual("owner", ProtectionMode.Owner.ToServerCompatibleString());
+            Assert.AreEqual("super", ProtectionMode.Super.ToServerCompatibleString());
+            Assert.AreEqual("review", ProtectionMode.Review.ToServerCompatibleString());
+            Assert.AreEqual("=read", ProtectionMode.ReadRights.ToServerCompatibleString());
+            Assert.AreEqual("=branch", ProtectionMode.BranchRights.ToServerCompatibleString());
+            Assert.AreEqual("=open", ProtectionMode.OpenRights.ToServerCompatibleString());
+            Assert.AreEqual("=write", ProtectionMode.WriteRights.ToServerCompatibleString());
+            Assert.AreEqual("none", ProtectionMode.None.ToServerCompatibleString());
+            Assert.AreEqual("readstreamspec", ProtectionMode.ReadStreamSpec.ToServerCompatibleString());
+            Assert.AreEqual("openstreamspec", ProtectionMode.OpenStreamSpec.ToServerCompatibleString());
+            Assert.AreEqual("writestreamspec", ProtectionMode.WriteStreamSpec.ToServerCompatibleString());
+            Assert.AreEqual("=readstreamspec", ProtectionMode.ReadStreamSpecRights.ToServerCompatibleString());
+            Assert.AreEqual("=openstreamspec", ProtectionMode.OpenStreamSpecRights.ToServerCompatibleString());
+            Assert.AreEqual("=writestreamspec", ProtectionMode.WriteStreamSpecRights.ToServerCompatibleString());
+        }
+
+        /// <summary>
+        ///A test for Path
+        ///</summary>
+        [TestMethod()]
 		public void PathTest()
 		{
 			ProtectionMode mode = new ProtectionMode(); // TODO: Initialize to an appropriate value

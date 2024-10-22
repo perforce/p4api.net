@@ -38,6 +38,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text;
 
 [assembly: InternalsVisibleTo("p4api.net-unit-test, PublicKey=00240000048000009400000006020000002400005253413100040000010001005bd58b86ff0b4ac3872932400b9b4da1d7d72faad9c7a37cc1c9c3d9a89d7de24f260d07fe676146196ef8f1e5b5dc49d2eaa0347780454b82afb9502d15730858f0acc35cfd20285d4aa924b2edb55cb56846a2c3cbe2d65303b45c9dd737e6f81fec00d5c5f3c66e1335bc36d1ad13bea44851d35d65d08bee5aacf9e409b2")]
 
@@ -89,8 +90,16 @@ namespace Perforce.P4
 		/// Makes 'p4 sync' attempt to delete a workspace
 		/// directory when all files in it are removed.
 		/// </summary>
-		RmDir		= 0x0020
-	};
+		RmDir		= 0x0020,
+        /// <summary>
+        /// Instructs the client to use an alternative sync
+        /// agent specified with P4ALTSYNC when performing
+        /// file operations in the workspace. This option
+        /// can only be changed when the client's have list
+        /// is empty
+        /// </summary>
+        AltSync     = 0x0040
+    };
 
 	internal class ClientOptionEnum : StringEnum<ClientOption>
 	{
@@ -146,26 +155,45 @@ namespace Perforce.P4
 		public static bool operator ==(ClientOptionEnum t1, ClientOption t2) { return t1.value.Equals(t2); }
 		public static bool operator !=(ClientOptionEnum t1, ClientOption t2) { return !t1.value.Equals(t2); }
 
-		/// <summary>
-		/// Convert to a client spec formatted string
-		/// </summary>
-		/// <returns></returns>
-		public override string ToString()
-		{
-			return String.Format("{0} {1} {2} {3} {4} {5}",
-				((value & ClientOption.AllWrite) != 0) ? "allwrite" : "noallwrite",
-				((value & ClientOption.Clobber) != 0) ? "clobber" : "noclobber",
-				((value & ClientOption.Compress) != 0) ? "compress" : "nocompress",
-				((value & ClientOption.Locked) != 0) ? "locked" : "unlocked",
-				((value & ClientOption.ModTime) != 0) ? "modtime" : "nomodtime",
-				((value & ClientOption.RmDir) != 0) ? "rmdir" : "normdir"
-				);
-		}
-		/// <summary>
-		/// Parse a client spec formatted string
-		/// </summary>
-		/// <param name="spec"></param>
-		public void Parse(String spec)
+        /// <summary>
+        /// Convert to a client spec formatted string
+        /// </summary>
+        /// <returns>String representation of client options</returns>
+        public override string ToString()
+        {
+            return this.ToString(0);
+        }
+
+        /// <summary>
+        /// Convert to a client spec formatted string
+        /// </summary>
+        /// <param name="apiLevel">Server protocol</param>
+        /// <returns>String representation of client options</returns>
+        public string ToString(int apiLevel)
+        {
+            var clientOptionFormat = "{0} {1} {2} {3} {4} {5}";
+
+            // Append 'noaltsync' option above 2023.1 server OR if server version is not provided
+            clientOptionFormat += apiLevel >= 56 || apiLevel == 0 ?
+                " {6}" :
+                string.Empty;
+
+            return String.Format(clientOptionFormat,
+                ((value & ClientOption.AllWrite) != 0) ? "allwrite" : "noallwrite",
+                ((value & ClientOption.Clobber) != 0) ? "clobber" : "noclobber",
+                ((value & ClientOption.Compress) != 0) ? "compress" : "nocompress",
+                ((value & ClientOption.Locked) != 0) ? "locked" : "unlocked",
+                ((value & ClientOption.ModTime) != 0) ? "modtime" : "nomodtime",
+                ((value & ClientOption.RmDir) != 0) ? "rmdir" : "normdir",
+                ((value & ClientOption.AltSync) != 0) ? "altsync" : "noaltsync"
+                );
+        }
+
+        /// <summary>
+        /// Parse a client spec formatted string
+        /// </summary>
+        /// <param name="spec"></param>
+        public void Parse(String spec)
 		{
 			value = ClientOption.None;
 
@@ -186,7 +214,10 @@ namespace Perforce.P4
 
 			if (!spec.Contains("normdir"))
 				value |= ClientOption.RmDir;
-		}
+
+            if (spec.Contains("altsync") && !spec.Contains("noaltsync"))
+                value |= ClientOption.AltSync;
+        }
 	}
 
 	/// <summary>
@@ -712,24 +743,9 @@ namespace Perforce.P4
 				}
 			}
 
-			idx = 0;
-			key = String.Format("View{0}", idx);
-			if (workspaceInfo.ContainsKey(key))
-			{
-				ViewMap = new ViewMap();
-				while (workspaceInfo.ContainsKey(key))
-				{
-					ViewMap.Add(workspaceInfo[key]);
-					idx++;
-					key = String.Format("View{0}", idx);
-				}
-			}
-			else
-			{
-				ViewMap = null;
-			}
-			
-			idx = 0;
+            ViewMap = Utility.GetViewMapEntries(workspaceInfo);
+
+            idx = 0;
 			key = String.Format("ChangeView{0}", idx);
 			if (workspaceInfo.ContainsKey(key))
 			{
@@ -965,11 +981,21 @@ namespace Perforce.P4
 			return string.Empty;
 		}
 
-		/// <summary>
-		/// Format as a client spec
-		/// </summary>
-		/// <returns>String description of client </returns>
-		override public String ToString()
+        /// <summary>
+        /// Format as a client spec
+        /// </summary>
+        /// <returns>String description of client</returns>
+        override public String ToString()
+        {
+            return this.ToString(this.Connection?.getP4Server()?.ApiLevel ?? 0);
+        }
+
+        /// <summary>
+        /// Format as a client spec
+        /// </summary>
+        /// <param name="apiLevel">Server protocol</param>
+        /// <returns>String description of client</returns>
+        public String ToString(int apiLevel)
 		{
             String tmpDescStr = String.Empty;
             if (!String.IsNullOrEmpty(Description))
@@ -1014,7 +1040,7 @@ namespace Perforce.P4
 				FormatDateTime(Updated),
 				FormatDateTime(Accessed),
 				OwnerName, Host, tmpDescStr, Root, tmpAltRootsStr,
-				_options.ToString(),
+				_options.ToString(apiLevel),
 				SubmitOptions.ToString(),
 				_lineEnd.ToString(), _clientType.ToString(), tmpStreamStr, tmpStreamAtChangeStr,
 				tmpServerIDStr, tmpChangeViewStr, tmpViewStr);

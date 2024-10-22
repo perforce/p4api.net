@@ -580,203 +580,214 @@ namespace p4api.net.unit.test
         public static Process DeployP4TestServer(string testRoot, int checkpointRev,
             string tarFile, string P4DCmd, string testName)
         {
-
-            var tarBase = Path.GetFileNameWithoutExtension(tarFile); // a, u, s3
-            var untarredContentsDir = Path.Combine(rubbishBin, tarBase);
-
-            var testServerRoot = Path.Combine(testRoot, tarBase, "server");
-            var testClientsRoot = Path.Combine(testRoot, tarBase, "clients");
-
-            // If the checkpoints are not in the server root, populate the directory
-            if (!System.IO.File.Exists(Path.Combine(testServerRoot, "checkpoint.2")))
-            {
-                if (!PopulateServer(testServerRoot, tarFile))
-                    return null;
-            }
-
-            // Change directory
-            Environment.CurrentDirectory = testServerRoot;
-            string CurWDir = Environment.CurrentDirectory;
-
-            string unitTestDir = AppDomain.CurrentDomain.BaseDirectory;
-            //logger.Info("unitTestDir {0}", unitTestDir);
-
-            if (unitTestDir.ToLower().StartsWith("file:\\"))
-            {
-                // cut off the file:\\
-                var idx = unitTestDir.IndexOf("\\", StringComparison.Ordinal) + 1;
-                unitTestDir = unitTestDir.Substring(idx);
-            }
-
-            // Make sure no db.* files present
-            // logger.Info("Removing db.* from {0}", testServerRoot);
             try
             {
-                foreach (string fname in Directory.GetFiles(testServerRoot, "db.*", SearchOption.TopDirectoryOnly))
+                var tarBase = Path.GetFileNameWithoutExtension(tarFile); // a, u, s3
+                var untarredContentsDir = Path.Combine(rubbishBin, tarBase);
+
+                var testServerRoot = Path.Combine(testRoot, tarBase, "server");
+                var testClientsRoot = Path.Combine(testRoot, tarBase, "clients");
+
+                // If the checkpoints are not in the server root, populate the directory
+                if (!System.IO.File.Exists(Path.Combine(testServerRoot, "checkpoint.2")))
                 {
-                    System.IO.File.Delete(fname);
+                    if (!PopulateServer(testServerRoot, tarFile))
+                        return null;
                 }
-            }
-            catch (Exception ex)
-            {
-                logger.Error(ex.Message);
-                logger.Error(ex.StackTrace);
-                return null;
-            }
 
-            // Always Reset client directories
-            DeleteDirectory(testClientsRoot);
-            CreateDir(testClientsRoot, 5);
+                // Change directory
+                Environment.CurrentDirectory = testServerRoot;
+                string CurWDir = Environment.CurrentDirectory;
 
-            foreach (
-                string fname in Directory.GetDirectories(untarredContentsDir, "*space*", SearchOption.TopDirectoryOnly)
-            )
-            {
-                var dirOnly = Path.GetFileName(fname);
-                if (!CopyDirTree(fname, Path.Combine(testClientsRoot, dirOnly)))
-                    return null;
-            }
+                string unitTestDir = AppDomain.CurrentDomain.BaseDirectory;
+                //logger.Info("unitTestDir {0}", unitTestDir);
 
-            ProcessStartInfo si;
-
-            if (p4d_cmd.Contains("ssl:"))
-            {
-                using (Process GenKeyandCert = new Process())
+                if (unitTestDir.ToLower().StartsWith("file:\\"))
                 {
-                    // generate private key and certificate
+                    // cut off the file:\\
+                    var idx = unitTestDir.IndexOf("\\", StringComparison.Ordinal) + 1;
+                    unitTestDir = unitTestDir.Substring(idx);
+                }
+
+                // Make sure no db.* files present
+                // logger.Info("Removing db.* from {0}", testServerRoot);
+                try
+                {
+                    foreach (string fname in Directory.GetFiles(testServerRoot, "db.*", SearchOption.TopDirectoryOnly))
+                    {
+                        System.IO.File.Delete(fname);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger.Error(ex.Message);
+                    logger.Error(ex.StackTrace);
+                    return null;
+                }
+
+                // Always Reset client directories
+                DeleteDirectory(testClientsRoot);
+                CreateDir(testClientsRoot, 5);
+
+                foreach (
+                    string fname in Directory.GetDirectories(untarredContentsDir, "*space*", SearchOption.TopDirectoryOnly)
+                )
+                {
+                    var dirOnly = Path.GetFileName(fname);
+                    if (!CopyDirTree(fname, Path.Combine(testClientsRoot, dirOnly)))
+                        return null;
+                }
+
+                ProcessStartInfo si;
+
+                if (p4d_cmd.Contains("ssl:"))
+                {
+                    using (Process GenKeyandCert = new Process())
+                    {
+                        // generate private key and certificate
+                        si = new ProcessStartInfo(configuration.P4dPath);
+                        si.Arguments = generate_key_cmd;
+                        si.WorkingDirectory = testServerRoot;
+                        si.UseShellExecute = false;
+                        si.CreateNoWindow = true;
+                        si.RedirectStandardOutput = true;
+
+                        var msg = si.Arguments;
+                        logger.Info(msg);
+
+                        GenKeyandCert.StartInfo = si;
+                        GenKeyandCert.Start();
+                        GenKeyandCert.WaitForExit();
+                    }
+                }
+
+                // restore the checkpoint
+                using (Process RestoreCheckPoint = new Process())
+                {
                     si = new ProcessStartInfo(configuration.P4dPath);
-                    si.Arguments = generate_key_cmd;
+                    si.Arguments = string.Format(restore_cmd, testServerRoot, checkpointRev);
+                    si.WorkingDirectory = testServerRoot;
+                    si.UseShellExecute = false;
+                    si.RedirectStandardOutput = true;
+                    si.RedirectStandardError = true;
+                    si.CreateNoWindow = true;
+
+                    // logger.Info("{0} {1}", si.FileName, si.Arguments);
+
+                    RestoreCheckPoint.StartInfo = si;
+                    RestoreCheckPoint.Start();
+                    RestoreCheckPoint.WaitForExit();
+
+                    if (RestoreCheckPoint.ExitCode != 0)
+                    {
+                        var errorStream = RestoreCheckPoint.StandardError;
+                        logger.Error("Error restoring checkpoint.{0} {1}", checkpointRev, errorStream.ReadToEnd());
+                        return null;
+                    }
+                }
+
+                // upgrade the db tables
+                using (Process UpgradeTables = new Process())
+                {
+                    si = new ProcessStartInfo(configuration.P4dPath);
+                    si.Arguments = string.Format(upgrade_cmd, testServerRoot);
                     si.WorkingDirectory = testServerRoot;
                     si.UseShellExecute = false;
                     si.CreateNoWindow = true;
                     si.RedirectStandardOutput = true;
 
-                    var msg = si.Arguments;
-                    logger.Info(msg);
+                    //logger.Info("{0} {1}", si.FileName, si.Arguments);
 
-                    GenKeyandCert.StartInfo = si;
-                    GenKeyandCert.Start();
-                    GenKeyandCert.WaitForExit();
-                }
-            }
+                    UpgradeTables.StartInfo = si;
+                    UpgradeTables.Start();
+                    UpgradeTables.WaitForExit();
 
-            // restore the checkpoint
-            using (Process RestoreCheckPoint = new Process())
-            {
-                si = new ProcessStartInfo(configuration.P4dPath);
-                si.Arguments = string.Format(restore_cmd, testServerRoot, checkpointRev);
-                si.WorkingDirectory = testServerRoot;
-                si.UseShellExecute = false;
-                si.RedirectStandardOutput = true;
-                si.RedirectStandardError = true;
-                si.CreateNoWindow = true;
-
-                // logger.Info("{0} {1}", si.FileName, si.Arguments);
-
-                RestoreCheckPoint.StartInfo = si;
-                RestoreCheckPoint.Start();
-                RestoreCheckPoint.WaitForExit();
-
-                if (RestoreCheckPoint.ExitCode != 0)
-                {
-                    var errorStream = RestoreCheckPoint.StandardError;
-                    logger.Error("Error restoring checkpoint.{0} {1}", checkpointRev, errorStream.ReadToEnd());
-                    return null;
-                }
-            }
-
-            // upgrade the db tables
-            using (Process UpgradeTables = new Process())
-            {
-                si = new ProcessStartInfo(configuration.P4dPath);
-                si.Arguments = string.Format(upgrade_cmd, testServerRoot);
-                si.WorkingDirectory = testServerRoot;
-                si.UseShellExecute = false;
-                si.CreateNoWindow = true;
-                si.RedirectStandardOutput = true;
-
-                //logger.Info("{0} {1}", si.FileName, si.Arguments);
-
-                UpgradeTables.StartInfo = si;
-                UpgradeTables.Start();
-                UpgradeTables.WaitForExit();
-
-                if (UpgradeTables.ExitCode != 0)
-                {
-                    logger.Error("Error upgrading server tables");
-                    return null;
-                }
-            }
-
-            Process p4d = new Process();
-
-            if (P4DCmd != null)
-            {
-                string P4DCmdSrc = Path.Combine(unitTestDir, P4DCmd);
-                string P4DCmdTarget = Path.Combine(testServerRoot, P4DCmd);
-                System.IO.File.Copy(P4DCmdSrc, P4DCmdTarget);
-
-                // run the command to start p4d
-                si = new ProcessStartInfo(P4DCmdTarget);
-                si.Arguments = string.Format(testServerRoot);
-                si.WorkingDirectory = testServerRoot;
-                si.UseShellExecute = false;
-                si.CreateNoWindow = true;
-                si.RedirectStandardOutput = true;
-
-                // logger.Info("{0} {1}", si.FileName, si.Arguments);
-
-                p4d.StartInfo = si;
-                p4d.Start();
-            }
-            else
-            {
-                //start p4d
-                si = new ProcessStartInfo(configuration.P4dPath);
-                if (string.IsNullOrEmpty(testName))
-                    testName = "UnitTestServer";
-                si.Arguments = string.Format(p4d_cmd, testServerRoot, testName);
-                si.WorkingDirectory = testServerRoot;
-                si.UseShellExecute = false;
-                si.RedirectStandardOutput = true;
-                si.CreateNoWindow = true;
-
-                // logger.Info("{0} {1}", si.FileName, si.Arguments);
-
-                p4d.StartInfo = si;
-                p4d.Start();
-            }
-            Environment.CurrentDirectory = CurWDir;
-
-            // Give p4d time to start up
-            using (TcpClient client = new TcpClient())
-            {
-                DateTime started = DateTime.UtcNow;
-                while (DateTime.UtcNow.Subtract(started).Milliseconds < 500)
-                {
-                    try
+                    if (UpgradeTables.ExitCode != 0)
                     {
-                        string[] parts = configuration.ServerPort.Split(':');
-                        int port = int.Parse(parts[1]);
-                        client.Connect(parts[0], port);
-                        if (client.Connected)
-                            return p4d;
-                    }
-                    catch (FormatException ex)
-                    {
-                        logger.Error("Unparsable port number in configuration: {0} {1}",
-                            configuration.ServerPort, ex.Message);
-                    }
-                    catch (SocketException)
-                    {
-                        // logger.Info("Ignoring Exception during startup: {0}", ex.Message);
-                        // Ignore any exception while waiting for p4d to initialize
+                        logger.Error("Error upgrading server tables");
+                        return null;
                     }
                 }
-            }
 
-            // that didn't work
-            return p4d;
+                Process p4d = new Process();
+
+                if (P4DCmd != null)
+                {
+                    string P4DCmdSrc = Path.Combine(unitTestDir, P4DCmd);
+                    string P4DCmdTarget = Path.Combine(testServerRoot, P4DCmd);
+                    System.IO.File.Copy(P4DCmdSrc, P4DCmdTarget);
+
+                    // run the command to start p4d
+                    si = new ProcessStartInfo(P4DCmdTarget);
+                    si.Arguments = string.Format(testServerRoot);
+                    si.WorkingDirectory = testServerRoot;
+                    si.UseShellExecute = false;
+                    si.CreateNoWindow = true;
+                    si.RedirectStandardOutput = true;
+
+                    // logger.Info("{0} {1}", si.FileName, si.Arguments);
+
+                    p4d.StartInfo = si;
+                    p4d.Start();
+                }
+                else
+                {
+                    //start p4d
+                    si = new ProcessStartInfo(configuration.P4dPath);
+                    if (string.IsNullOrEmpty(testName))
+                        testName = "UnitTestServer";
+                    si.Arguments = string.Format(p4d_cmd, testServerRoot, testName);
+                    si.WorkingDirectory = testServerRoot;
+                    si.UseShellExecute = false;
+                    si.RedirectStandardOutput = true;
+                    si.CreateNoWindow = true;
+
+                    // logger.Info("{0} {1}", si.FileName, si.Arguments);
+
+                    p4d.StartInfo = si;
+                    p4d.Start();
+                }
+                Environment.CurrentDirectory = CurWDir;
+
+                // Give p4d time to start up
+                using (TcpClient client = new TcpClient())
+                {
+                    DateTime started = DateTime.UtcNow;
+                    while (DateTime.UtcNow.Subtract(started).Milliseconds < 500)
+                    {
+                        try
+                        {
+                            string[] parts = configuration.ServerPort.Split(':');
+                            int port = int.Parse(parts[1]);
+                            client.Connect(parts[0], port);
+                            if (client.Connected)
+                                return p4d;
+                        }
+                        catch (FormatException ex)
+                        {
+                            logger.Error("Unparsable port number in configuration: {0} {1}",
+                                configuration.ServerPort, ex.Message);
+                        }
+                        catch (SocketException)
+                        {
+                            // logger.Info("Ignoring Exception during startup: {0}", ex.Message);
+                            // Ignore any exception while waiting for p4d to initialize
+                        }
+                    }
+                }
+
+                // that didn't work
+                return p4d;
+
+            }
+            finally
+            {
+#if (_LINUX || _OSX)
+                    // Linux tests are getting triggerred even before the p4d checkpoint is upgraded to the latest
+                    // So wait for a bit
+                    System.Threading.Thread.Sleep(2000);
+#endif
+            }
         }
 
         private static bool CopyDirTree(string srcDir, string targDir)

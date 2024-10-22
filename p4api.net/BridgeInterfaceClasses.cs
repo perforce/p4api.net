@@ -214,7 +214,7 @@ namespace Perforce.P4
     /// Error Subsystem Categories
     /// </summary>
 	public enum ErrorSubsystem : int
-	{
+    {
         /// <summary>
         /// OS error
         /// </summary>
@@ -230,11 +230,11 @@ namespace Perforce.P4
         /// <summary>
         /// Messaging
         /// </summary>
-		ES_RPC = 3, 
+		ES_RPC = 3,
         /// <summary>
         /// Database
         /// </summary>
-		ES_DB = 4,
+        ES_DB = 4,
         /// <summary>
         /// Database support
         /// </summary>
@@ -274,8 +274,32 @@ namespace Perforce.P4
         /// <summary>
         /// P4V and other Qt based clients
         /// </summary>
-		ES_P4QT = 14
-	} ;
+        ES_P4QT = 14,
+        /// <summary>
+        /// P4X3 server
+        /// </summary>
+        ES_X3SERVER = 15,
+        /// <summary>
+        /// Graph depot messages
+        /// </summary>
+        ES_GRAPH = 16,
+        /// <summary>
+        /// Scripting
+        /// </summary>
+        ES_SCRIPT = 17,
+        /// <summary>
+        /// Server Overflow
+        /// </summary>
+        ES_SERVER2 = 18,
+        /// <summary>
+        /// DM overflow
+        /// </summary>
+        ES_DM2 = 19,
+        /// <summary>
+        /// Help for configurables
+        /// </summary>
+        ES_CONFIG = 20
+    };
 
 	/*******************************************************************************
 	 *  P4ClientError
