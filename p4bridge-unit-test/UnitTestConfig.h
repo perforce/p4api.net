@@ -9,14 +9,18 @@
 #endif
 
 #if defined(OS_MACOSX)
-#define P4D "/Users/admin/p4d/r24.1/p4d"
+#define P4D "/Users/admin/p4d/r24.2/p4d"
 #define TAR "/usr/bin/tar"
 #define MYTESTDIR "/tmp/mytestdirbridge"
 #define MYTESTDIR8 "/tmp/mytestdirbridge8"
 #endif
 
 #if defined (OS_LINUX)
-#define P4D "/home/mount/p4-bin/bin.linux26x86_64/p4d"
+	#if defined(__aarch64__)
+		#define P4D "/home/mount/p4-bin/bin.linux26aarch64/p4d"		
+	#else
+		#define P4D "/home/mount/p4-bin/bin.linux26x86_64/p4d"
+	#endif	
 #define TAR "/bin/tar"
 #define MYTESTDIR "/tmp/MyTestDirBridge"
 #define MYTESTDIR8 "/tmp/MyTestDirBridge"

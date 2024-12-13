@@ -7033,7 +7033,13 @@ namespace Perforce.P4
         /// 	the nameFilter pattern, for example: -e 'svr-dev-rel*'. -E makes
         /// 	the matching case-insensitive.
         /// </summary>
-        IgnoreCase = 0x0002
+        IgnoreCase = 0x0002,
+        /// <summary>
+        /// 	The --user-case-insensitive flag specifies that all clients
+        /// 	should be displayed for given user considering user value
+        /// 	as case insensitive even for a case-sensitive server.
+        /// </summary>
+        UserCaseInsensitive = 0x0004
     }
 
     public partial class Options
@@ -7053,7 +7059,7 @@ namespace Perforce.P4
         /// <br/>     clients -- Display list of clients
         /// <br/>     workspaces -- synonym for 'clients'
         /// <br/> 
-        /// <br/>     p4 clients [-t] [-u user] [[-e|-E] nameFilter -m max] [-S stream]
+        /// <br/>     p4 clients [-t] [-u user [--user-case-insensitive]] [[-e|-E] nameFilter -m max] [-S stream]
         /// <br/>                [-a | -s serverID]
         /// <br/>     p4 clients -U
         /// <br/> 
@@ -7062,7 +7068,10 @@ namespace Perforce.P4
         /// <br/> 	The -t flag displays the time as well as the date.
         /// <br/> 
         /// <br/> 	The -u user flag lists client workspaces that are owned by the
-        /// <br/> 	specified user.
+        /// <br/> 	specified user.This can include wildcards to form a search pattern.
+        /// <br/> 	If wildcards are used enclose the search pattern in double quotes.
+        /// <br/> 	You can also add a --user-case-insensitive flag which will indicate
+        /// <br/> 	that the user value is a case-insensitive search pattern.
         /// <br/> 
         /// <br/> 	The -e nameFilter flag lists workspaces with a name that matches
         /// <br/> 	the nameFilter pattern, for example: -e 'svr-dev-rel*'. The -e flag
@@ -7097,6 +7106,10 @@ namespace Perforce.P4
             if (String.IsNullOrEmpty(userName) != true)
             {
                 this["-u"] = userName;
+                if ((flags & ClientsCmdFlags.UserCaseInsensitive) != 0)
+                {
+                    this["--user-case-insensitive"] = null;
+                }
             }
 
             if (String.IsNullOrEmpty(nameFilter) != true)
@@ -7142,7 +7155,7 @@ namespace Perforce.P4
         /// <br/>     clients -- Display list of clients
         /// <br/>     workspaces -- synonym for 'clients'
         /// <br/> 
-        /// <br/>     p4 clients [-t] [-u user] [[-e|-E] nameFilter -m max] [-S stream]
+        /// <br/>     p4 clients [-t] [-u user  [--user-case-insensitive]] [[-e|-E] nameFilter -m max] [-S stream]
         /// <br/>                [-a | -s serverID]
         /// <br/>     p4 clients -U
         /// <br/> 
@@ -7151,7 +7164,10 @@ namespace Perforce.P4
         /// <br/> 	The -t flag displays the time as well as the date.
         /// <br/> 
         /// <br/> 	The -u user flag lists client workspaces that are owned by the
-        /// <br/> 	specified user.
+        /// <br/> 	specified user. This can include wildcards to form a search pattern.
+        /// <br/> 	If wildcards are used enclose the search pattern in double quotes.
+        /// <br/> 	You can also add a --user-case-insensitive flag which will indicate
+        /// <br/> 	that the user value is a case-insensitive search pattern.
         /// <br/> 
         /// <br/> 	The -e nameFilter flag lists workspaces with a name that matches
         /// <br/> 	the nameFilter pattern, for example: -e 'svr-dev-rel*'. The -e flag
@@ -7702,7 +7718,19 @@ namespace Perforce.P4
         /// <summary>
 		/// 	The -r flag sorts the output in reverse order.
 		/// </summary>
-		ReverseOrder = 0x0020
+		ReverseOrder = 0x0020,
+        /// <summary>
+        /// 	The --client-case-insensitive flag specifies that all changelists
+        /// 	should be displayed for given client considering client value
+        /// 	as case insensitive even for a case-sensitive server.
+        /// </summary>
+        ClientCaseInsensitive = 0x0040,
+        /// <summary>
+        /// 	The --user-case-insensitive flag specifies that all changeslists
+        /// 	should be displayed for given user considering user value
+        /// 	as case insensitive even for a case-sensitive server.
+        /// </summary>
+        UserCaseInsensitive = 0x0080
     }
 
     /// <summary>
@@ -7749,8 +7777,8 @@ namespace Perforce.P4
         /// <br/> 
         /// <br/>     p4 changes [options] [file[revRange] ...]
         /// <br/> 
-        /// <br/> 	options: -i -t -l -L -f -r -c client -e changelist -m max -s status
-        /// <br/>            -u user
+        /// <br/> 	options: -i -t -l -L -f -r -c client --client-case-insensitive -e changelist
+        /// <br/> 	         -m max -s status -u user --user-case-insensitive
         /// <br/> 
         /// <br/> 	Returns a list of all pending and submitted changelists currently
         /// <br/> 	stored in the server.
@@ -7781,7 +7809,12 @@ namespace Perforce.P4
         /// <br/> 
         /// <br/> 	The -f flag enables admin users to view restricted changes.
         /// <br/> 
-        /// <br/> 	The -c client flag displays only submitted by the specified client.
+        /// <br/> 	The -c client flag displays only changes owned by the specified client.
+        /// <br/> 	You can repeat this option to filter the result for multiple clients.
+        /// <br/> 	Each client can include wildcards to form a search pattern. This search
+        /// <br/> 	pattern can start with '-' to exclude changes by those client(s) from
+        /// <br/> 	the result. Adding a -E (or --client-case-insensitive) flag makes the
+        /// <br/> 	search pattern case-insensitive even on a case-sensitive server.
         /// <br/> 
         /// <br/>   The -e changelist# flag displays only changes that are above and
         /// <br/>   including the specified changelist number.
@@ -7794,6 +7827,11 @@ namespace Perforce.P4
         /// <br/> 	status. Specify '-s pending', '-s shelved', or '-s submitted'.
         /// <br/> 
         /// <br/> 	The -u user flag displays only changes owned by the specified user.
+        /// <br/> 	You can repeat this option to filter the result for multiple users.
+        /// <br/> 	Each user can include wildcards to form a search pattern. This search
+        /// <br/> 	pattern can start with '-' to exclude changes by those user(s) from
+        /// <br/> 	the result. Adding a -E (or --user-case-insensitive) flag makes the
+        /// <br/> 	search pattern case-insensitive even on a case-sensitive server.
         /// <br/> 
         /// <br/> 
         /// </remarks>
@@ -7833,6 +7871,10 @@ namespace Perforce.P4
             if (String.IsNullOrEmpty(clientName) != true)
             {
                 this["-c"] = clientName;
+                if ((flags & ChangesCmdFlags.ClientCaseInsensitive) != 0)
+                {
+                    this["--client-case-insensitive"] = null;
+                }
             }
 
             if (maxItems >= 0)
@@ -7848,6 +7890,10 @@ namespace Perforce.P4
             if (String.IsNullOrEmpty(userName) != true)
             {
                 this["-u"] = userName;
+                if ((flags & ChangesCmdFlags.UserCaseInsensitive) != 0)
+                {
+                    this["--user-case-insensitive"] = null;
+                }
             }
 
             if (changelist > 0)
@@ -7879,7 +7925,8 @@ namespace Perforce.P4
         /// <br/> 
         /// <br/>     p4 changes [options] [file[revRange] ...]
         /// <br/> 
-        /// <br/> 	options: -i -t -l -L -f -c client -m max -s status -u user
+        /// <br/> 	options: -i -t -l -L -f -c client --client-case-insensitive
+        /// <br/> 	-m max -s status -u user --user-case-insensitive
         /// <br/> 
         /// <br/> 	Returns a list of all pending and submitted changelists currently
         /// <br/> 	stored in the server.
@@ -7910,7 +7957,12 @@ namespace Perforce.P4
         /// <br/> 
         /// <br/> 	The -f flag enables admin users to view restricted changes.
         /// <br/> 
-        /// <br/> 	The -c client flag displays only submitted by the specified client.
+        /// <br/> 	The -c client flag displays only changes owned by the specified client.
+        /// <br/> 	You can repeat this option to filter the result for multiple clients.
+        /// <br/> 	Each client can include wildcards to form a search pattern. This search
+        /// <br/> 	pattern can start with '-' to exclude changes by those client(s) from
+        /// <br/> 	the result. Adding a -E (or --client-case-insensitive) flag makes the
+        /// <br/> 	search pattern case-insensitive even on a case-sensitive server.
         /// <br/> 
         /// <br/> 	The -m max flag limits changes to the 'max' most recent.
         /// <br/> 
@@ -7918,6 +7970,11 @@ namespace Perforce.P4
         /// <br/> 	status. Specify '-s pending', '-s shelved', or '-s submitted'.
         /// <br/> 
         /// <br/> 	The -u user flag displays only changes owned by the specified user.
+        /// <br/> 	You can repeat this option to filter the result for multiple users.
+        /// <br/> 	Each user can include wildcards to form a search pattern. This search
+        /// <br/> 	pattern can start with '-' to exclude changes by those user(s) from
+        /// <br/> 	the result. Adding a -E (or --user-case-insensitive) flag makes the
+        /// <br/> 	search pattern case-insensitive even on a case-sensitive server.
         /// <br/> 
         /// <br/> 
         /// </remarks>
@@ -9357,7 +9414,13 @@ namespace Perforce.P4
         /// 	the nameFilter pattern, for example: -e 'branchspec*'. -E makes
         /// 	the matching case-insensitive.
         /// </summary>
-        IgnoreCase = 0x0002
+        IgnoreCase = 0x0002,
+        /// <summary>
+        /// 	The --user-case-insensitive flag specifies that all branches
+        /// 	should be displayed for given user considering user value
+        /// 	as case insensitive even for a case-sensitive server.
+        /// </summary>
+        UserCaseInsensitive = 0x0004
     }
 
     /// <summary>
@@ -9375,6 +9438,10 @@ namespace Perforce.P4
             if (String.IsNullOrEmpty(user) != true)
             {
                 this["-u"] = user;
+                if ((flags & BranchSpecsCmdFlags.UserCaseInsensitive) != 0)
+                {
+                    this["--user-case-insensitive"] = null;
+                }
             }
 
             if (String.IsNullOrEmpty(nameFilter) != true)
@@ -9531,7 +9598,13 @@ namespace Perforce.P4
         /// 	The -a flag specifies that all labels should be displayed,
         /// 	not just those that are bound to this server.
         /// </summary>
-        All = 0x0008
+        All = 0x0008,
+        /// <summary>
+        /// 	The --user-case-insensitive flag specifies that all labels
+        /// 	should be displayed for given user considering user value
+        ///     as case insensitive even for a case-sensitive server.
+        /// </summary>
+        UserCaseInsensitive = 0x0010
     }
 
     /// <summary>
@@ -9561,6 +9634,10 @@ namespace Perforce.P4
             if (String.IsNullOrEmpty(user) != true)
             {
                 this["-u"] = user;
+                if ((flags & LabelsCmdFlags.UserCaseInsensitive) != 0)
+                {
+                    this["--user-case-insensitive"] = null;
+                }
             }
 
             if (String.IsNullOrEmpty(nameFilter) != true)

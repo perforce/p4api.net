@@ -6,6 +6,8 @@ These are Build instructions for P4API.net and its required DLL and various test
 
 With the 2021.2 release, `P4API.NET` has been extended to support .NET CORE and to be cross-platform on three Target OS's (Windows, Linux, OSX)
 
+With the 2024.2 release, 'P4API.NET' has been extended to support Linux and Mac ARM64 architecture systems.
+
 P4API.NET consists of a DLL written in C++ which contains the Perforce C++ API, which is wrapped by a layer of C# code which exports the .NET interface.
 
 Within this directory are several subprojects.  p4bridge, p4bridge-unit-test, p4bridgeStressTest, p4api.net and p4api.net-unit-test

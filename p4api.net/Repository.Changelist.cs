@@ -1205,7 +1205,8 @@ namespace Perforce.P4
         /// <br/>
         /// <br/>     p4 changes [options] [file[revRange] ...]
         /// <br/>
-        /// <br/> 	options: -i -t -l -L -f -c client -m max -s status -u user
+        /// <br/> 	options: -i -t -l -L -f -c client --client-case-insensitive -m max
+        /// <br/> 	         -s status -u user --user-case-insensitive
         /// <br/>
         /// <br/> 	Returns a list of all pending and submitted changelists currently
         /// <br/> 	stored in the server.
@@ -1288,6 +1289,24 @@ namespace Perforce.P4
         ///		    IList&lt;Changelist&gt; changes =
         ///		    Repository.GetChangelists(opts, file);
         ///		</code>
+        ///		To get all changelists owned by users starting with sb and
+        ///		excluding clients those starts with sw:
+        ///		<code>
+        ///		    ChangesCmdOptions opts = new ChangesCmdOptions(ChangesCmdFlags.ClientCaseInsensitive|ChangesCmdFlags.UserCaseInsensitvie,
+        ///		            "-sw*", 0, ChangeListStatus.None, "sb*");
+        ///
+        ///		    IList&lt;Changelist&gt; changes =
+        ///		    Repository.GetChangelists(opts, null);
+        ///		</code>
+        ///		To get all changelists owned by multiple users and multiple clients,
+        ///		considering user names and client names as case insensitive: 
+        ///		<code>
+        ///		    ChangesCmdOptions opts = new ChangesCmdOptions(ChangesCmdFlags.ClientCaseInsensitive|ChangesCmdFlags.UserCaseInsensitvie,
+        ///		            "-sw*;workspace1;workspace2", 0, ChangeListStatus.None, "sb*;john");
+        ///
+        ///		    IList&lt;Changelist&gt; changes =
+        ///		    Repository.GetChangelists(opts, null);
+        ///		</code>
         /// </example>
         /// <seealso cref="ChangesCmdFlags"/>
         public IList<Changelist> GetChangelists(Options options, params FileSpec[] files)
@@ -1296,8 +1315,50 @@ namespace Perforce.P4
                 ? new P4Command(this, "changes", true, FileSpec.ToEscapedStrings(files))
                 : new P4Command(this, "changes", true))
 			{
+			StringList commandArguments = options;
 
-			P4CommandResult results = cmd.Run(options);
+			// options dictionary does not support duplicate keys,
+			// so need to constuct commands arguments in specific format that p4 understands.
+			// Support multiple clients "p4 changes -c client1 -c client2" 
+			if (options.ContainsKey("-c") && options["-c"].Contains(";"))
+			{
+				var clientNames = options["-c"].Split(';');
+				int insertIndex = commandArguments.IndexOf("-c") + 1;
+				commandArguments.RemoveAt(insertIndex);
+
+				foreach (var client in clientNames)
+				{
+					commandArguments.Insert(insertIndex, client);
+					if (client != clientNames.Last())
+					{
+						insertIndex = insertIndex + 1;
+						commandArguments.Insert(insertIndex, "-c");
+						insertIndex++;
+					}
+				}
+			}
+
+			// Support multiple users "p4 changes -u user1 -u user2" 
+			if (options.ContainsKey("-u") && options["-u"].Contains(";"))
+			{
+				var userNames = options["-u"].Split(';');
+				int insertIndex = commandArguments.IndexOf("-u") + 1;
+				commandArguments.RemoveAt(insertIndex);
+
+				foreach (var userName in userNames)
+				{
+					commandArguments.Insert(insertIndex, userName);
+					if (userName != userNames.Last())
+					{
+						insertIndex = insertIndex + 1;
+						commandArguments.Insert(insertIndex, "-u");
+						insertIndex++;
+					}
+				}
+			}
+
+			P4CommandResult results = cmd.Run(commandArguments);
+
 			if (results.Success)
 			{
 				if ((results.TaggedOutput == null) || (results.TaggedOutput.Count <= 0))

@@ -288,64 +288,76 @@ namespace Perforce.P4
 			return GetBranchSpec(branch, null, null, null);
 		}
 
-		/// <summary>
-		/// Get a list of branches from the repository
-		/// </summary>
-		/// <returns>A list containing the matching branches</returns>
-		/// <remarks>
-		/// <br/><b>p4 help branches</b>
-		/// <br/> 
-		/// <br/>     branches -- Display list of branch specifications
-		/// <br/> 
-		/// <br/>     p4 branches [-t] [-u user] [[-e|-E] nameFilter -m max]
-		/// <br/> 
-		/// <br/> 	Lists branch specifications. (See 'p4 help branch'.) 
-		/// <br/> 
-		/// <br/> 	The -t flag displays the time as well as the date.
-		/// <br/> 
-		/// <br/> 	The -u user flag lists branch specs owned by the specified user.
-		/// <br/> 
-		/// <br/> 	The -e nameFilter flag lists branch specs with a name that matches
-		/// <br/> 	the nameFilter pattern, for example: -e 'svr-dev-rel*'. The -e flag
-		/// <br/> 	uses the server's normal case-sensitivity rules. The -E flag makes
-		/// <br/> 	the matching case-insensitive, even on a case-sensitive server.
-		/// <br/> 
-		/// <br/> 	The -m max flag limits output to the specified number of branch specs.
-		/// <br/> 
-		/// <br/> 
-		/// </remarks>
-		/// <example>
-		///		To get all branches and include timestamps [-t] (WARNING, will fetch all branches from the repository):
-		///		<code> 
-		///	
-		///			Options opts = new Options(BranchSpecsCmdFlags.Time, "", "", -1);
-		/// 		IList&#60;Branch&#62; branches = _repository.GetBranchSpecs(opts);
-		///			
-		///		</code>
-		///		To get branches owned by 'Bob' [-u]:
-		///		<code> 
-		///			
-		///			Options opts = new Options(BranchSpecsCmdFlags.None, "Bob", "", -1);
-		///			IList&#60;Branch&#62; branches = _repository.GetBranchSpecs(opts);
-		///			
-		///		</code>
-		///		To get the first 10 branches that start with the capital letter 'A' [-m] [-e]:
-		///		<code> 
-		///			
-		///			Options opts = new Options(BranchSpecsCmdFlags.None, "", "A*", 10);
-		///			IList&#60;Branch&#62; branches = _repository.GetBranchSpecs(opts);
-		///			
-		///		</code>
-		///		To get the first 10 branches that start with the letter 'A' case insensitive [-m] [-E]:
-		///		<code> 
-		///			
-		///			Options opts = new Options(BranchSpecsCmdFlags.IgnoreCase, "", "A*", 10);
-		///			IList&#60;Branch&#62; branches = _repository.GetBranchSpecs(opts);
-		///			
-		///		</code>
-		/// </example>
-		/// <seealso cref="BranchSpecsCmdFlags"/>
-		public IList<BranchSpec> GetBranchSpecs(Options options)
+        /// <summary>
+        /// Get a list of branches from the repository
+        /// </summary>
+        /// <returns>A list containing the matching branches</returns>
+        /// <remarks>
+        /// <br/><b>p4 help branches</b>
+        /// <br/> 
+        /// <br/>   branches -- Display list of branch specifications
+        /// <br/> 
+        /// <br/>   p4 branches [-t] [-u user [--user-case-insensitive]] [[-e|-E] nameFilter -m max]
+        /// <br/> 
+        /// <br/> 	Lists branch specifications. (See 'p4 help branch'.) 
+        /// <br/> 
+        /// <br/> 	The -t flag displays the time as well as the date.
+        /// <br/> 
+        /// <br/> 	The -u user flag lists branch specs owned by the specified user.
+        /// <br/> 	This can include wildcards to form a search pattern.If wildcards
+        /// <br/> 	are used enclose the search pattern in double quotes.You can also
+        /// <br/> 	add a --user-case-insensitive flag which will indicate that the user
+        /// <br/> 	value is a case-insensitive search pattern.
+        /// <br/> 
+        /// <br/> 	The -e nameFilter flag lists branch specs with a name that matches
+        /// <br/> 	the nameFilter pattern, for example: -e 'svr-dev-rel*'. The -e flag
+        /// <br/> 	uses the server's normal case-sensitivity rules. The -E flag makes
+        /// <br/> 	the matching case-insensitive, even on a case-sensitive server.
+        /// <br/> 
+        /// <br/> 	The -m max flag limits output to the specified number of branch specs.
+        /// <br/> 
+        /// <br/> 
+        /// </remarks>
+        /// <example>
+        ///		To get all branches and include timestamps [-t] (WARNING, will fetch all branches from the repository):
+        ///		<code> 
+        ///	
+        ///			Options opts = new Options(BranchSpecsCmdFlags.Time, "", "", -1);
+        /// 		IList&#60;Branch&#62; branches = _repository.GetBranchSpecs(opts);
+        ///			
+        ///		</code>
+        ///		To get branches owned by 'Bob' [-u]:
+        ///		<code> 
+        ///			
+        ///			Options opts = new Options(BranchSpecsCmdFlags.None, "Bob", "", -1);
+        ///			IList&#60;Branch&#62; branches = _repository.GetBranchSpecs(opts);
+        ///			
+        ///		</code>
+        ///		To get branches owned by 'Bob' [-u [--user-case-insensitive]]
+        ///		considering ignore case for user name:
+        ///		<code> 
+        ///			
+        ///			Options opts = new Options(BranchSpecsCmdFlags.UserCaseInsensitive, "Bob", "", -1);
+        ///			IList&#60;Branch&#62; branches = _repository.GetBranchSpecs(opts);
+        ///			
+        ///		</code>
+        ///		To get the first 10 branches that start with the capital letter 'A' [-m] [-e]:
+        ///		<code> 
+        ///			
+        ///			Options opts = new Options(BranchSpecsCmdFlags.None, "", "A*", 10);
+        ///			IList&#60;Branch&#62; branches = _repository.GetBranchSpecs(opts);
+        ///			
+        ///		</code>
+        ///		To get the first 10 branches that start with the letter 'A' case insensitive [-m] [-E]:
+        ///		<code> 
+        ///			
+        ///			Options opts = new Options(BranchSpecsCmdFlags.IgnoreCase, "", "A*", 10);
+        ///			IList&#60;Branch&#62; branches = _repository.GetBranchSpecs(opts);
+        ///			
+        ///		</code>
+        /// </example>
+        /// <seealso cref="BranchSpecsCmdFlags"/>
+        public IList<BranchSpec> GetBranchSpecs(Options options)
 		{
             using (P4Command cmd = new P4Command(this, "branches", true))
             {

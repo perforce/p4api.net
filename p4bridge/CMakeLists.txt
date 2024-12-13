@@ -16,6 +16,16 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     message( NOTICE "Build Arch: ${MSVC_CXX_ARCHITECTURE_ID}")
     set(WINDOWS "true")
     add_compile_definitions(OS_NT $<$<CONFIG:Debug>:_DEBUG> _WINDOWS _USRDLL P4BRIDGE_EXPORTS _CRT_SECURE_NO_WARNINGS )
+	
+	# Set flags for both Debug and Release
+    if (MSVC)
+    
+        # For Release mode
+        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Zi")  # Generate debug info
+        set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} /DEBUG")
+        set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /DEBUG")
+    endif()
+	
     set(SslLibs libcrypto libssl crypt32 Ws2_32 )
     set(ApiLibs libclient libsupp libp4api )
     set(PlatformLibs oldnames Ws2_32 kernel32 user32 gdi32 winspool comdlg32 advapi32 shell32 ole32 oleaut32 uuid odbc32 odbccp32 )

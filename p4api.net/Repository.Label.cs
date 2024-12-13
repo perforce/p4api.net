@@ -344,59 +344,63 @@ namespace Perforce.P4
 			return GetLabel(label, null, null);
 		}
 
-		/// <summary>
-		/// Get a list of labels from the repository
-		/// </summary>
-		/// <returns>A list containing the matching labels</returns>
-	    /// <remarks>
-		/// <br/><b>p4 help labels</b>
-		/// <br/>
-		/// <br/>     labels -- Display list of defined labels
-		/// <br/>
-		/// <br/>     p4 labels [-t] [-u user] [[-e|-E] nameFilter -m max] [file[revrange]]
-		/// <br/>     p4 labels [-t] [-u user] [[-e|-E] nameFilter -m max] [-a|-s serverID]
-		/// <br/>     p4 labels -U
-		/// <br/>
-		/// <br/> 	Lists labels defined in the server.
-		/// <br/>
-		/// <br/> 	If files are specified, 'p4 labels' lists the labels that contain
-		/// <br/> 	those files.  If you include a file specification, automatic labels
-		/// <br/> 	and labels with the 'autoreload' option set are omitted from the list.
-		/// <br/> 	If the file specification includes a revision range, 'p4 labels'
-		/// <br/> 	lists labels that contain the specified revisions.
-		/// <br/>
-		/// <br/> 	See 'p4 help revisions' for details about specifying revisions.
-		/// <br/>
-		/// <br/> 	The -t flag displays the time as well as the date.
-		/// <br/>
-		/// <br/> 	The -u user flag lists labels owned by the specified user.
-		/// <br/>
-		/// <br/> 	The -e nameFilter flag lists labels with a name that matches
-		/// <br/> 	the nameFilter pattern, for example: -e 'svr-dev-rel*'. The -e flag
-		/// <br/> 	uses the server's normal case-sensitivity rules. The -E flag makes
-		/// <br/> 	the matching case-insensitive, even on a case-sensitive server.
-		/// <br/>
-		/// <br/> 	The -m max flag limits output to the first 'max' number of labels.
-		/// <br/>
-		/// <br/> 	The -U flag lists unloaded labels (see 'p4 help unload').
-		/// <br/>
-		/// <br/> 	The -a and -s flags are useful in a distributed server installation
-		/// <br/> 	(see 'p4 help distributed') in order to see the names of local labels
-		/// <br/> 	stored on other Edge Servers. These flags are not allowed if the
-		/// <br/> 	command includes a file specification.
-		/// <br/>
-		/// <br/> 	The -a flag specifies that all labels should be displayed, not just
-		/// <br/> 	those that are bound to this server.
-		/// <br/>
-		/// <br/> 	The -s serverID flag specifies that only those labels bound to the
-		/// <br/> 	specified serverID should be displayed.
-		/// <br/>
-		/// <br/> 	On an Edge Server, if neither -s nor -a is specified, only those
-		/// <br/> 	local labels bound to this Edge Server are displayed. Labels created
-		/// <br/> 	on the Commit Server are global, and are also included in the output.
-		/// <br/>
-		/// <br/>
-		/// </remarks>
+        /// <summary>
+        /// Get a list of labels from the repository
+        /// </summary>
+        /// <returns>A list containing the matching labels</returns>
+        /// <remarks>
+        /// <br/><b>p4 help labels</b>
+        /// <br/>
+        /// <br/>     labels -- Display list of defined labels
+        /// <br/>
+        /// <br/>     p4 labels [-t] [-u user [--user-case-insensitive]] [[-e|-E] nameFilter -m max] [file[revrange]]
+        /// <br/>     p4 labels [-t] [-u user [--user-case-insensitive]] [[-e|-E] nameFilter -m max] [-a|-s serverID]
+        /// <br/>     p4 labels -U
+        /// <br/>
+        /// <br/> 	Lists labels defined in the server.
+        /// <br/>
+        /// <br/> 	If files are specified, 'p4 labels' lists the labels that contain
+        /// <br/> 	those files.  If you include a file specification, automatic labels
+        /// <br/> 	and labels with the 'autoreload' option set are omitted from the list.
+        /// <br/> 	If the file specification includes a revision range, 'p4 labels'
+        /// <br/> 	lists labels that contain the specified revisions.
+        /// <br/>
+        /// <br/> 	See 'p4 help revisions' for details about specifying revisions.
+        /// <br/>
+        /// <br/> 	The -t flag displays the time as well as the date.
+        /// <br/>
+        /// <br/> 	The -u user flag lists labels owned by the specified user.
+        /// <br/> 	This can include wildcards to form a search pattern.If wildcards are
+        /// <br/> 	used enclose the search pattern in double quotes.You can also add a
+        /// <br/> 	--user-case-insensitive flag which will indicate that the user value
+        /// <br/> 	is a case-insensitive search pattern.
+        /// <br/>
+        /// <br/> 	The -e nameFilter flag lists labels with a name that matches
+        /// <br/> 	the nameFilter pattern, for example: -e 'svr-dev-rel*'. The -e flag
+        /// <br/> 	uses the server's normal case-sensitivity rules. The -E flag makes
+        /// <br/> 	the matching case-insensitive, even on a case-sensitive server.
+        /// <br/>
+        /// <br/> 	The -m max flag limits output to the first 'max' number of labels.
+        /// <br/>
+        /// <br/> 	The -U flag lists unloaded labels (see 'p4 help unload').
+        /// <br/>
+        /// <br/> 	The -a and -s flags are useful in a distributed server installation
+        /// <br/> 	(see 'p4 help distributed') in order to see the names of local labels
+        /// <br/> 	stored on other Edge Servers. These flags are not allowed if the
+        /// <br/> 	command includes a file specification.
+        /// <br/>
+        /// <br/> 	The -a flag specifies that all labels should be displayed, not just
+        /// <br/> 	those that are bound to this server.
+        /// <br/>
+        /// <br/> 	The -s serverID flag specifies that only those labels bound to the
+        /// <br/> 	specified serverID should be displayed.
+        /// <br/>
+        /// <br/> 	On an Edge Server, if neither -s nor -a is specified, only those
+        /// <br/> 	local labels bound to this Edge Server are displayed. Labels created
+        /// <br/> 	on the Commit Server are global, and are also included in the output.
+        /// <br/>
+        /// <br/>
+        /// </remarks>
         /// <example>
         ///
         ///     To get 50 labels on a distributed server installation:
@@ -417,8 +421,18 @@ namespace Perforce.P4
         ///         IList&#60;Label&#62; l = rep.GetLabels(ops, path);
         ///
         ///     </code>
+        ///
+        ///     To get all labels for user Bob considering user name is case insensitive:
+        ///
+        ///     <code>
+        ///
+        ///         LabelsCmdOptions opts = new LabelsCmdOptions(LabelsCmdFlags.UserCaseInsensitive,
+        ///             "Bob", null, 50, null);
+        ///         IList&#60;Label&#62; labels = rep.GetLabels(opts);
+        ///
+        ///     </code>
         /// </example>
-		public IList<Label> GetLabels(Options options, params FileSpec[] files)
+        public IList<Label> GetLabels(Options options, params FileSpec[] files)
 		{
             using (P4Command cmd = (files?.Length ?? 0) > 0
                 ? new P4Command(this, "labels", true, FileSpec.ToEscapedStrings(files))

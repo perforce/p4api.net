@@ -101,7 +101,8 @@
       "generator": "CodeBlocks - Unix Makefiles",
       "binaryDir": "${sourceDir}/out/${presetName}",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug"
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_OSX_ARCHITECTURES": "x86_64;arm64"
       }
     },
     {
@@ -111,7 +112,8 @@
       "generator": "CodeBlocks - Unix Makefiles",
       "binaryDir": "${sourceDir}/out/${presetName}",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_OSX_ARCHITECTURES": "x86_64;arm64"
       }
     }
   ]

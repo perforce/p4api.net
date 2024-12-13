@@ -9,6 +9,7 @@ using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Configuration;
 using System.Text.RegularExpressions;
 using File = System.IO.File;
+using System.Runtime.InteropServices;
 
 namespace p4api.net.unit.test
 {
@@ -25,12 +26,15 @@ namespace p4api.net.unit.test
 
         Platform current_platform;
 
+        Architecture current_architecture;
+
         public PlatformID CurrentPlatform { get; set; }
         public string WindowsTestDirectory { get; set; }
         public string WindowsP4dPath { get; set; }
         public string WindowsTarPath { get; set; }
         public string LinuxTestDirectory { get; set; }
         public string LinuxP4dPath { get; set; }
+        public string LinuxArm64P4dPath { get; set; }
         public string LinuxTarPath { get; set; }
         public string OsxTestDirectory { get; set; }
         public string OsxP4dPath { get; set; }
@@ -75,7 +79,16 @@ namespace p4api.net.unit.test
                     return OsxP4dPath;
 
                 if (current_platform == Platform.Linux)
-                    return LinuxP4dPath;
+                {
+                    if (current_architecture == Architecture.Arm64)
+                    {
+                        return LinuxArm64P4dPath;
+                    }
+                    else
+                    {
+                        return LinuxP4dPath;
+                    }
+                }
 
                 return WindowsP4dPath;
             }
@@ -98,7 +111,8 @@ namespace p4api.net.unit.test
         public UnitTestConfiguration()
         {
 #if NET5_0_OR_GREATER
-            string pdesc = System.Runtime.InteropServices.RuntimeInformation.OSDescription;
+            string pdesc = RuntimeInformation.OSDescription;
+            current_architecture = RuntimeInformation.OSArchitecture;
 
             if (pdesc.Contains("Darwin"))
                 current_platform = Platform.Osx;

@@ -31,8 +31,9 @@
     <file src="bin\Release\net60\p4api.net.deps.json" target="lib\net60" />
     <file src="bin\Release\net462\x86\p4bridge.dll" target="runtimes\win-x86\native"/>
     <file src="bin\Release\net462\x64\p4bridge.dll" target="runtimes\win-x64\native"/>
+    <file src="..\p4bridge\out\linux-arm64-Release\libp4bridge.so" target="runtimes\linux-arm64\native"/>
     <file src="..\p4bridge\out\linux-Release\libp4bridge.so" target="runtimes\linux-x64\native"/>
-    <file src="..\p4bridge\out\osx-Release\libp4bridge.dylib" target="runtimes\osx-x64\native"/>
+    <file src="..\p4bridge\out\osx-Release\libp4bridge.dylib" target="runtimes\osx-u\native"/>
     <file src="..\LICENSE.txt" target="" />
     <file src="p4api.net.targets" target="build" />
   </files>

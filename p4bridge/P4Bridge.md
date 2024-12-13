@@ -24,12 +24,13 @@ The p4bridge is cross platform, and (in windows) supports multiple builds from t
 
 Location | Type of P4API      | Download Location
 ---------| -------------------|-----------------
-../p4api_release | x64 windows static release | [P4API x64 static](http://ftp.perforce.com/perforce/r23.1/bin.ntx64/p4api_vs2019_static_openssl3.zip)
-../p4api_debug | x64 windows static debug | [P4API x64 static debug](http://ftp.perforce.com/perforce/r23.1/bin.ntx64/p4api_vs2019_static_vsdebug_openssl3.zip)
-../p4api_x86_release | x86 windows static release |[P4API x86 static](http://ftp.perforce.com/perforce/r23.1/bin.ntx86/p4api_vs2019_static_openssl3.zip)  
-../p4api_x86_debug | x86 windows static debug |[P4API x86 static debug](http://ftp.perforce.com/perforce/r23.1/bin.ntx86/p4api_vs2019_static_vsdebug_openssl3.zip)
-../p4api | linux (all) | [P4API for linux](http://ftp.perforce.com/perforce/r23.1/bin.linux26x86_64/p4api-glibc2.3-openssl3.tgz)
-../p4api | osx (all) | [P4API for osx](http://ftp.perforce.com/perforce/r23.1/bin.macosx105x86_64/p4api-openssl3.tgz)
+../p4api_release | x64 windows static release | [P4API x64 static](http://ftp.perforce.com/perforce/r24.2/bin.ntx64/p4api_vs2019_static_openssl3.zip)
+../p4api_debug | x64 windows static debug | [P4API x64 static debug](http://ftp.perforce.com/perforce/r24.2/bin.ntx64/p4api_vs2019_static_vsdebug_openssl3.zip)
+../p4api_x86_release | x86 windows static release |[P4API x86 static](http://ftp.perforce.com/perforce/r24.2/bin.ntx86/p4api_vs2019_static_openssl3.zip)  
+../p4api_x86_debug | x86 windows static debug |[P4API x86 static debug](http://ftp.perforce.com/perforce/r24.2/bin.ntx86/p4api_vs2019_static_vsdebug_openssl3.zip)
+../p4api | linux (all) | [P4API for linux](http://ftp.perforce.com/perforce/r24.2/bin.linux26x86_64/p4api-glibc2.3-openssl3.tgz)
+../p4api | linuxarm64 (arm64) | [P4API for linux](https://ftp.perforce.com/perforce/r24.2/bin.linux26aarch64/p4api-openssl3.tgz)
+../p4api | osx (all) | [P4API for osx](https://ftp.perforce.com/perforce/r24.2/bin.macosx12u/p4api-openssl3.tgz)
 
 ## Set up openssl libraries
 
@@ -56,11 +57,13 @@ Every preset uses a unique build directory under ./out as seen in the table belo
   x64-Debug   | Windows | x64 | Debug | ./out/x64/Debug
   x86-Release | Windows | x86 | Release | ./out/x86/Release
   x86-Debug   | Windows | x86 | Debug | ./out/x86/Debug
-  osx-Release | OSX | Intel 64 bit | Release | ./out/osx-Release
-  osx-Debug   | OSX | Intel 64 bit | Debug   | ./out/osx-Debug
+  osx-Release | OSX | Universal (x64, aarch64) | Release | ./out/osx-Release
+  osx-Debug   | OSX | Universal (x64, aarch64) | Debug   | ./out/osx-Debug
   linux-Release | Linux | Intel 64 bit | Release | ./out/linux-Release
   linux-Debug | Linux | Intel 64 bit | Debug | ./out/linux-Debug
-
+  linux-Release | Linux | ARM 64 bit | Release | ./out/linux-Release
+  linux-Debug | Linux | ARM 64 bit | Debug | ./out/linux-Debug
+  
 ## Building the Bridge DLL
 
  1. Generate the build environment `cmake --preset=PRESET`. this will create an Cmake build toolchain for the specified preset and initialize its OUT_DIRECTORY.

@@ -1256,7 +1256,7 @@ namespace Perforce.P4
         /// <br/>     clients -- Display list of clients
         /// <br/>     workspaces -- synonym for 'clients'
         /// <br/> 
-        /// <br/>     p4 clients [-t] [-u user] [[-e|-E] nameFilter -m max] [-S stream]
+        /// <br/>     p4 clients [-t] [-u user [--user-case-insensitive]] [[-e|-E] nameFilter -m max] [-S stream]
         /// <br/>                [-a | -s serverID]
         /// <br/>     p4 clients -U
         /// <br/> 
@@ -1265,7 +1265,10 @@ namespace Perforce.P4
         /// <br/> 	The -t flag displays the time as well as the date.
         /// <br/> 
         /// <br/> 	The -u user flag lists client workspaces that are owned by the
-        /// <br/> 	specified user.
+        /// <br/> 	specified user.This can include wildcards to form a search pattern.
+        /// <br/> 	If wildcards are used enclose the search pattern in double quotes.
+        /// <br/> 	You can also add a --user-case-insensitive flag which will indicate
+        /// <br/> 	that the user value is a case-insensitive search pattern.
         /// <br/> 
         /// <br/> 	The -e nameFilter flag lists workspaces with a name that matches
         /// <br/> 	the nameFilter pattern, for example: -e 'svr-dev-rel*'. The -e flag
@@ -1315,6 +1318,13 @@ namespace Perforce.P4
         ///		<code> 
         ///			ClientsCmdOptions opts =
         ///			new ClientsCmdOptions(ClientsCmdFlags.NoneIncludeTime, "bsmith", null, 0, null));
+        ///			
+        ///			IList&lt;Client&gt; clients = Repository.GetClients(opts);
+        ///		</code>
+        ///		To get a list clients owned by user Bsmith considering user name as case insensitive:
+        ///		<code> 
+        ///			ClientsCmdOptions opts =
+        ///			new ClientsCmdOptions(ClientsCmdFlags.UserCaseInsensitive, "Bsmith", null, 0, null));
         ///			
         ///			IList&lt;Client&gt; clients = Repository.GetClients(opts);
         ///		</code>

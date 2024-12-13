@@ -59,8 +59,14 @@ namespace Perforce.P4
         {
             IntPtr libHandle = IntPtr.Zero;
 
-            string assemblyDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            string assemblyDirectory;
 
+            var assemblyLocation = Assembly.GetExecutingAssembly().Location;
+
+            assemblyDirectory = string.IsNullOrEmpty(assemblyLocation)
+                ? AppContext.BaseDirectory // Fallback when in a single-file bundle
+                : Path.GetDirectoryName(assemblyLocation);
+            
             // Look first in the location we expect for the nuget package,
             // if not found, look within the Assembly runtime directory
             if (libraryName == bridgeDll)
@@ -86,7 +92,17 @@ namespace Perforce.P4
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && Environment.Is64BitOperatingSystem)
                 {
-                    var res = NativeLibrary.TryLoad("./runtimes/linux-x64/native/libp4bridge.so", out libHandle);
+                    bool res;
+
+                    if (RuntimeInformation.OSArchitecture == Architecture.Arm64)
+                    {
+                        res = NativeLibrary.TryLoad("./runtimes/linux-arm64/native/libp4bridge.so", out libHandle);
+                    }
+                    else
+                    {
+                        res = NativeLibrary.TryLoad("./runtimes/linux-x64/native/libp4bridge.so", out libHandle);
+                    }
+
                     if (!res)
                     {
                         res = NativeLibrary.TryLoad(Path.Combine(assemblyDirectory, "libp4bridge.so"), out libHandle);
@@ -94,7 +110,7 @@ namespace Perforce.P4
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) && Environment.Is64BitOperatingSystem)
                 {
-                    var res = NativeLibrary.TryLoad("./runtimes/osx-x64/native/libp4bridge.dylib", out libHandle);
+                    var res = NativeLibrary.TryLoad("./runtimes/osx-u/native/libp4bridge.dylib", out libHandle);
                     if (!res)
                     {
                         res = NativeLibrary.TryLoad(Path.Combine(assemblyDirectory, "libp4bridge.dylib"), out libHandle);

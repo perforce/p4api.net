@@ -1,7 +1,7 @@
                            Release Notes for
                 P4API.NET, the Helix P4API for .NET
 
-                          Version 2024.1
+                          Version 2024.2
 
 Introduction
 
@@ -67,8 +67,8 @@ Compatibility Statements
 
         API Compatibility
 
-          This release of P4API.NET requires the 2024.1 Helix Core API
-          (2024.1/2596294) for C/C++ (P4API), built with Visual Studio 2019 or 
+          This release of P4API.NET requires the 2024.2 Helix Core API
+          (2024.2/2675662) for C/C++ (P4API), built with Visual Studio 2019 or 
           later.
 
         C#/.NET Compatibility
@@ -81,17 +81,19 @@ Compatibility Statements
         Platform Compatibility
 
           While P4API.NET is generally usable on Windows, Linux and MacOS 
-          platforms, the release is certified only on the following platforms:
+          platforms, the release is tested only on the following platforms:
 
-          Windows
-            Windows 10
-            Windows Server 2019
-            Windows Server 2022
+          Windows for Intel(x86_64)
+            Windows 10,11
+            Windows Server 2019,2022
           Mac OS 
-            MacOS 12.2
-          Linux
+            12.2 (x86_64)
+            12,13 (ARM64)
+          Linux kernel 2.6+ for Intel(x86_64)
             Ubuntu 20.04
-
+          Linux kernel 2.6+ for ARM(aarch64)
+            Ubuntu 20.04 
+          
         Compiler Compatibility
 
           Details regarding compiler compatibility can be found in the source 
@@ -103,6 +105,13 @@ Compatibility Statements
           Unless otherwise stated below, this release of P4API.NET is compatible
           with previous releases from Perforce Software.
 
+---------------------------------------------------------------------------
+Important End-of-Life Notice
+
+    This major release of P4API.NET would be the last to support '.Net 6.0'.
+    Next major release will add support for '.Net 8.0'.  
+    This is part of our commitment to focus on supported technology platforms.
+
 --------------------------------------------------------------------------
 
 Key to symbols used in change notes below.
@@ -110,6 +119,64 @@ Key to symbols used in change notes below.
           * -- requires new P4API.NET
          ** -- requires P4API.NET built with new P4API
         *** -- requires new p4d server program
+
+--------------------------------------------------------------------------
+New functionality in 2024.2 (2024.2/2693570) (2024/12/10)
+
+        #2682306 (Job #122604) * ** ***
+            Updated P4API.NET to support 2024.2 release of Helix Core.
+
+        #2688952,2688933,2690282 (Job #122182,#123875) * ** ***
+            Added P4Bridge & build support for Linux ARM64/AARCH64 architecture.
+
+        #2681514,2681534,2681515,2690282 (Job #118414,#123875) * ** ***
+            Added P4Bridge & build support for Apple M1 (ARM64) architecture.
+            P4Bridge now supports universal binary for x64 and ARM64 machines 
+            for macosx.
+
+        #2683196 (Job #123225) * ** ***
+            Added support for --client-case-insensitive for client and 
+            --user-case-insensitive option for user for changes command.
+            Users can now get changelists without case sensitivity for 
+            usernames or client names, even if the server is case-sensitive.
+
+        #2684063 (Job #123230) * ** ***
+            Added support for multiple -c and -u for p4 changes command.
+            User can now get changelists from multiple clients and 
+            users. 
+            Note: User needs to pass client name/user name as ';' separated 
+            string while passing values to ChangesCmdOptions object. 			
+
+        #2683152 (Job #123232) * ** ***
+            Add support for --user-case-insensitive flag for p4 labels command.
+            Users can now get labels without worrying about case sensitivity, 
+            even if the server is case-sensitive.		
+
+        #2683154 (Job #123227) * ** ***
+            Add support for --user-case-insensitive option for p4 branches.
+            Users can now get branches without worrying about case sensitivity, 
+            even if the server is case-sensitive.			
+
+        #2683169 (Job #123226) * ** ***
+            Added suppport for option --user-case-insensitve for p4 clients command.
+            Users can now get clients without worrying about case sensitivity, 
+            even if the server is case-sensitive.
+
+--------------------------------------------------------------------------
+Bugs fixed in 2024.2 (2024.2/2693570) (2024/12/10)
+
+        #2689825 (Job #119342) *
+            Fixed issue while loading p4bridge.dll in single-file bundles.
+
+        #2685105 (Job #123137) *
+            This fix addresses vulnerabilties CVE-2024-43485
+
+--------------------------------------------------------------------------
+
+Bugs fixed in 2024.1 Patch 1 (2024.1/2655426) (2024/09/18)
+
+        #2654528 (Job #122566) *
+            Fixed unhandled exception while fetching server information.
 
 --------------------------------------------------------------------------
 New functionality in 2024.1 (2024.1/2618274) (2024/06/27)
