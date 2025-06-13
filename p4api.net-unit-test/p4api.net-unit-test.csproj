@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <RootNamespace>p4api.net.unit.test</RootNamespace>
-    <TargetFrameworks>netstandard2.0;net462;net60</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net462;net80</TargetFrameworks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AssemblyTitle>Perforce .NET API Unit Tests</AssemblyTitle>
     <Company>Perforce Software, Inc.</Company>

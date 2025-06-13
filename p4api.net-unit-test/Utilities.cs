@@ -116,7 +116,7 @@ namespace p4api.net.unit.test
 
             if (pdesc.Contains("Darwin"))
                 current_platform = Platform.Osx;
-            else if (pdesc.Contains("Linux"))
+            else if (pdesc.Contains("Linux") || pdesc.Contains("Ubuntu"))
                 current_platform = Platform.Linux;
             else
             {
@@ -564,6 +564,8 @@ namespace p4api.net.unit.test
 
             // unpack the tar ball
             si = new ProcessStartInfo(configuration.TarPath);
+
+            
             si.WorkingDirectory = untarredContentsDir;
 #if _LINUX
             si.Arguments = String.Format("--warning=no-unknown-keyword -xf {0}", tarFile);

@@ -824,12 +824,32 @@ namespace Perforce.P4
         Virtual = 0x0004,
         /// <summary>
         /// Task: A lightweight short-lived stream that
-        ///  only promotes modified content to the
-        ///  repository, branched data is stored in
-        ///  shadow tables that are removed when the task
-        ///  stream is deleted or unloaded.
+        /// only promotes modified content to the
+        /// repository, branched data is stored in
+        /// shadow tables that are removed when the task
+        /// stream is deleted or unloaded.
         /// </summary>
-        Task = 0x0008
+        Task = 0x0008,
+        /// <summary>
+        /// Sparsedev: Sparse stream for development with
+        /// the same flow control as a stream of type development.
+        /// Files in sparse streams are only branched as needed,
+        /// so less metadata needs to be maintained, stored,
+        /// and sent to downstream servers.
+        /// A sparse stream can be a child of a mainline,
+        /// development, or release stream.
+        /// </summary>
+        Sparsedev = 0x0010,
+        /// <summary>
+        /// Sparserel: Sparse stream for release with the
+        /// same flow control as a stream of type release.
+        /// Files in sparse streams are only branched as needed,
+        /// so less metadata needs to be maintained, stored,
+        /// and sent to downstream servers.
+        /// A sparse stream can be a child of a mainline,
+        /// development, or release stream.
+        /// </summary>
+        Sparserel = 0x0020
     }
 
     /// <summary>

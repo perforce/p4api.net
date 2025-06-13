@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace Perforce.P4
 {
@@ -698,14 +700,30 @@ namespace Perforce.P4
                 //Populate license information only if it's available.
                 if (!string.IsNullOrEmpty(lic) && !lic.Equals("none"))
                 {
-                    string[] info = lic.Split(' ');
-                    int users;
-                    int.TryParse(info[0], out users);
-                    DateTime expires;
-                    DateTime.TryParse(info[2], out expires);
+                    int users=0;
+                    DateTime expires=DateTime.MinValue;
+
+                    // Match number of users and license expiry date using regex since position of these values is not fixed in serverLicense property.
+                    Regex usersPattern = new Regex(@"\d+ users", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+                    Regex expiryDatePattern = new Regex(@"\(expires (\d{4}/\d{2}/\d{2})\)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+                    Match match = usersPattern.Match(lic);
+
+                    if (match.Success)
+                    {
+                        int.TryParse(match.Value.Replace(" users", "").Trim(), out users);
+                    }
+
+                    Match matchExpiryDate = expiryDatePattern.Match(lic);
+
+                    if (matchExpiryDate.Success)
+                    {
+                        DateTime.TryParse(matchExpiryDate.Groups[1].Value, out expires);
+                    }
+
                     License = new ServerLicense(users, expires);
                 }
-			}
+            }
 
 			if (objectInfo.ContainsKey("serverLicense-ip"))
 				LicenseIp = objectInfo["serverLicense-ip"];

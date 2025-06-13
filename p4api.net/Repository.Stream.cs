@@ -856,5 +856,65 @@ namespace Perforce.P4
             }
             return null;
         }
+
+
+        /// <summary>
+        /// Converts a sparse stream to a development/release stream.
+        /// If stream is not already open, the stream specification will be opened
+        /// and any unbranched files from the parent stream will be opened in the workspace
+        /// for branch to the stream in default changelist.
+        /// </summary>
+        /// <param name="options">options for the stream convertsparse command</param>
+        /// <returns>Returns result during conversion of a sparse stream to a development/release stream.</returns>
+        /// <remarks>
+        /// <br/><b>p4 help streamcmds</b>
+        /// <br/>
+        /// <br/>    p4 stream convertsparse [-q]
+        /// <br/>
+        /// <br/> 	'p4 stream convertsparse' converts a sparsedev or sparserel stream to
+        /// <br/> 	either a development or release stream.If it is not already open, the
+        /// <br/> 	stream specification will be opened and any unbranched files from the
+        /// <br/> 	parent stream will be opened in the workspace for branch to the stream.
+        /// <br/> 	-q  Suppress normal output messages.Messages regarding
+        /// <br/> 	    errors or exceptional conditions are displayed.
+        /// <br/>
+        /// </remarks>
+        /// <example>
+        ///
+        ///     To convert the stream currently assigned to the client to either development/release:
+        ///     <code>
+        ///          //Establish connection with server and assign a client to a repository
+        ///          which has sparserel/sparsedev stream.
+        ///          string result = rep.ConvertSparseStream(new StreamCmdOptions(StreamCmdFlags.Convertsparse, null, null, false));
+        ///          //User can pass boolean value to true to set the -q flag to suppress normal output messages.
+        ///     </code>
+        /// </example>
+        public string ConvertSparseStream(Options options)
+        {
+            using (P4Command cmd = new P4Command(this, "stream", true))
+            {
+                if (options == null)
+                {
+                    options = new Options((StreamCmdFlags.Convertsparse), null, null,false);
+                }
+
+                if (options.ContainsKey("convertsparse") == false)
+                {
+                    options["convertsparse"] = null;
+                }
+
+                P4CommandResult results = cmd.Run(options);
+                if (results.Success)
+                {
+                    return results.InfoOutput;
+                }
+                else
+                {
+                    P4Exception.Throw(results.ErrorList);
+                }
+
+                return string.Empty;
+            }
+        }
 	}
 }

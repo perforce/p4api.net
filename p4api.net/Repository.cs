@@ -1117,7 +1117,8 @@ namespace Perforce.P4
         }
 
         /// <summary>
-        /// Return the contents of the files identified by the passed-in file specs.
+        /// Return the contents of the files identified by the passed-in file specs based on their base file type in the depot.
+        /// If the file type is unknown or if both text and binary content may be needed, use GetFileContentsEx instead.
         /// </summary>
         /// <param name="filespecs"></param>
         /// <param name="options"></param>
@@ -1225,7 +1226,8 @@ namespace Perforce.P4
         }
 
         /// <summary>
-        /// Return the contents of the files identified by the passed-in file specs.
+        /// Return the contents of the files identified by the passed-in file specs based on their base file type in the depot.
+        /// If the file type is unknown or if both text and binary content may be needed, use GetFileContentsEx instead.
         /// </summary>
         /// <param name="filespecs"></param>
         /// <param name="options"></param>
@@ -1308,6 +1310,7 @@ namespace Perforce.P4
 
         /// <summary>
         /// Return the contents of the files identified by the passed-in file specs.
+        /// Use this method if user wants get file contents in binary format or if server is returning file contents in binary format.
         /// </summary>
         /// <param name="filespecs"></param>
         /// <param name="options"></param>
@@ -1445,6 +1448,7 @@ namespace Perforce.P4
 
         /// <summary>
         /// Return the contents of the files identified by the passed-in file specs.
+        /// Use this method if user wants get file contents in binary format or if server is returning file contents in binary format.
         /// </summary>
         /// <param name="filespecs"></param>
         /// <param name="options"></param>
@@ -1739,7 +1743,8 @@ namespace Perforce.P4
                             else
                             {
                                 srev = srev.Trim('#');
-                                int rev = Convert.ToInt16(srev);
+                                // Changed from Int16 to Int32 to handle larger revision numbers.
+                                int rev = Convert.ToInt32(srev);
                                 startrev = new Revision(rev);
                             }
 
@@ -1770,7 +1775,8 @@ namespace Perforce.P4
                             else
                             {
                                 erev = erev.Trim('#');
-                                int rev = Convert.ToInt16(erev);
+                                // Changed from Int16 to Int32 to handle larger revision numbers.
+                                int rev = Convert.ToInt32(erev);
                                 endrev = new Revision(rev);
                             }
 

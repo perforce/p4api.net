@@ -16,7 +16,7 @@
     <tags>perforce helix vcs scm p4 p4api p4api.net</tags>
     <dependencies>
       <group targetFramework=".NETFramework4.6.2" />
-      <group targetFramework="net6.0" />
+      <group targetFramework="NET8.0" />
       <group targetFramework=".NETStandard2.0" />
     </dependencies>
   </metadata>
@@ -26,9 +26,9 @@
     <file src="bin\Release\netstandard2.0\p4api.net.deps.json" target="lib\netstandard2.0" />
     <file src="bin\Release\net462\p4api.net.dll" target="lib\net462" />
     <file src="bin\Release\net462\p4api.net.pdb" target="lib\net462" />
-    <file src="bin\Release\net60\p4api.net.dll" target="lib\net60" />
-    <file src="bin\Release\net60\p4api.net.pdb" target="lib\net60" />
-    <file src="bin\Release\net60\p4api.net.deps.json" target="lib\net60" />
+    <file src="bin\Release\net80\p4api.net.dll" target="lib\net80" />
+    <file src="bin\Release\net80\p4api.net.pdb" target="lib\net80" />
+    <file src="bin\Release\net80\p4api.net.deps.json" target="lib\net80" />
     <file src="bin\Release\net462\x86\p4bridge.dll" target="runtimes\win-x86\native"/>
     <file src="bin\Release\net462\x64\p4bridge.dll" target="runtimes\win-x64\native"/>
     <file src="..\p4bridge\out\linux-arm64-Release\libp4bridge.so" target="runtimes\linux-arm64\native"/>

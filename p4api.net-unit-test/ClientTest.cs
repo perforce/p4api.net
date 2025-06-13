@@ -1436,6 +1436,236 @@ namespace p4api.net.unit.test
         }
 
         /// <summary>
+        ///A test for MoveFiles
+        ///</summary>
+        [TestMethod()]
+        public void MoveMatchMoveFilesTest()
+        {
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
+            string uri = configuration.ServerPort;
+            string user = "admin";
+            string pass = string.Empty;
+            string ws_client = "admin_space";
+            for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
+            {
+                Process p4d = null;
+                Repository rep = null;
+                try
+                {
+                    p4d = Utilities.DeployP4TestServer(TestDir, cptype, TestContext.TestName);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+                   
+                    var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
+                    var adminSpace = Path.Combine(clientRoot, "admin_space");
+                    
+                    Utilities.DeleteDirectory(adminSpace);  // get rid of workspace cruft
+                    Directory.CreateDirectory(adminSpace);
+                    
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
+                    
+                    using (Connection con = rep.Connection)
+                    {
+                        con.UserName = user;
+                        con.Client = new Client();
+                        con.Client.Name = ws_client;
+                        
+                        Assert.AreEqual(con.Status, ConnectionStatus.Disconnected);
+                        Assert.AreEqual(con.Server.State, ServerState.Unknown);
+                        Assert.IsTrue(con.Connect(null));
+                        Assert.AreEqual(con.Server.State, ServerState.Online);
+                        Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+                        Assert.AreEqual("admin", con.Client.OwnerName);
+                        
+                        //setting current working directory to the adminSpace
+                        con.getP4Server().CurrentWorkingDirectory = adminSpace;
+                        
+                        FileSpec folderRoot = new FileSpec(new LocalPath(Path.Combine(adminSpace, "MyCode", "...")),
+                            null);
+                        
+                        // force sync files
+                        Options sFlags = new Options(SyncFilesCmdFlags.Force, -1);
+                        IList<FileSpec> syncedFiles = con.Client.SyncFiles(sFlags, folderRoot);
+                        
+                        // touch file under Perforce control without opening for
+                        // add, edit or delete
+                        string readme = Path.Combine(adminSpace, "MyCode", "ReadMe.txt");
+                        string renamedreadme = Path.Combine(adminSpace, "MyCode", "RenamedReadMe.txt");
+                        System.IO.File.SetAttributes(readme,
+                            System.IO.File.GetAttributes(readme)
+                            & ~FileAttributes.ReadOnly);
+                        
+                        // rename a file
+                        System.IO.File.Move(readme, renamedreadme);
+                        sFlags = new Options(ReconcileFilesCmdFlags.None, -1);
+                        IList<FileSpec> rFiles = con.Client.ReconcileStatus(sFlags, folderRoot);
+                        Assert.AreEqual(3, rFiles.Count);
+                        
+                        // reconcile the renamed file
+                        sFlags = new Options(ReconcileFilesCmdFlags.Preview, -1);
+                        rFiles = con.Client.ReconcileFiles(sFlags, folderRoot);
+                        Assert.AreEqual(2, rFiles.Count);
+                        
+                        // change folderRoot to limit to the renamed file
+                        folderRoot = new FileSpec(new LocalPath(Path.Combine(adminSpace, "MyCode", "*ReadMe.txt")), null);
+                        sFlags = new Options(ReconcileFilesCmdFlags.None, -1);
+                        rFiles = con.Client.ReconcileFiles(sFlags, folderRoot);
+                        sFlags = new Options(GetFileMetadataCmdFlags.None, null, null, 0,
+                            null, null, null);
+                        syncedFiles = new List<FileSpec>();
+                        syncedFiles.Add(folderRoot);
+                        
+                        // get the filemetadata to confirm reconcile opened the
+                        // modified files with the correct action
+                        IList<FileMetaData> fmd = rep.GetFileMetaData(syncedFiles, sFlags);
+                        
+                        Assert.IsNotNull(fmd);
+                        Assert.AreEqual(2, fmd.Count);
+                        Assert.AreEqual(fmd[0].Action, FileAction.Delete);
+                        Assert.AreEqual(fmd[1].Action, FileAction.Add);
+                        
+                        Options options = new Options(MoveFileCmdFlags.MatchMoves, -1, null);
+                        rFiles = con.Client.MoveFiles(null, null, options);
+                        Assert.IsNotNull(rFiles);
+                        Assert.AreEqual(2, rFiles.Count);
+                        
+                        if (rFiles[0] is Perforce.P4.File rFileMoveDelete)
+                        {
+                            Assert.AreEqual(rFileMoveDelete.Action, FileAction.MoveDelete);
+                        }
+                        if (rFiles[1] is Perforce.P4.File rFileMoveAdd)
+                        {
+                            Assert.AreEqual(rFileMoveAdd.Action, FileAction.MoveAdd);
+                        }
+                    }
+                }
+                finally
+                {
+                    Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
+                }
+                cptype = Utilities.CheckpointType.U;
+            }
+        }
+
+        /// <summary>
+        ///A test for Parallel MoveFiles
+        ///</summary>
+        [TestMethod()]
+        public void ParallelMoveFilesTestA()
+        {
+            ParallelMoveFilesTest(Utilities.CheckpointType.A);
+        }
+
+        public void ParallelMoveFilesTest(Utilities.CheckpointType cptype)
+        {
+            string uri = configuration.ServerPort;
+            string user = "admin";
+            string ws_client = "admin_space";
+
+            Process p4d = null;
+            Repository rep = null;
+
+            try
+            {
+#if !_WINDOWS
+                // Avoid issues with GetCharSet() on non-Windows platforms
+                if (cptype == Utilities.CheckpointType.U)
+                    P4Server.Update("P4CHARSET", "utf8");
+#endif
+                // Deploy the test server
+                p4d = Utilities.DeployP4TestServer(TestDir, 2, cptype);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+                // Set up repository and client
+                var adminSpace = Path.Combine(Utilities.TestClientRoot(TestDir, cptype), "admin_space");
+                Utilities.DeleteDirectory(adminSpace); // Clean up workspace
+                Directory.CreateDirectory(adminSpace);
+
+                Server server = new Server(new ServerAddress(uri));
+                rep = new Repository(server);
+                Utilities.SetClientRoot(rep, TestDir, cptype, ws_client, false);
+
+                using (Connection con = rep.Connection)
+                {
+                    con.UserName = user;
+                    con.Client = new Client { Name = ws_client };
+
+                    Assert.AreEqual(con.Status, ConnectionStatus.Disconnected);
+                    Assert.IsTrue(con.Connect(null));
+                    Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+
+                    //setting current working directory to the adminSpace
+                     con.getP4Server().CurrentWorkingDirectory = adminSpace;
+
+                    FileSpec folderRoot = new FileSpec(new LocalPath(Path.Combine(adminSpace, "MyCode", "...")), null);
+
+                    // Force sync files
+                    Options syncFlags = new Options(SyncFilesCmdFlags.Force, -1);
+                    IList<FileSpec> syncedFiles = con.Client.SyncFiles(syncFlags, folderRoot);
+
+                    // Simulate file renaming
+                    string originalFile = Path.Combine(adminSpace, "MyCode", "ReadMe.txt");
+                    string renamedFile = Path.Combine(adminSpace, "MyCode", "RenamedReadMe.txt");
+
+                    System.IO.File.SetAttributes(originalFile, System.IO.File.GetAttributes(originalFile) & ~FileAttributes.ReadOnly);
+                    System.IO.File.Move(originalFile, renamedFile);
+
+                    // test reconcile against all files in a directory with no changelist specified
+                    Options sFlags = new Options(ReconcileFilesCmdFlags.Preview, -1);
+                    IList<FileSpec> rFiles = con.Client.ReconcileFiles(sFlags, folderRoot);
+
+                    Assert.IsNotNull(rFiles);
+                    Assert.AreEqual(2, rFiles.Count);
+
+                    // change folderRoot to limit to the renamed file
+                    folderRoot = new FileSpec(new LocalPath(Path.Combine(adminSpace, "MyCode", "*ReadMe.txt")), null);
+
+                    // Enable parallel processing for reconcile with MatchMoves (-M) option
+                    Options reconcileFlags = new Options(ReconcileFilesCmdFlags.None, -1, 2);
+                    IList<FileSpec> reconciledFiles = con.Client.ReconcileFiles(reconcileFlags, folderRoot);
+
+                    // Validate the results
+                    Assert.IsNotNull(reconciledFiles);
+                    Assert.AreEqual(2, reconciledFiles.Count);
+
+                    // Ensure the correct actions are applied
+                    if (reconciledFiles[0] is Perforce.P4.File rFileDelete)
+                    {
+                        Assert.AreEqual(rFileDelete.Action, FileAction.Delete);
+                    }
+                    if (reconciledFiles[1] is Perforce.P4.File rFileAdd)
+                    {
+                        Assert.AreEqual(rFileAdd.Action, FileAction.Add);
+                    }
+
+                    Options options = new Options(MoveFileCmdFlags.MatchMoves, -1, null, 2);
+                    rFiles = con.Client.MoveFiles(null, null, options);
+                    Assert.IsNotNull(rFiles);
+                    Assert.AreEqual(2, rFiles.Count);
+
+                    if (rFiles[0] is Perforce.P4.File rFileMoveDelete)
+                    {
+                        Assert.AreEqual(rFileMoveDelete.Action, FileAction.MoveDelete);
+                    }
+                    if (rFiles[1] is Perforce.P4.File rFileMoveAdd)
+                    {
+                        Assert.AreEqual(rFileMoveAdd.Action, FileAction.MoveAdd);
+                    }
+                }
+            }
+            finally
+            {
+                // Clean up
+                Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
+            }
+        }
+
+        /// <summary>
         ///A test for ReopenFiles
         ///</summary>
         [TestMethod()]
@@ -3199,8 +3429,9 @@ namespace p4api.net.unit.test
                         IList<FileMetaData> fmd = rep.GetFileMetaData(syncedFiles, sFlags);
                         Assert.IsNotNull(fmd);
                         Assert.AreEqual(2, fmd.Count);
-                        Assert.AreEqual(fmd[0].Action, FileAction.MoveDelete);
-                        Assert.AreEqual(fmd[1].Action, FileAction.MoveAdd);
+                        
+                        Assert.AreEqual(fmd[0].Action, FileAction.Delete);
+                        Assert.AreEqual(fmd[1].Action, FileAction.Add);
 
                         // status with -A, which should return null since all
                         // files in this directory have been reconciled and
@@ -3381,6 +3612,235 @@ namespace p4api.net.unit.test
                     p4d?.Dispose();
                     rep?.Dispose();
                 }
+            }
+        }
+
+        /// <summary>
+        ///A test for ReconcileFiles with MatchMoves option
+        ///</summary>
+        [TestMethod()]
+        public void ReconcileMatchMoveFilesTest()
+        {
+            string uri = configuration.ServerPort;
+            string user = "admin";
+            string pass = string.Empty;
+            string ws_client = "admin_space";
+
+            for (int i = 0; i < 1; i++) // run only once for ascii
+            {
+                var cptype = (Utilities.CheckpointType)i;
+                var adminSpace = Path.Combine(Utilities.TestClientRoot(TestDir, cptype), "admin_space");
+
+                Process p4d = null;
+                Repository rep = null;
+                try
+                {
+                    p4d = Utilities.DeployP4TestServer(TestDir, 2, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Utilities.DeleteDirectory(adminSpace);  // get rid of workspace cruft
+                    Directory.CreateDirectory(adminSpace);
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
+
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client, false);
+
+                    using (Connection con = rep.Connection)
+                    {
+                        con.UserName = user;
+                        con.Client = new Client();
+                        con.Client.Name = ws_client;
+                        Assert.AreEqual(con.Status, ConnectionStatus.Disconnected);
+
+                        Assert.AreEqual(con.Server.State, ServerState.Unknown);
+
+                        Assert.IsTrue(con.Connect(null));
+
+                        Assert.AreEqual(con.Server.State, ServerState.Online);
+
+                        Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+
+                        Assert.AreEqual("admin", con.Client.OwnerName);
+
+                        FileSpec folderRoot = new FileSpec(new LocalPath(Path.Combine(adminSpace, "MyCode", "...")),
+                            null);
+                        // force sync files
+
+                        Options sFlags = new Options(SyncFilesCmdFlags.Force, -1);
+                        IList<FileSpec> syncedFiles = con.Client.SyncFiles(sFlags, folderRoot);
+
+                        // touch file under Perforce control without opening for
+                        // add, edit or delete
+                        string readme = Path.Combine(adminSpace, "MyCode", "ReadMe.txt");
+                        string renamedreadme = Path.Combine(adminSpace, "MyCode", "RenamedReadMe.txt");
+                        System.IO.File.SetAttributes(readme,
+                            System.IO.File.GetAttributes(readme)
+                            & ~FileAttributes.ReadOnly);
+
+                        // rename ReadMe.txt file
+                        System.IO.File.Move(readme, renamedreadme);
+
+                        // test reconcile against all files in a directory with no changelist specified
+                        sFlags = new Options(ReconcileFilesCmdFlags.Preview, -1);
+                        IList<FileSpec> rFiles = con.Client.ReconcileFiles(sFlags, folderRoot);
+
+                        Assert.IsNotNull(rFiles);
+                        Assert.AreEqual(2, rFiles.Count);
+
+                        // change folderRoot to limit to the renamed file
+                        folderRoot = new FileSpec(new LocalPath(Path.Combine(adminSpace, "MyCode", "*ReadMe.txt")), null);
+
+                        // reconcile the renamed file
+                        sFlags = new Options(ReconcileFilesCmdFlags.MatchMoves, -1);
+                        rFiles = con.Client.ReconcileFiles(sFlags, folderRoot);
+                        
+                        Assert.IsNotNull(rFiles);
+                        Assert.AreEqual(4, rFiles.Count);
+
+                        if (rFiles[0] is Perforce.P4.File rFileDelete)
+                        {
+                            Assert.AreEqual(rFileDelete.Action, FileAction.Delete);
+                        }
+                        if (rFiles[1] is Perforce.P4.File rFileAdd)
+                        {
+                            Assert.AreEqual(rFileAdd.Action, FileAction.Add);
+                        }
+                        if (rFiles[2] is Perforce.P4.File rFileMoveDelete)
+                        {
+                            Assert.AreEqual(rFileMoveDelete.Action, FileAction.MoveDelete);
+                        }
+                        if (rFiles[3] is Perforce.P4.File rFileMoveAdd)
+                        {
+                            Assert.AreEqual(rFileMoveAdd.Action, FileAction.MoveAdd);
+                        }
+
+                        // status with -A, which should return null since all
+                        // files in this directory have been reconciled and
+                        // p4 status -A == p4 reconcile -e -a -d
+                        sFlags = new Options(ReconcileFilesCmdFlags.NotOpened, -1);
+                        rFiles = con.Client.ReconcileStatus(sFlags, folderRoot);
+                        Assert.IsNull(rFiles);
+                    }
+                }
+                finally
+                {
+                    // set renamed file back to read only and original name
+                    System.IO.File.Move(Path.Combine(adminSpace, "MyCode", "RenamedReadMe.txt"),
+                        Path.Combine(adminSpace, "MyCode", "ReadMe.txt"));
+
+                    System.IO.File.SetAttributes(Path.Combine(adminSpace, "MyCode", "ReadMe.txt"),
+                        FileAttributes.ReadOnly);
+
+                    Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
+                }
+            }
+        }
+
+        /// <summary>
+        ///A test for Parallel Reconcile
+        ///</summary>
+        [TestMethod()]
+        public void ParallelReconcileFilesTestA()
+        {
+            ParallelReconcileFilesTest(Utilities.CheckpointType.A);
+        }
+
+        public void ParallelReconcileFilesTest(Utilities.CheckpointType cptype)
+        {
+            string uri = configuration.ServerPort;
+            string user = "admin";
+            string ws_client = "admin_space";
+
+            Process p4d = null;
+            Repository rep = null;
+
+            try
+            {
+#if !_WINDOWS
+                // Avoid issues with GetCharSet() on non-Windows platforms
+                if (cptype == Utilities.CheckpointType.U)
+                    P4Server.Update("P4CHARSET", "utf8");
+#endif
+                // Deploy the test server
+                p4d = Utilities.DeployP4TestServer(TestDir, 2, cptype);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+                // Set up repository and client
+                var adminSpace = Path.Combine(Utilities.TestClientRoot(TestDir, cptype), "admin_space");
+                Utilities.DeleteDirectory(adminSpace); // Clean up workspace
+                Directory.CreateDirectory(adminSpace);
+
+                Server server = new Server(new ServerAddress(uri));
+                rep = new Repository(server);
+                Utilities.SetClientRoot(rep, TestDir, cptype, ws_client, false);
+
+                using (Connection con = rep.Connection)
+                {
+                    con.UserName = user;
+                    con.Client = new Client { Name = ws_client };
+
+                    Assert.AreEqual(con.Status, ConnectionStatus.Disconnected);
+                    Assert.IsTrue(con.Connect(null));
+                    Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+
+                    FileSpec folderRoot = new FileSpec(new LocalPath(Path.Combine(adminSpace, "MyCode", "...")), null);
+
+                    // Force sync files
+                    Options syncFlags = new Options(SyncFilesCmdFlags.Force, -1);
+                    IList<FileSpec> syncedFiles = con.Client.SyncFiles(syncFlags, folderRoot);
+
+                    // Simulate file renaming
+                    string originalFile = Path.Combine(adminSpace, "MyCode", "ReadMe.txt");
+                    string renamedFile = Path.Combine(adminSpace, "MyCode", "RenamedReadMe.txt");
+
+                    System.IO.File.SetAttributes(originalFile, System.IO.File.GetAttributes(originalFile) & ~FileAttributes.ReadOnly);
+                    System.IO.File.Move(originalFile, renamedFile);
+
+                    // test reconcile against all files in a directory with no changelist specified
+                    Options sFlags = new Options(ReconcileFilesCmdFlags.Preview, -1);
+                    IList<FileSpec> rFiles = con.Client.ReconcileFiles(sFlags, folderRoot);
+
+                    Assert.IsNotNull(rFiles);
+                    Assert.AreEqual(2, rFiles.Count);
+
+                    // change folderRoot to limit to the renamed file
+                    folderRoot = new FileSpec(new LocalPath(Path.Combine(adminSpace, "MyCode", "*ReadMe.txt")), null);
+
+                    // Enable parallel processing for reconcile with MatchMoves (-M) option
+                    Options reconcileFlags = new Options(ReconcileFilesCmdFlags.MatchMoves, -1, 4);
+                    IList<FileSpec> reconciledFiles = con.Client.ReconcileFiles(reconcileFlags, folderRoot);
+
+                    // Validate the results
+                    Assert.IsNotNull(reconciledFiles);
+                    Assert.AreEqual(4, reconciledFiles.Count);
+
+                    // Ensure the correct actions are applied
+                    if (reconciledFiles[0] is Perforce.P4.File rFileDelete)
+                    {
+                        Assert.AreEqual(rFileDelete.Action, FileAction.Delete);
+                    }
+                    if (reconciledFiles[1] is Perforce.P4.File rFileAdd)
+                    {
+                        Assert.AreEqual(rFileAdd.Action, FileAction.Add);
+                    }
+                    if (reconciledFiles[2] is Perforce.P4.File rFileMoveDelete)
+                    {
+                        Assert.AreEqual(rFileMoveDelete.Action, FileAction.MoveDelete);
+                    }
+                    if (reconciledFiles[3] is Perforce.P4.File rFileMoveAdd)
+                    {
+                        Assert.AreEqual(rFileMoveAdd.Action, FileAction.MoveAdd);
+                    }
+                }
+            }
+            finally
+            {
+                // Clean up
+                Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
             }
         }
 
@@ -4063,6 +4523,218 @@ namespace p4api.net.unit.test
                 p4d?.Dispose();
                 rep?.Dispose();
                 }
+        }
+
+        // <summary>
+        /// A test for sync ServerOnly with ksynctime option
+        /// </summary>
+        [TestMethod()]
+        public void SyncFilesWithKSyncTimeTest()
+        {
+            Utilities.CheckpointType cptype = Utilities.CheckpointType.A;
+
+            string uri = configuration.ServerPort;
+            string user = "Alex";
+            string pass = string.Empty;
+            string ws_client = "alex_space";
+
+            for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
+            {
+                Process p4d = null;
+                Repository rep = null;
+                try
+                {
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
+
+                    Utilities.SetClientRoot(rep, TestDir, cptype, ws_client, false);
+
+                    using (Connection con = rep.Connection)
+                    {
+                        con.UserName = user;
+                        con.Client = new Client();
+                        con.Client.Name = ws_client;
+                        Assert.AreEqual(con.Status, ConnectionStatus.Disconnected);
+
+                        Assert.AreEqual(con.Server.State, ServerState.Unknown);
+
+                        Assert.IsTrue(con.Connect(null));
+
+                        Assert.AreEqual(con.Server.State, ServerState.Online);
+
+                        Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+
+                        Assert.AreEqual("Alex", con.Client.OwnerName);
+
+                        FileSpec fromFile = new FileSpec(new DepotPath("//depot/..."), null);
+
+                        Options sFlags = new Options(
+                            SyncFilesCmdFlags.Preview,
+                            100
+                        );
+
+                        IList<FileSpec> rFiles = con.Client.SyncFiles(sFlags, fromFile);
+
+                        Assert.IsNotNull(rFiles);
+
+                        fromFile = new FileSpec(new DepotPath("//depot/MyCode2/*"), null);
+                    
+                        // The ksyncTimeValue specifies the file modification time to be set when updating
+                        // the server metadata with the -k flag. This test ensures that the sync operation
+                        // respects the provided ksyncTimeValue.
+                        
+                        int ksyncTimeValue = 150; // Sample sync time value
+                        SyncFilesCmdFlags sflags = SyncFilesCmdFlags.ServerOnly;
+
+                        Options options = new Options(sflags,
+                             ksynctime: ksyncTimeValue
+                          );
+
+                        rFiles = con.Client.SyncFiles(options, fromFile);
+
+                        Assert.IsNotNull(rFiles);
+                        Assert.AreEqual(1, rFiles.Count);
+                    }
+                }
+                finally
+                {
+                    Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
+                }
+                cptype = Utilities.CheckpointType.U;
+            }
+        }
+
+        /// <summary>
+        /// A test for Parallel sync ServerOnly with ksynctime option for ASCII.
+        ///</summary>
+        [TestMethod()]
+        public void ParallelSyncFilesWithKSyncTimeTestA()
+        {
+            ParallelSyncFilesWithKSyncTimeTest(Utilities.CheckpointType.A);
+        }
+
+        /// <summary>
+        ///A test for Parallel sync ServerOnly with ksynctime option for Unicode.
+        ///</summary>
+        [TestMethod()]
+        public void ParallelSyncFilesWithKSyncTimeTestU()
+        {
+            ParallelSyncFilesWithKSyncTimeTest(Utilities.CheckpointType.U);
+        }
+
+        public void ParallelSyncFilesWithKSyncTimeTest(Utilities.CheckpointType cptype)
+        {
+            string uri = configuration.ServerPort;
+            string user = "Alex";
+            string pass = string.Empty;
+            string ws_client = "alex_space";
+
+            int fileCount = 500;  // remember that this is an unlicensed server
+
+            Process p4d = null;
+            Repository rep = null;
+
+            try
+            {
+#if ! _WINDOWS
+                // Avoid something bad going on with GetCharSet()
+                if (cptype == Utilities.CheckpointType.U)
+                    P4Server.Update("P4CHARSET", "utf8");
+#endif 
+                p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                Assert.IsNotNull(p4d, "Setup Failure");
+
+                Server server = new Server(new ServerAddress(uri));
+                rep = new Repository(server);
+
+                string clientDir = Path.Combine(Utilities.TestClientRoot(TestDir, cptype), ws_client);
+                string syncFilesDir = Path.Combine(clientDir, "parallel");
+                FileSpec parallelFileSpec = FileSpec.ClientSpec(Path.Combine(syncFilesDir, "..."));
+
+                var parallelFileSpecArray = new FileSpec[] { parallelFileSpec };
+
+                FileSpec parallelFileSpecZero = FileSpec.ClientSpec(Path.Combine(syncFilesDir, "..."), VersionSpec.None);
+                Client c;
+
+                // Create / Update client 
+                using (Connection con1 = rep.Connection)
+                {
+                    con1.UserName = "admin";
+                    con1.Connect(null);
+
+                    c = rep.GetClient(ws_client, null);
+                    c.Root = clientDir;
+                    c.OwnerName = user;
+                    c.ViewMap = new ViewMap(new string[]
+                    {
+                       "    //depot/parallel/... //alex_space/parallel/..."
+                    });
+                    rep.UpdateClient(c);
+                    rep.Connection.Server.SetState(ServerState.Unknown);
+                }
+
+                using (Connection con = rep.Connection)
+                {
+                    con.UserName = user;
+                    con.Client = c;
+
+                    Assert.AreEqual(con.Status, ConnectionStatus.Disconnected);
+
+                    Assert.AreEqual(con.Server.State, ServerState.Unknown);
+
+                    Assert.IsTrue(con.Connect(null));
+
+                    Assert.AreEqual(con.Server.State, ServerState.Online);
+
+                    Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+
+                    Assert.AreEqual("Alex", con.Client.OwnerName);
+
+                    // Set up a bunch of files in the workspace
+                    PrepSyncFiles(syncFilesDir);
+                    CreateSyncFiles(syncFilesDir, fileCount);
+
+                    // Add them to the server
+                    Options addFlags = new Options(AddFilesCmdFlags.None, -1, null);
+                    IList<FileSpec> addFiles = con.Client.AddFiles(addFlags, parallelFileSpecArray);
+
+                    // Submit them
+                    Options submitFlags = new Options(SubmitFilesCmdFlags.None, -1, null, "initial submit test files", null);
+                    con.Client.SubmitFiles(submitFlags, parallelFileSpec);
+
+                    // Now Sync them all to NONE
+                    Options syncFlags = new Options(SyncFilesCmdFlags.Quiet);
+                    IList<FileSpec> syncFiles = con.Client.SyncFiles(syncFlags, parallelFileSpecZero);
+
+                    bool setRv = P4ConfigureSetParallel(con, 4);
+                    Assert.IsTrue(setRv);
+
+                    // Finally, we Sync them again using parallel with k sync time option.
+                    int ksyncTimeValue = 150; // Sample sync time value
+                    SyncFilesCmdFlags sflags = SyncFilesCmdFlags.ServerOnly;
+                    Options pFlags = new SyncFilesCmdOptions(sflags, 0, 4, 10, 0, 100, 0, ksyncTimeValue);
+                    
+                    IList<FileSpec> pFiles = con.Client.SyncFiles(pFlags, parallelFileSpecArray);
+
+                    Assert.IsNotNull(pFiles);
+                    Assert.AreEqual(fileCount, pFiles.Count);
+                }
+            }
+            catch (P4Exception ex)
+            {
+                logger.Error("ParallelSyncFilesTest " + ex.Message, ex);
+            }
+            finally
+            {
+                Utilities.RemoveTestServer(p4d, TestDir);
+                p4d?.Dispose();
+                rep?.Dispose();
+            }
         }
 
         /// <summary>

@@ -1,7 +1,7 @@
                            Release Notes for
-                P4API.NET, the Helix P4API for .NET
+                P4API.NET, the P4 API for .NET
 
-                          Version 2024.2
+                          Version 2025.1
 
 Introduction
 
@@ -45,7 +45,7 @@ Building P4API.NET from Source
         P4API.NET supports SSL connections, and requires linking with SSL 
         libraries.
 
-        Executables linked against the P4API libraries must also be linked
+        Executables linked against the P4 C/C++ API libraries must also be linked
         against real OpenSSL libraries: The latest 3.0.x patch is recommended.
         Use the OpenSSL libraries as mentioned in BUILD.md.
 
@@ -60,22 +60,20 @@ Compatibility Statements
 
         Server Compatibility
 
-          You can use this release of P4API.NET with any release of the
-          Perforce server at or later than 2018.1, but to ensure maximum
-          compatibility, it is recommended that you use it with the
-          corresponding Perforce server release
+          This release of P4API.NET supports the P4 Server 2025.1.
+          Older releases might work but are not supported.
 
         API Compatibility
 
-          This release of P4API.NET requires the 2024.2 Helix Core API
-          (2024.2/2675662) for C/C++ (P4API), built with Visual Studio 2019 or 
+          This release of P4API.NET requires the 2025.1 P4 C/C++ API
+          (2025.1/2761706), built with Visual Studio 2019 or 
           later.
 
         C#/.NET Compatibility
 
           This release of P4API.NET, when built from source using 
           p4apicore.net.sln, is compatible with '.NET Framework 4.6.2',
-          '.NET 6.0' and '.NET Standard 2.0'. Other .Net Framework, .NET Core
+          '.NET 8.0' and '.NET Standard 2.0'. Other .Net Framework, .NET Core
           and .NET Standard versions might work, but are not supported.
 
         Platform Compatibility
@@ -103,22 +101,66 @@ Compatibility Statements
         Compatibility with Previous Releases
 
           Unless otherwise stated below, this release of P4API.NET is compatible
-          with previous releases from Perforce Software.
+          with previous releases from P4 Software.
 
----------------------------------------------------------------------------
-Important End-of-Life Notice
+--------------------------------------------------------------------------
 
-    This major release of P4API.NET would be the last to support '.Net 6.0'.
-    Next major release will add support for '.Net 8.0'.  
-    This is part of our commitment to focus on supported technology platforms.
+Important Product Rebrand Notice
+
+        Helix Core is now P4
+        Perforce has a new look and logo that reflects our place in DevOps
+        workflows. As part of these changes, Helix Core is now P4. Name updates
+        and new icons to align with the P4 branding will be rolled out soon.
+        To learn more, see:
+         https://www.perforce.com/blog/vcs/introducing-the-p4-platform
 
 --------------------------------------------------------------------------
 
 Key to symbols used in change notes below.
 
           * -- requires new P4API.NET
-         ** -- requires P4API.NET built with new P4API
+         ** -- requires P4API.NET built with new P4 C/C++ API
         *** -- requires new p4d server program
+
+--------------------------------------------------------------------------
+New functionality in 2025.1 (2025.1/2773624) (2025/06/03)
+
+        #2762830,2763155 (Job #125774) * ** ***
+            Updated P4API.NET to support 2025.1 release of P4 C/C++ API.
+
+        #2754421 (Job #123673) * ** ***
+            Added support for .NET SDK 8.0.
+
+        #2765712,2766915 (Job #124086) * ** ***
+            Added support for sparse stream creation and converting sparse 
+            stream into development/release stream.
+
+        #2749356,2752384 (Job #125614) * ** ***
+            Added support for --sync-time option with -k for p4 sync.
+            The --sync-time specifies the file modification time to 
+            be set when updating the server metadata with the -k flag.
+
+        #2760384 (Job #125905) * ** ***
+            Added support for support -M and --parallel in p4 reconcile.
+            The -M flag allows the missing and added files to be compared and
+            converted to pairs of move/delete and move/add operations if they
+            are similar enough.
+
+        #2762361 (Job #125907) * ** ***
+            Added support for -M and --parallel flag for p4 move.
+            The -M flag matches already opened files for add and delete in the
+            default or specified changelist and reopens them as a move.
+
+--------------------------------------------------------------------------
+Bugs fixed in 2025.1 (2025.1/2773624) (2025/06/03)
+
+        #2750543 (Job #125040) *
+            Handled exception for GetFileHistory where start revision
+            and end revision was exceeding limit for Int16.
+
+        #2766575 (Job #124034) *
+            Corrected documentation for usage of GetFileContents
+            and GetFileContentsEx methods.
 
 --------------------------------------------------------------------------
 New functionality in 2024.2 (2024.2/2693570) (2024/12/10)

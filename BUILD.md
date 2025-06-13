@@ -2,11 +2,13 @@
 
 These are Build instructions for P4API.net and its required DLL and various test utilities
 
-## The .NET Core (6.0) cross-platform port
+## The .NET Core (8.0) cross-platform port
 
 With the 2021.2 release, `P4API.NET` has been extended to support .NET CORE and to be cross-platform on three Target OS's (Windows, Linux, OSX)
 
 With the 2024.2 release, 'P4API.NET' has been extended to support Linux and Mac ARM64 architecture systems.
+
+With the 2025.1 release, 'P4API.NET' has been extended to support .NET 8.0 and to be cross-platform on three Target OS's (Windows, Linux, OSX) and has dropped support for .NET 6.0.
 
 P4API.NET consists of a DLL written in C++ which contains the Perforce C++ API, which is wrapped by a layer of C# code which exports the .NET interface.
 
@@ -17,7 +19,7 @@ Within this directory are several subprojects.  p4bridge, p4bridge-unit-test, p4
 ### p4apicore.net.sln
 
 [p4apicore.net.sln](p4apicore.net.sln) - This solution includes projects [p4api.net.csproj](./p4api.net/p4api.net.csproj)  and [p4api.net-unit-test.csproj](./p4api.net-unit-test/p4api.net-unit-test.csproj). 
-Both of the projects target frameworks .NET Framework 4.6.2, .Net Core 6.0 and .NET Standard 2.0.
+Both of the projects target frameworks .NET Framework 4.6.2, .Net Core 8.0 and .NET Standard 2.0.
 > It only includes the C# portions of the project.
 > It can be built using the `dotnet build p4apicore.net.sln` command.
 This solution can be opened by the "dotnet" executable on any supported platform, or by VS2019+ on windows only.
@@ -25,7 +27,7 @@ This is the primary solution to be used for building and/or debugging P4API.NET 
 
 ### Sample Applications
 
-Sample Console Applications for .NET 6.0 are provided here: 
+Sample Console Applications for .NET 8.0 are provided here: 
 [consoleApps/ControlCTest.sln](consoleApps/ControlCTest.sln) and [consoleApps/P4DotNetConsole.sln](consoleApps/P4DotNetConsole.sln)
 
 Sample Applications for .NET framework are provided here:
@@ -90,14 +92,14 @@ The source, build and configuration instructions for these tests is in the *p4br
 
 **IMPORTANT!** - The C++ bridge must have already been built before building P4API.NET.
 
-Make sure you have an updated .NET 6.0 SDK (or better) installed for your platform.
+Make sure you have an updated .NET 8.0 SDK (or better) installed for your platform.
 download from here: [Microsoft .NET Downloads](https://dotnet.microsoft.com/download)
 
 in the p4api.net root folder run
 `dotnet build p4apicore.net.sln`
 
- This will create The .NET DLL in `p4api.net\bin\Debug\net60\p4api.net.dll`, `p4api.net\bin\Debug\net462\p4api.net.dll`, `p4api.net\bin\Debug\netstandard2.0\p4api.net.dll`
- And the Unit test in `\p4api.net-unit-test\bin\Debug\net60\p4api.net-unit-test.dll`, `\p4api.net-unit-test\bin\Debug\net462\p4api.net-unit-test.dll`, `\p4api.net-unit-test\bin\Debug\netstandard2.0\p4api.net-unit-test.dll`
+ This will create The .NET DLL in `p4api.net\bin\Debug\net80\p4api.net.dll`, `p4api.net\bin\Debug\net462\p4api.net.dll`, `p4api.net\bin\Debug\netstandard2.0\p4api.net.dll`
+ And the Unit test in `\p4api.net-unit-test\bin\Debug\net80\p4api.net-unit-test.dll`, `\p4api.net-unit-test\bin\Debug\net462\p4api.net-unit-test.dll`, `\p4api.net-unit-test\bin\Debug\netstandard2.0\p4api.net-unit-test.dll`
  It will also copy the p4bridge.dll from the appropriate place in the ../p4bridge output into the default output directory.
 
  On Windows, you can specify a specific Configuration and Platform with parameters:
@@ -115,10 +117,10 @@ into proper runtime locations.
 `dotnet test p4apicore.net.sln`
 
 > Filter on the dotnet framework to run upon
->> `dotnet test p4apicore.net.sln -f net60`
+>> `dotnet test p4apicore.net.sln -f net80`
 >
 > Filter on the specific test to run
->> `dotnet test p4apicore.net.sln -f net60 --filter TestName`
+>> `dotnet test p4apicore.net.sln -f net80 --filter TestName`
 
 
 * **Visual Studio 2019** can be used to debug the .NET unit tests if you are running in Windows.
@@ -134,7 +136,7 @@ Unfortunately, you cannot debug through the C++ code using Rider.
 2. Build the four varieties of p4bridge first
 3. `dotnet pack p4apicore.net.sln`
 
-This will create an Assembly DLL in *.\bin\p4api.net\bin\Debug\net6.0\p4api.net.dll*
+This will create an Assembly DLL in *.\bin\p4api.net\bin\Debug\net8.0\p4api.net.dll*
 and a nuget package in:
 *p4api.net\bin\Debug\p4api.net.VERSION.nupkg*
 

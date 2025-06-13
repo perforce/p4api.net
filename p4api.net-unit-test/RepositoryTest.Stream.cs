@@ -502,6 +502,160 @@ namespace p4api.net.unit.test
         }
 
         /// <summary>
+        ///A test for Create SparseStream
+        ///</summary>
+        [TestMethod()]
+        [DataRow(StreamType.Sparsedev, "//Rocket/sparsedev1","Sparsedev1",DisplayName = "Sparse Stream Creation - Sparsedev")]
+        [DataRow(StreamType.Sparserel, "//Rocket/sparserel1", "Sparserel1", DisplayName = "Sparse Stream Creation - Sparserel")]
+        public void CreateSparseStreamTest(StreamType streamType,string streamPath, string streamName)
+        {
+            string uri = configuration.ServerPort;
+            string user = "admin";
+            string pass = string.Empty;
+            string ws_client = "admin_space";
+
+            for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
+            {
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
+                try
+                {
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+
+                    rep = new Repository(server);
+
+                    using (Connection con = rep.Connection)
+                    {
+                        con.UserName = user;
+                        con.Client = new Client();
+                        con.Client.Name = ws_client;
+
+                        bool connected = con.Connect(null);
+
+                        Assert.IsTrue(connected);
+
+                        Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+
+                        Stream s = new Stream();
+                        string targetId = streamPath;
+                        s.Id = targetId;
+                        s.Type = streamType;
+                        s.Options = new StreamOptionEnum(StreamOption.None);
+                        s.Parent = new DepotPath("//Rocket/main");
+                        s.Name = streamName;
+
+                        // Paths
+                        s.Paths = new ViewMap();
+                        MapEntry p1 = new MapEntry(MapType.Share, new DepotPath("..."), null);
+                        s.Paths.Add(p1);
+
+                        s.OwnerName = "admin";
+                        s.Description = "Sparsdev stream for testing";
+
+                        Stream newStream = rep.CreateStream(s);
+
+                        Stream sparseStream= rep.GetStream(s.Id);
+
+                        Assert.IsNotNull(newStream);
+                        Assert.AreEqual(sparseStream.Id, newStream.Id);
+                        Assert.AreEqual(sparseStream.Type, newStream.Type);
+
+                    }
+                }
+                finally
+                {
+                    Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
+                }
+            }
+        }
+
+        [TestMethod()]
+        public void ConvertSparseStreamTest()
+        {
+            string uri = configuration.ServerPort;
+            string user = "admin";
+            string pass = string.Empty;
+            string ws_client = "admin_space";
+
+            for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
+            {
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
+                try
+                {
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+
+                    rep = new Repository(server);
+
+                    using (Connection con = rep.Connection)
+                    {
+                        con.UserName = user;
+                        con.Client = new Client();
+                        con.Client.Name = ws_client;
+
+                        var clientRoot = Utilities.TestClientRoot(TestDir, cptype);
+                        var adminSpace = Path.Combine(clientRoot, "admin_space");
+                        Directory.CreateDirectory(adminSpace);
+
+                        Utilities.SetClientRoot(rep, TestDir, cptype, ws_client);
+
+                        bool connected = con.Connect(null);
+
+                        Assert.IsTrue(connected);
+
+                        Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+
+                        Stream s = new Stream();
+                        string targetId = "//Rocket/sparsedev1";
+                        s.Id = targetId;
+                        s.Type = StreamType.Sparsedev;
+                        s.Options = new StreamOptionEnum(StreamOption.None);
+                        s.Parent = new DepotPath("//Rocket/main");
+                        s.Name = "SparseDevStream";
+
+                        // Paths
+                        s.Paths = new ViewMap();
+                        MapEntry p1 = new MapEntry(MapType.Share, new DepotPath("..."), null);
+                        s.Paths.Add(p1);
+
+                        s.OwnerName = "admin";
+                        s.Description = "Sparsdev stream for testing";
+
+                        Stream newStream = rep.CreateStream(s);
+                        Assert.IsNotNull(newStream);
+
+                        con.Client.Stream = s.Id;
+
+                        rep.UpdateClient(con.Client);
+
+                        Thread.Sleep(10000);
+
+                        string result = rep.ConvertSparseStream(new StreamCmdOptions(StreamCmdFlags.Convertsparse, null, null, false));
+
+                        Assert.IsTrue(result.Contains("//Rocket/sparsedev1"));
+                        Assert.IsTrue(result.Contains("edit stream spec default change"));
+                        
+                    }
+                }
+                finally
+                {
+                    Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
+                }
+            }
+        }
+        /// <summary>
         ///A test for UpdateStream
         ///</summary>
         [TestMethod()]

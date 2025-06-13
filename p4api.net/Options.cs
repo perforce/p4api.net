@@ -1873,6 +1873,18 @@ namespace Perforce.P4
         /// server metadata.
         /// </summary>
         ServerOnly = 0x0004,
+        /// <summary>
+        /// The -M flag matches already opened files for add and delete in the
+        /// default or specified changelist and reopens them as a move.
+        /// </summary>
+        MatchMoves = 0x0008,
+        /// <summary>
+        /// Auto parallel move is turned off by
+        /// unsetting the net.parallel.threads configurable. A user may override
+        /// the configured auto parallel move options on the command line, or may
+        /// disable it via 'p4 move -M --parallel=0'. 
+        /// </summary>
+        DisableParallel = 0x0010
     };
     public partial class Options
     {
@@ -1890,6 +1902,7 @@ namespace Perforce.P4
         /// <br/>     rename -- synonym for 'move'
         /// <br/> 
         /// <br/>     p4 move [-c changelist#] [-f -n -k] [-t filetype] fromFile toFile
+        /// <br/>     p4 move -M [-c changelist#] [-n] [--parallel=N]
         /// <br/> 
         /// <br/> 	Move takes an already opened file and moves it from one client
         /// <br/> 	location to another, reopening it as a pending depot move.  When
@@ -1926,12 +1939,20 @@ namespace Perforce.P4
         /// <br/> 	discrepancies between the state of the client and the corresponding
         /// <br/> 	server metadata.
         /// <br/> 
+        /// <br/> 	The -M flag matches already opened files for add and delete in the
+        /// <br/> 	default or specified changelist and reopens them as a move.
+        /// <br/> 	
+        /// <br/> 	The --parallel flag when used with the -M flag specifies the number
+        /// <br/> 	of files opened for add to be compared simultaneously on the client
+        /// <br/> 	to the file opened for delete to improve the performance of the move
+        /// <br/> 	matching.
+        /// <br/>  
         /// <br/> 	The 'move' command requires a release 2009.1 or newer client. The
         /// <br/> 	'-f' flag requires a 2010.1 client.
         /// <br/> 
         /// <br/> 
         /// </remarks>
-        public Options(MoveFileCmdFlags flags, int changeList, FileType fileType)
+        public Options(MoveFileCmdFlags flags, int changeList, FileType fileType, int pthreads = 0)
         {
             if (changeList > 0)
             {
@@ -1954,6 +1975,20 @@ namespace Perforce.P4
             {
                 this["-t"] = fileType.ToString();
             }
+            if ((flags & MoveFileCmdFlags.MatchMoves) != 0)
+            {
+                this["-M"] = null;
+            }
+            if ((flags & MoveFileCmdFlags.DisableParallel) != 0)
+            {
+                this["--parallel"] = "0";
+            }
+            if (((flags & MoveFileCmdFlags.DisableParallel) == 0) && pthreads > 0)
+            {
+                string poptions = "threads=" + pthreads.ToString();
+
+                this["--parallel"] = poptions;
+            }
         }
     }
     ///<summary>
@@ -1975,6 +2010,7 @@ namespace Perforce.P4
         /// <br/>     rename -- synonym for 'move'
         /// <br/> 
         /// <br/>     p4 move [-c changelist#] [-f -n -k] [-t filetype] fromFile toFile
+        /// <br/>     p4 move -M [-c changelist#] [-n] [--parallel=N]
         /// <br/> 
         /// <br/> 	Move takes an already opened file and moves it from one client
         /// <br/> 	location to another, reopening it as a pending depot move.  When
@@ -2010,14 +2046,22 @@ namespace Perforce.P4
         /// <br/> 	client files. Use with caution, as an incorrect move can cause
         /// <br/> 	discrepancies between the state of the client and the corresponding
         /// <br/> 	server metadata.
-        /// <br/> 
+        /// <br/>
+        /// <br/> 	The -M flag matches already opened files for add and delete in the
+        /// <br/> 	default or specified changelist and reopens them as a move.
+        /// <br/> 	
+        /// <br/> 	The --parallel flag when used with the -M flag specifies the number
+        /// <br/> 	of files opened for add to be compared simultaneously on the client
+        /// <br/> 	to the file opened for delete to improve the performance of the move
+        /// <br/> 	matching.
+        /// <br/>   
         /// <br/> 	The 'move' command requires a release 2009.1 or newer client. The
         /// <br/> 	'-f' flag requires a 2010.1 client.
         /// <br/> 
         /// <br/> 
         /// </remarks>
-        public MoveCmdOptions(MoveFileCmdFlags flags, int changeList, FileType fileType)
-            : base(flags, changeList, fileType) { }
+        public MoveCmdOptions(MoveFileCmdFlags flags, int changeList, FileType fileType, int pthreads = 0)
+            : base(flags, changeList, fileType, pthreads) { }
     }
     public partial class Options
     {
@@ -2181,7 +2225,7 @@ namespace Perforce.P4
         /// <summary>
         ///    -af: Force Accept. Accept the merge file no matter what. 
         ///    If the merge file has conflict markers, they will be left in, 
-        ///    and you’ll need to remove them by editing the file.
+        ///    and youï¿½ll need to remove them by editing the file.
         /// 
         ///    The -a flag puts 'p4 resolve' into automatic mode. The user is not
         ///    prompted, and files that can't be resolved automatically are skipped:
@@ -3419,7 +3463,22 @@ namespace Perforce.P4
         /// 	optimized option doesn't support move detection. Files to open
         /// 	for 'delete' and 'edit' are still listed individually.
         /// </summary>
-        Sumarized = 0x0800
+        Sumarized = 0x0800,
+        /// <summary>
+        /// 	If the list of files to be opened includes both adds and deletes,
+        /// 	the -M flag allows the missing and added files to be compared and
+        /// 	converted to pairs of move/delete and move/add operations if they
+        /// 	tare similar enough.
+        /// </summary>
+        MatchMoves = 0x1000,
+        /// <summary>
+        /// 	Auto parallel reconcile is turned off by
+        /// 	unsetting the net.parallel.threads configurable. A user may override
+        /// 	the configured auto parallel reconcile options on the command line, or may
+        /// 	disable it via 'p4 reconcile -M --parallel=0'. 
+        /// </summary>
+        DisableParallel = 0x2000
+        
     }
 
     public partial class Options
@@ -3442,8 +3501,10 @@ namespace Perforce.P4
         /// <br/>     
         /// <br/>     clean       -- synonym for 'reconcile -w'
         /// <br/>     
-        /// <br/>     p4 reconcile [-c change#] [-e -a -d -f -I -l -m -n -w] [file ...]
-        /// <br/>     p4 status [-c change#] [-A | [-e -a -d] | [-s]] [-f -I -m] [file ...]
+        /// <br/>     p4 reconcile [-c change#] [-e -a -d -M -f -I -l -m -n -w] [file ...]
+        /// <br/>     		   [--parallel=N] [file ...]
+        /// <br/>     p4 status [-c change#] [-A | [-e -a -d -M] | [-s]] [-f -I -m] [file ...]
+        /// <br/>     		   [--parallel=N] [file ...]
         /// <br/>     p4 clean [-e -a -d -I -l -n] [file ...]
         /// <br/>     p4 reconcile -k [-l -n] [file ...]
         /// <br/>     p4 status -k [file ...]
@@ -3463,8 +3524,15 @@ namespace Perforce.P4
         /// <br/> 	working directory.
         /// <br/> 	
         /// <br/> 	If the list of files to be opened includes both adds and deletes,
-        /// <br/> 	the missing and added files will be compared and converted to pairs
-        /// <br/> 	of move/delete and move/add operations if they are similar enough.
+        /// <br/> 	If the list of files to be opened includes both adds and deletes,
+        /// <br/> 	the -M flag allows the missing and added files to be compared and
+        /// <br/> 	converted to pairs of move/delete and move/add operations if they
+        /// <br/> 	are similar enough.
+        /// <br/>
+        /// <br/> 	The --parallel flag when used with the -M flag specifies the number
+        /// <br/> 	of files opened for add to be compared simultaneously on the client
+        /// <br/> 	to the file opened for delete to improve the performance of the move
+        /// <br/> 	matching.
         /// <br/> 	
         /// <br/> 	In addition to opening unopened files, reconcile will detect files
         /// <br/> 	that are currently opened for edit but missing from the workspace
@@ -3538,7 +3606,7 @@ namespace Perforce.P4
         /// <br/> 	from an edge server in a distributed environment.
         /// <br/> 
         /// </remarks>
-        public Options(ReconcileFilesCmdFlags flags, int changelist)
+        public Options(ReconcileFilesCmdFlags flags, int changelist, int pthreads = 0)
         {
             if ((flags & ReconcileFilesCmdFlags.ModifiedOutside) != 0)
             {
@@ -3588,6 +3656,14 @@ namespace Perforce.P4
             {
                 this["-s"] = null;
             }
+            if ((flags & ReconcileFilesCmdFlags.MatchMoves) != 0)
+            {
+                this["-M"] = null;
+            }
+            if ((flags & ReconcileFilesCmdFlags.DisableParallel) != 0)
+            {
+                this["--parallel"] = "0";
+            }
             if (changelist > 0)
             {
                 this["-c"] = changelist.ToString();
@@ -3595,6 +3671,12 @@ namespace Perforce.P4
             if (changelist == 0)
             {
                 this["-c"] = "default";
+            }
+            if (((flags & ReconcileFilesCmdFlags.DisableParallel) == 0) && pthreads > 0)
+            {
+                string poptions = "threads=" + pthreads.ToString();
+
+                this["--parallel"] = poptions;
             }
         }
     }
@@ -3619,8 +3701,10 @@ namespace Perforce.P4
         /// <br/>     
         /// <br/>     clean       -- synonym for 'reconcile -w'
         /// <br/>     
-        /// <br/>     p4 reconcile [-c change#] [-e -a -d -f -I -l -m -n -w] [file ...]
-        /// <br/>     p4 status [-c change#] [-A | [-e -a -d] | [-s]] [-f -I -m] [file ...]
+        /// <br/>     p4 reconcile [-c change#] [-e -a -d -M -f -I -l -m -n -w] [file ...]
+        /// <br/>     		   [--parallel=N] [file ...]
+        /// <br/>     p4 status [-c change#] [-A | [-e -a -d -M] | [-s]] [-f -I -m] [file ...]
+        /// <br/>     		   [--parallel=N] [file ...]
         /// <br/>     p4 clean [-e -a -d -I -l -n] [file ...]
         /// <br/>     p4 reconcile -k [-l -n] [file ...]
         /// <br/>     p4 status -k [file ...]
@@ -3640,8 +3724,14 @@ namespace Perforce.P4
         /// <br/> 	working directory.
         /// <br/> 	
         /// <br/> 	If the list of files to be opened includes both adds and deletes,
-        /// <br/> 	the missing and added files will be compared and converted to pairs
-        /// <br/> 	of move/delete and move/add operations if they are similar enough.
+        /// <br/> 	the -M flag allows the missing and added files to be compared and
+        /// <br/> 	converted to pairs of move/delete and move/add operations if they
+        /// <br/> 	are similar enough.
+        /// <br/>
+        /// <br/> 	The --parallel flag when used with the -M flag specifies the number
+        /// <br/> 	of files opened for add to be compared simultaneously on the client
+        /// <br/> 	to the file opened for delete to improve the performance of the move
+        /// <br/> 	matching.
         /// <br/> 	
         /// <br/> 	In addition to opening unopened files, reconcile will detect files
         /// <br/> 	that are currently opened for edit but missing from the workspace
@@ -3715,8 +3805,8 @@ namespace Perforce.P4
         /// <br/> 	from an edge server in a distributed environment.
         /// <br/> 
         /// </remarks>
-        public ReconcileCmdOptions(ReconcileFilesCmdFlags flags, int changelist)
-            : base(flags, changelist)
+        public ReconcileCmdOptions(ReconcileFilesCmdFlags flags, int changelist, int pthreads = 0)
+            : base(flags, changelist, pthreads)
         { }
     }
     /// <summary>
@@ -4403,6 +4493,7 @@ namespace Perforce.P4
         /// <br/>     p4 sync [-L -n -N -q -s] [-m max] [file[revRange] ...]
         /// <br/>     p4 sync [-L -n -N -p -q] [-m max] [file[revRange] ...]
         /// <br/>             --parallel=threads=N[,batch=N][,batchsize=N][,min=N][,minsize=N]
+        /// <br/>     p4 sync -k --sync-time=N [file[revRange] ...]
         /// <br/> 
         /// <br/> 	Sync updates the client workspace to reflect its current view (if
         /// <br/> 	it has changed) and the current contents of the depot (if it has
@@ -4495,15 +4586,18 @@ namespace Perforce.P4
         /// <br/> 	bytes in a parallel sync. Requesting progress indicators causes the
         /// <br/> 	--parallel flag to be ignored.
         /// <br/> 
-        /// <br/>   Auto parallel sync may be enabled by setting the net.parallel.threads
-        /// <br/>   configurable to the desired number of threads to be used by all sync
-        /// <br/>   commands. This value must be less than or equal to the value of
-        /// <br/>   net.parallel.max. Other net.parallel.* configurables may be specified
-        /// <br/>   as well, but are not required. See 'p4 help configurables' to see
-        /// <br/>   the options and their defaults. Auto parallel sync is turned off by
-        /// <br/>   unsetting the net.parallel.threads configurable. A user may override
-        /// <br/>   the configured auto parallel sync options on the command line, or may
-        /// <br/>   disable it via 'p4 sync --parallel=0'.
+        /// <br/> 	Auto parallel sync may be enabled by setting the net.parallel.threads
+        /// <br/> 	configurable to the desired number of threads to be used by all sync
+        /// <br/> 	commands. This value must be less than or equal to the value of
+        /// <br/> 	net.parallel.max. Other net.parallel.* configurables may be specified
+        /// <br/> 	as well, but are not required. See 'p4 help configurables' to see
+        /// <br/> 	the options and their defaults. Auto parallel sync is turned off by
+        /// <br/> 	unsetting the net.parallel.threads configurable. A user may override
+        /// <br/> 	the configured auto parallel sync options on the command line, or may
+        /// <br/> 	disable it via 'p4 sync --parallel=0'.
+        /// <br/> 
+        /// <br/> 	The --sync-time specifies the file modification time to be set when
+        /// <br/> 	updating the server metadata with the -k flag.
         /// <br/> 
         /// </remarks>
         /// <param name="pthreads">
@@ -4535,7 +4629,11 @@ namespace Perforce.P4
         ///    If ParallelThreads is enabled, specify minsize=N to control the minimum number of
         ///    bytes in a parallel sync.
         /// </param>
-        public Options(SyncFilesCmdFlags flags, int maxItems = 0, int pthreads = 0, int pbatch = 0, int pbatchsize = 0, int pmin = 0, int pminsize = 0)
+        /// <param name = "ksynctime">
+        ///    The mentioned --sync-time option specifies the file modification time to be set when
+        ///    updating the server metadata with the -k flag.
+        /// </param>
+        public Options(SyncFilesCmdFlags flags, int maxItems = 0, int pthreads = 0, int pbatch = 0, int pbatchsize = 0, int pmin = 0, int pminsize = 0, long? ksynctime = null)
         {
             if ((flags & SyncFilesCmdFlags.Force) != 0)
             {
@@ -4555,7 +4653,7 @@ namespace Perforce.P4
             }
             if ((flags & SyncFilesCmdFlags.ServerOnly) != 0)
             {
-                this["-k"] = null;
+                this["-k"] = ksynctime.HasValue ? $"--sync-time={ksynctime}" : null;
             }
             if ((flags & SyncFilesCmdFlags.PopulateClient) != 0)
             {
@@ -4627,6 +4725,7 @@ namespace Perforce.P4
         /// <br/>     p4 sync [-L -n -N -q -s] [-m max] [file[revRange] ...]
         /// <br/>     p4 sync [-L -n -N -p -q] [-m max] [file[revRange] ...]
         /// <br/>             --parallel=threads=N[,batch=N][,batchsize=N][,min=N][,minsize=N]
+        /// <br/>     p4 sync -k --sync-time=N [file[revRange] ...]
         /// <br/> 
         /// <br/> 	Sync updates the client workspace to reflect its current view (if
         /// <br/> 	it has changed) and the current contents of the depot (if it has
@@ -4719,6 +4818,9 @@ namespace Perforce.P4
         /// <br/> 	bytes in a parallel sync. Requesting progress indicators causes the
         /// <br/> 	--parallel flag to be ignored.
         /// <br/> 
+        /// <br/> 	The --sync-time specifies the file modification time to be set when
+        /// <br/> 	updating the server metadata with the -k flag.
+        /// <br/>
         /// <br/> 
         /// </remarks>
         /// <param name="pthreads">
@@ -4750,8 +4852,12 @@ namespace Perforce.P4
         ///    If ParallelThreads is enabled, specify minsize=N to control the minimum number of
         ///    bytes in a parallel sync.
         /// </param>
-        public SyncFilesCmdOptions(SyncFilesCmdFlags flags, int maxItems = 0, int pthreads = 0, int pbatch = 0, int pbatchsize = 0, int pmin = 0, int pminsize = 0)
-            : base(flags, maxItems, pthreads, pbatch, pbatchsize, pmin, pminsize)
+        /// <param name = "ksynctime">
+        ///    The mentioned --sync-time option specifies the file modification time to be set when
+        ///    updating the server metadata with the -k flag.
+        /// </param>
+        public SyncFilesCmdOptions(SyncFilesCmdFlags flags, int maxItems = 0, int pthreads = 0, int pbatch = 0, int pbatchsize = 0, int pmin = 0, int pminsize = 0, long? ksynctime = null) 
+            : base(flags, maxItems, pthreads, pbatch, pbatchsize, pmin, pminsize, ksynctime)
         {
         }
     }   /// <summary>
@@ -9011,6 +9117,11 @@ namespace Perforce.P4
         /// 	a locked stream. It requires 'admin' access granted by 'p4 protect'.
         /// </summary>
         Force = 0x0010,
+        /// <summary>
+        /// 	The convertsparse flag converts a sparsedev stream to a development
+        /// 	stream or a sparserel stream to a release stream. 
+        /// </summary>
+        Convertsparse = 0x0020
     }
 
     /// <summary>
@@ -9024,7 +9135,9 @@ namespace Perforce.P4
         /// <param name="flags">Stream flags</param>
         /// <param name="parent">parent stream</param>
         /// <param name="type">type of stream</param>
-		public Options(StreamCmdFlags flags, string parent, string type)
+        /// <param name="supressMessage">Suppresses normal output messages while using convertsparse option. Messages regarding
+        /// errors or exceptional conditions are displayed. </param>
+		public Options(StreamCmdFlags flags, string parent, string type,bool supressMessage= false)
         {
             if ((flags & StreamCmdFlags.Output) != 0)
             {
@@ -9060,6 +9173,16 @@ namespace Perforce.P4
             {
                 this["-P"] = parent;
             }
+
+            if ((flags & StreamCmdFlags.Convertsparse) != 0)
+            {
+                this["convertsparse"] = null;
+                if (supressMessage == true)
+                {
+                    this["-q"] = null;
+                }
+            }
+
         }
     }
 
@@ -9074,8 +9197,10 @@ namespace Perforce.P4
         /// <param name="flags">Stream flags</param>
         /// <param name="parent">parent stream</param>
         /// <param name="type">type of stream</param>
-		public StreamCmdOptions(StreamCmdFlags flags, string parent, string type)
-            : base(flags, parent, type) { }
+        /// <param name="supressMessages">Suppresses normal output messages while using convertsparse option. Messages regarding
+        /// errors or exceptional conditions are displayed. </param>
+		public StreamCmdOptions(StreamCmdFlags flags, string parent, string type, bool supressMessages = false)
+            : base(flags, parent, type, supressMessages) { }
     }
 
     /// <summary>
@@ -10366,7 +10491,7 @@ namespace Perforce.P4
         /// </summary>
         InUnloadDepot = 0x400000,
         /// < summary >
-        /// ‘-On'   output attribute value’s storage location set by 'p4 attribute'
+        /// ï¿½-On'   output attribute valueï¿½s storage location set by 'p4 attribute'
         ///         using [-T0|-T1] options.(see 'p4 help attribute') 
         /// </summary>
         AttributesProp = 0x800000
@@ -10817,7 +10942,7 @@ namespace Perforce.P4
         /// <br/> 
         /// <br/> 	        -Os     exclude client-related data from output
         /// <br/>
-        /// <br/>           -On     output attribute value’s storage location set by 'p4 attribute'
+        /// <br/>           -On     output attribute valueï¿½s storage location set by 'p4 attribute'
         /// <br/>                   using [-T0|-T1] options.(see 'p4 help attribute') 
         /// </br>
         /// <br/> 	The -R option limits output to specific files:

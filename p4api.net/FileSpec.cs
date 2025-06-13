@@ -25,8 +25,9 @@ namespace Perforce.P4
 			LocalPath = fs.LocalPath;
 
 			Version = fs.Version;
-		}
 
+			SyncTime = fs.SyncTime;
+		}		
         /// <summary>
         /// Constructor given path and version
         /// </summary>
@@ -335,6 +336,11 @@ namespace Perforce.P4
         /// Gets or sets the VersionSpec
         /// </summary>
 		public VersionSpec Version { get; set; }
+
+        /// <summary>
+        /// Gets or sets the SyncTime
+        /// </summary>
+		public long? SyncTime { get; set; }
 
         /// <summary>
         /// Create a string representing a FileSpec

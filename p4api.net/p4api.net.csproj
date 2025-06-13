@@ -3,7 +3,7 @@
     <ProductVersion>8.0.30703</ProductVersion>
     <ProjectGuid>{1305ABF0-EEA0-464F-99D5-7FD5BE5E4956}</ProjectGuid>
     <RootNamespace>Perforce.P4</RootNamespace>
-    <TargetFrameworks>netstandard2.0;net462;net60</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net462;net80</TargetFrameworks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <PackageId>p4api.net</PackageId>
     <AssemblyTitle>Helix Core API for .NET</AssemblyTitle>
