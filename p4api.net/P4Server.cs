@@ -83,7 +83,7 @@ namespace Perforce.P4
     {
         public IKeepAlive KeepAlive { get; set; }
 
-        internal object Sync = new object();
+        internal readonly object Sync = new object();
 
         private Dictionary<int, P4CommandResult> _lastResultsCache;
         /// <summary>
@@ -93,20 +93,24 @@ namespace Perforce.P4
         {
             get
             {
-                if (_lastResultsCache.ContainsKey(System.Threading.Thread.CurrentThread.ManagedThreadId))
+                lock (Sync)
                 {
-                    return _lastResultsCache[System.Threading.Thread.CurrentThread.ManagedThreadId];
+                    if (_lastResultsCache != null && _lastResultsCache.ContainsKey(System.Threading.Thread.CurrentThread.ManagedThreadId))
+                    {
+                        return _lastResultsCache[System.Threading.Thread.CurrentThread.ManagedThreadId];
+                    }
+                    return null;
                 }
-                return null;
             }
             internal set
             {
-                if (_lastResultsCache == null)
+                lock (Sync)
                 {
-                    _lastResultsCache = new Dictionary<int, P4CommandResult>();
-                }
-                lock (_lastResultsCache)
-                {
+                    if (_lastResultsCache == null)
+                    {
+                        _lastResultsCache = new Dictionary<int, P4CommandResult>();
+                    }
+                    
                     if (_lastResultsCache.Count > 32)
                     {
                         // if the results cache is getting large, throw away anything older than 10 seconds
