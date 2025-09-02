@@ -112,7 +112,9 @@ if (hasParent)
 endif()
 
 # declare our DLL target
-add_library(p4bridge SHARED ${HEADER_FILES} ${SRC_FILES} p4bridge.rc)
+if (NOT TARGET p4bridge)
+    add_library(p4bridge SHARED ${HEADER_FILES} ${SRC_FILES} p4bridge.rc)
+endif()
 
 set_source_files_properties(p4bridge.def PROPERTIES HEADER_FILE_ONLY TRUE )
 

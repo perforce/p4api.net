@@ -5,8 +5,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_COLOR_MAKEFILE ON)
 
 # top level cmake file for P4API.NET
-project(P4ApiNet  DESCRIPTION "p4api.net project"  LANGUAGES CSharp CPP)
-
+project(P4ApiNet  DESCRIPTION "p4api.net project")
 message( NOTICE "Platform: ${CMAKE_SYSTEM_NAME}" ) # 'Windows' 'Linux' 'Darwin'
 message( NOTICE "Version: ${P4ApiNet_VERSION}" )
 message( NOTICE "Build Type: ${CMAKE_BUILD_TYPE}" )
@@ -17,16 +16,29 @@ endif()
 
 add_subdirectory(p4bridge)
 add_subdirectory(p4bridge-unit-test)
-add_subdirectory(p4bridgeStressTest)
+
+set(add_bridge_test ON)
+if (EXISTS p4bridgeStressTest/CMakeLists.txt)
+  add_subdirectory(p4bridgeStressTest)
+else()
+  set(add_bridge_test OFF)
+endif()
 add_subdirectory(p4api.net)
-add_subdirectory(p4api.net-unit-test)
 
-add_custom_target(bridgetests)
-add_dependencies(bridgetests p4bridge-unit-test p4bridgeStressTest)
+if (EXISTS p4api.net-unit-test/CMakeLists.txt)
+  add_subdirectory(p4api.net-unit-test)
+  add_custom_target(tests)
+  add_dependencies(tests p4api.net-unit-test)
+else()
+  set(add_bridge_test OFF)
+endif()
 
-add_custom_target(tests)
-add_dependencies(tests p4api.net-unit-test)
-set(P4APINET_SOURCES )
+if (add_bridge_test)
+  add_custom_target(bridgetests)
+  add_dependencies(bridgetests p4bridge-unit-test p4bridgeStressTest)
+endif()
 
-add_executable(P4ApiNet ${P4APINET_SOURCES})
+# set(P4APINET_SOURCES )
+
+# add_executable(P4ApiNet ${P4APINET_SOURCES})
 
