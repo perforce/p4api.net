@@ -641,15 +641,13 @@ namespace Perforce.P4
                                 + "Description:" + Environment.NewLine
                                 + "\t{7}" + Environment.NewLine + Environment.NewLine
                                 + "Options:\t{8}" + Environment.NewLine + Environment.NewLine
-                                + "Components:" + Environment.NewLine
-                                + "\t{9}" + Environment.NewLine + Environment.NewLine
                                 + "Paths:" + Environment.NewLine
-                                + "\t{10}" + Environment.NewLine + Environment.NewLine
+                                + "\t{9}" + Environment.NewLine + Environment.NewLine
                                 + "Remapped:" + Environment.NewLine
-                                + "\t{11}" + Environment.NewLine + Environment.NewLine
+                                + "\t{10}" + Environment.NewLine + Environment.NewLine
                                 + "Ignored:" + Environment.NewLine
-                                + "\t{12}" + Environment.NewLine + Environment.NewLine
-                                + "{13}";
+                                + "\t{11}" + Environment.NewLine + Environment.NewLine
+                                + "{12}";
 
 
         /// <summary>
