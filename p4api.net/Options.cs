@@ -11220,47 +11220,72 @@ namespace Perforce.P4
         /// </summary>
         /// <param name="flags"></param>
         /// <param name="localFile"></param>
+        /// <param name="lineEnding"></param>
+        /// <param name="charset"></param>
+        /// <param name="filesysUtf8bom"></param>
         /// <remarks>
         /// <br/><b>p4 help print</b>
-        /// <br/> 
-        /// <br/>     print -- Write a depot file to standard output
-        /// <br/> 
-        /// <br/>     p4 print [-a -A -k -o localFile -q -m max] file[revRange] ...
-        /// <br/>     p4 print -U unloadfile ...
-        /// <br/> 
-        /// <br/> 	Retrieve the contents of a depot file to the client's standard output.
-        /// <br/> 	The file is not synced.  If file is specified using client syntax,
-        /// <br/> 	Perforce uses the client view to determine the corresponding depot
-        /// <br/> 	file.
-        /// <br/> 
-        /// <br/> 	By default, the head revision is printed.  If the file argument
-        /// <br/> 	includes a revision, the specified revision is printed.  If the
-        /// <br/> 	file argument has a revision range,  then only files selected by
-        /// <br/> 	that revision range are printed, and the highest revision in the
-        /// <br/> 	range is printed. For details about revision specifiers, see 'p4
-        /// <br/> 	help revisions'.
-        /// <br/> 
-        /// <br/> 	The -a flag prints all revisions within the specified range, rather
-        /// <br/> 	than just the highest revision in the range.
-        /// <br/> 
-        /// <br/> 	The -A flag prints files in archive depots.
-        /// <br/> 
-        /// <br/> 	The -k flag suppresses keyword expansion.
-        /// <br/> 
-        /// <br/> 	The -o localFile flag redirects the output to the specified file on
-        /// <br/> 	the client filesystem.
-        /// <br/> 
-        /// <br/> 	The -q flag suppresses the initial line that displays the file name
-        /// <br/> 	and revision.
-        /// <br/> 
-        /// <br/> 	The -m flag limits print to the first 'max' number of files.
-        /// <br/> 
-        /// <br/> 	The -U option prints files in the unload depot (see 'p4 help unload'
-        /// <br/> 	for more information about the unload depot).
-        /// <br/> 
-        /// <br/> 
+        /// <br/>
+        /// <br/>    print -- Write a depot file to standard output
+        /// <br/>
+        /// <br/>    p4 print [-a -A -K -o localFile -q -m max --offset offset --size size
+        /// <br/>	      -Q charset -B utf8bom -L line-ending] file[revRange] ...
+        /// <br/>    p4 print -U unloadfile ...
+        /// <br/>
+        /// <br/>	Retrieve the contents of a depot file to the client's standard output.
+        /// <br/>	The file is not synced.  If file is specified using client syntax,
+        /// <br/>	Perforce uses the client view to determine the corresponding depot
+        /// <br/>	file.
+        /// <br/>
+        /// <br/>	By default, the head revision is printed.  If the file argument
+        /// <br/>	includes a revision, the specified revision is printed.  If the
+        /// <br/>	file argument has a revision range,  then only files selected by
+        /// <br/>	that revision range are printed, and the highest revision in the
+        /// <br/>	range is printed. For details about revision specifiers, see 'p4
+        /// <br/>	help revisions'.
+        /// <br/>
+        /// <br/>	The -a flag prints all revisions within the specified range, rather
+        /// <br/>	than just the highest revision in the range.
+        /// <br/>
+        /// <br/>	The -A flag prints files in archive depots.
+        /// <br/>
+        /// <br/>	The -K flag suppresses keyword expansion (this replaced the -k flag
+        /// <br/>	in 2022.1, which is now an alias for -K for backwards compatibility).
+        /// <br/>
+        /// <br/>	The -L flag allows the line ending of textual files to be explicitly
+        /// <br/>	specified as either 'unix', 'win' or 'mac'.
+        /// <br/>
+        /// <br/>	The -Q flag allows the charset for unicode type files to be explicitly
+        /// <br/>	specified, overriding the connection's P4CHARSET but not override the
+        /// <br/>	charset of unicode files with versioned charsets.
+        /// <br/>
+        /// <br/>	The -B flag overrides the client-side 'filesys.utf8bom' setting,
+        /// <br/>	controlling the presence of the byte-order-mark in utf8 type files.
+        /// <br/>
+        /// <br/>	The -o localFile flag redirects the output to the specified file on
+        /// <br/>	the client filesystem. Multiple files may be written by using wildcards
+        /// <br/>	in the localFile argument that match wildcards in the file argument.
+        /// <br/>
+        /// <br/>	The -q flag suppresses the initial line that displays the file name
+        /// <br/>	and revision.
+        /// <br/>
+        /// <br/>	The -m flag limits print to the first 'max' number of files.
+        /// <br/>
+        /// <br/>	The --offset flag limits print by skipping 'offset' bytes from the
+        /// <br/>	begining of the file.
+        /// <br/>
+        /// <br/>	The --size flag limits print to a maximum of 'size' bytes. Users can
+        /// <br/>	combine --offset and --size flags in one command.
+        /// <br/>
+        /// <br/>	The -U option prints files in the unload depot (see 'p4 help unload'
+        /// <br/>	for more information about the unload depot).
+        /// <br/>
+        /// <br/>	See 'p4 help-graph print' for information on using this command with
+        /// <br/>	graph depots.
+        /// <br/>
+        /// <br/>
         /// </remarks>
-        public Options(GetFileContentsCmdFlags flags, string localFile)
+        public Options(GetFileContentsCmdFlags flags, string localFile, string lineEnding = null, string charset = null, int? filesysUtf8bom = null)
         {
             if ((flags & GetFileContentsCmdFlags.AllRevisions) != 0)
             {
@@ -11277,6 +11302,21 @@ namespace Perforce.P4
                 this["-o"] = localFile;
             }
 
+            if (String.IsNullOrEmpty(lineEnding) != true)
+            {
+                this["-L"] = lineEnding;
+            }
+
+            if (String.IsNullOrEmpty(charset) != true)
+            {
+                this["-Q"] = charset;
+            }
+
+            if (filesysUtf8bom != null && 0 <= filesysUtf8bom)
+            {
+                this["-B"] = filesysUtf8bom.ToString();
+            }
+
         }
     }
 
@@ -11290,48 +11330,73 @@ namespace Perforce.P4
         /// </summary>
         /// <param name="flags"></param>
         /// <param name="localFile"></param>
+        /// <param name="lineEnding"></param>
+        /// <param name="charset"></param>
+        /// <param name="filesysUtf8bom"></param>
         /// <remarks>
         /// <br/><b>p4 help print</b>
-        /// <br/> 
-        /// <br/>     print -- Write a depot file to standard output
-        /// <br/> 
-        /// <br/>     p4 print [-a -A -k -o localFile -q -m max] file[revRange] ...
-        /// <br/>     p4 print -U unloadfile ...
-        /// <br/> 
-        /// <br/> 	Retrieve the contents of a depot file to the client's standard output.
-        /// <br/> 	The file is not synced.  If file is specified using client syntax,
-        /// <br/> 	Perforce uses the client view to determine the corresponding depot
-        /// <br/> 	file.
-        /// <br/> 
-        /// <br/> 	By default, the head revision is printed.  If the file argument
-        /// <br/> 	includes a revision, the specified revision is printed.  If the
-        /// <br/> 	file argument has a revision range,  then only files selected by
-        /// <br/> 	that revision range are printed, and the highest revision in the
-        /// <br/> 	range is printed. For details about revision specifiers, see 'p4
-        /// <br/> 	help revisions'.
-        /// <br/> 
-        /// <br/> 	The -a flag prints all revisions within the specified range, rather
-        /// <br/> 	than just the highest revision in the range.
-        /// <br/> 
-        /// <br/> 	The -A flag prints files in archive depots.
-        /// <br/> 
-        /// <br/> 	The -k flag suppresses keyword expansion.
-        /// <br/> 
-        /// <br/> 	The -o localFile flag redirects the output to the specified file on
-        /// <br/> 	the client filesystem.
-        /// <br/> 
-        /// <br/> 	The -q flag suppresses the initial line that displays the file name
-        /// <br/> 	and revision.
-        /// <br/> 
-        /// <br/> 	The -m flag limits print to the first 'max' number of files.
-        /// <br/> 
-        /// <br/> 	The -U option prints files in the unload depot (see 'p4 help unload'
-        /// <br/> 	for more information about the unload depot).
-        /// <br/> 
-        /// <br/> 
+        /// <br/>
+        /// <br/>    print -- Write a depot file to standard output
+        /// <br/>
+        /// <br/>    p4 print [-a -A -K -o localFile -q -m max --offset offset --size size
+        /// <br/>	      -Q charset -B utf8bom -L line-ending] file[revRange] ...
+        /// <br/>    p4 print -U unloadfile ...
+        /// <br/>
+        /// <br/>	Retrieve the contents of a depot file to the client's standard output.
+        /// <br/>	The file is not synced.  If file is specified using client syntax,
+        /// <br/>	Perforce uses the client view to determine the corresponding depot
+        /// <br/>	file.
+        /// <br/>
+        /// <br/>	By default, the head revision is printed.  If the file argument
+        /// <br/>	includes a revision, the specified revision is printed.  If the
+        /// <br/>	file argument has a revision range,  then only files selected by
+        /// <br/>	that revision range are printed, and the highest revision in the
+        /// <br/>	range is printed. For details about revision specifiers, see 'p4
+        /// <br/>	help revisions'.
+        /// <br/>
+        /// <br/>	The -a flag prints all revisions within the specified range, rather
+        /// <br/>	than just the highest revision in the range.
+        /// <br/>
+        /// <br/>	The -A flag prints files in archive depots.
+        /// <br/>
+        /// <br/>	The -K flag suppresses keyword expansion (this replaced the -k flag
+        /// <br/>	in 2022.1, which is now an alias for -K for backwards compatibility).
+        /// <br/>
+        /// <br/>	The -L flag allows the line ending of textual files to be explicitly
+        /// <br/>	specified as either 'unix', 'win' or 'mac'.
+        /// <br/>
+        /// <br/>	The -Q flag allows the charset for unicode type files to be explicitly
+        /// <br/>	specified, overriding the connection's P4CHARSET but not override the
+        /// <br/>	charset of unicode files with versioned charsets.
+        /// <br/>
+        /// <br/>	The -B flag overrides the client-side 'filesys.utf8bom' setting,
+        /// <br/>	controlling the presence of the byte-order-mark in utf8 type files.
+        /// <br/>
+        /// <br/>	The -o localFile flag redirects the output to the specified file on
+        /// <br/>	the client filesystem. Multiple files may be written by using wildcards
+        /// <br/>	in the localFile argument that match wildcards in the file argument.
+        /// <br/>
+        /// <br/>	The -q flag suppresses the initial line that displays the file name
+        /// <br/>	and revision.
+        /// <br/>
+        /// <br/>	The -m flag limits print to the first 'max' number of files.
+        /// <br/>
+        /// <br/>	The --offset flag limits print by skipping 'offset' bytes from the
+        /// <br/>	begining of the file.
+        /// <br/>
+        /// <br/>	The --size flag limits print to a maximum of 'size' bytes. Users can
+        /// <br/>	combine --offset and --size flags in one command.
+        /// <br/>
+        /// <br/>	The -U option prints files in the unload depot (see 'p4 help unload'
+        /// <br/>	for more information about the unload depot).
+        /// <br/>
+        /// <br/>	See 'p4 help-graph print' for information on using this command with
+        /// <br/>	graph depots.
+        /// <br/>
+        /// <br/>
         /// </remarks>
-        public GetFileContentsCmdOptions(GetFileContentsCmdFlags flags, string localFile)
-            : base(flags, localFile) { }
+        public GetFileContentsCmdOptions(GetFileContentsCmdFlags flags, string localFile, string lineEnding = null, string charset = null, int? filesysUtf8bom = null)
+            : base(flags, localFile, lineEnding, charset, filesysUtf8bom) { }
     }
 
     /// <summary>
