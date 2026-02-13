@@ -36,6 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 /// <summary>
 /// Specifies type of Change List
@@ -781,12 +782,12 @@ namespace Perforce.P4
 				}
 			}
 			
-			String filesStr = String.Empty;
+			StringBuilder filesStringBuilder = new StringBuilder();
 			if (Files != null&&Pending)
 			{
 				foreach (FileSpec file in Files)
 				{
-					filesStr += $"\t{file.ToEscapedString()}{Environment.NewLine}";
+					filesStringBuilder.Append($"\t{file.ToEscapedString()}{Environment.NewLine}");
 				}
 			}
 
@@ -819,7 +820,7 @@ namespace Perforce.P4
 			String value = String.Format(ChangelistSpecFormat, ChangeNumbeStr,
 				FormBase.FormatDateTime(ModifiedDate), ClientId, OwnerName,
 				statusStr,
-				restrictedStr, importedStr, identityStr, descStr, jobsStr, streamStr, filesStr);
+				restrictedStr, importedStr, identityStr, descStr, jobsStr, streamStr, filesStringBuilder.ToString());
 			return value;
 		}
 
