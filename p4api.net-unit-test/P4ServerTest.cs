@@ -2093,8 +2093,14 @@ namespace p4api.net.unit.test
                             errors = target.GetErrorResults(cmdId);
 
                             Assert.IsNotNull(errors);
+                            // The point is that a bad/unauthenticated user yields an auth error here.
+                            // Pre-2026.1 servers returned "Password must be set before access can be
+                            // granted."; 2026.1 "secure by default" (dm.user.noautocreate=2, so the
+                            // bad user is not auto-created) returns "Perforce password (P4PASSWD)
+                            // invalid or unset." Accept either so the test works across versions.
                             Assert.IsTrue(
-                                errors[0].ErrorMessage.Contains("Password must be set before access can be granted"));
+                                errors[0].ErrorMessage.Contains("Password must be set")
+                                || errors[0].ErrorMessage.Contains("Perforce password (P4PASSWD) invalid or unset"));
 
                             target.User = user; // back to the good  user
                         }
@@ -2361,6 +2367,16 @@ namespace p4api.net.unit.test
                         else
                             Assert.IsFalse(target.UseUnicode, "Non Unicode server detected as supporting Unicode");
 
+                        // Server 2026.1 secure-by-default (dm.user.setinitialpasswd=0) makes 'passwd'
+                        // fail with a super-user error before it can prompt. admin is super here, so
+                        // enable initial-password setting on the server first. Use a SEPARATE admin
+                        // connection so 'target' (with its prompt wiring) is left untouched; the new
+                        // config is read server-side on the next command. No-op on older servers.
+                        using (P4Server cfgSrv = new P4Server(server, "admin", string.Empty, ws_client))
+                        {
+                            cfgSrv.RunCommand("configure", 0, true, new string[] { "set", "dm.user.setinitialpasswd=1" }, 2);
+                        }
+
                         target.PromptHandler = PromptWaiter;
                         // attempt to change the password, this guarantees a prompt
                         using (P4Command cmd = new P4Command(target, "passwd", false))
@@ -2480,6 +2496,16 @@ namespace p4api.net.unit.test
                             Assert.IsTrue(target.UseUnicode, "Unicode server detected as not supporting Unicode");
                         else
                             Assert.IsFalse(target.UseUnicode, "Non Unicode server detected as supporting Unicode");
+
+                        // Server 2026.1 secure-by-default (dm.user.setinitialpasswd=0) makes 'passwd'
+                        // fail with a super-user error before it can prompt. admin is super here, so
+                        // enable initial-password setting on the server first. Use a SEPARATE admin
+                        // connection so 'target' (with its prompt wiring) is left untouched; the new
+                        // config is read server-side on the next command. No-op on older servers.
+                        using (P4Server cfgSrv = new P4Server(server, "admin", string.Empty, ws_client))
+                        {
+                            cfgSrv.RunCommand("configure", 0, true, new string[] { "set", "dm.user.setinitialpasswd=1" }, 2);
+                        }
 
                         target.PromptHandler = PromptWaiter;
                         // attempt to change the password, this guarantees a prompt

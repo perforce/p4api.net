@@ -28,7 +28,7 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 	
     set(SslLibs libcrypto libssl crypt32 Ws2_32 )
     set(ApiLibs libclient libsupp libp4api )
-    set(PlatformLibs oldnames Ws2_32 kernel32 user32 gdi32 winspool comdlg32 advapi32 shell32 ole32 oleaut32 uuid odbc32 odbccp32 )
+    set(PlatformLibs oldnames Ws2_32 kernel32 user32 gdi32 winspool comdlg32 advapi32 shell32 ole32 oleaut32 uuid odbc32 odbccp32 iphlpapi bcrypt )
     string(COMPARE EQUAL "${MSVC_CXX_ARCHITECTURE_ID}" "X86" _is_x86)
     link_directories( "../p4api$<${_is_x86}:_x86>_$<IF:$<CONFIG:Debug>,debug,release>/lib" )
     include_directories( "../p4api$<${_is_x86}:_x86>_$<IF:$<CONFIG:Debug>,debug,release>/include/p4" )

@@ -57,6 +57,7 @@ namespace p4api.net.unit.test
 						u.OwnerNames = new List<string> { "Alex" };
 						u.MaxResults = 9999;
                         u.MaxMemory = 9999;
+                        u.IdleTimeout = 80; 
 
 						//GroupOptions uFlags = new GroupOptions(GroupFlags.Force);
 						Group newGuy = rep.CreateGroup(u, null);
@@ -510,6 +511,7 @@ namespace p4api.net.unit.test
 						u.OwnerNames = new List<string> { "admin" };
 						u.MaxResults = 9999;
                         u.PasswordTimeout = 1111;
+                        u.IdleTimeout = 115;
 
                         Group newGuy = rep.CreateGroup(u, null);
 
@@ -518,11 +520,17 @@ namespace p4api.net.unit.test
 
                         newGuy.UserNames.Add("Alice");
                         newGuy.UserNames.Add("Alex");
+
+                        newGuy.MaxResults = -1;
+                        newGuy.IdleTimeout = 0;        // 0 = unset
+                        newGuy.PasswordTimeout = 0;    // 0 = unset
                         Group u2 = rep.UpdateGroup(newGuy);
 
                         Assert.IsNotNull(u2);
                         Assert.AreEqual(targetGroup, u2.Id);
                         Assert.AreEqual(3, u2.UserNames.Count);
+                        Assert.AreEqual(0, u2.IdleTimeout);
+                        Assert.AreEqual(0, u2.PasswordTimeout);
                     }
                 }
                 finally
@@ -581,6 +589,7 @@ namespace p4api.net.unit.test
                         u.UserNames.Add("Alex");
                         u.OwnerNames = new List<string> { "Alex" };
                         u.MaxResults = 9999;
+                        u.IdleTimeout = 10000;
 
                         u = rep.UpdateGroup(u, null);
 
@@ -597,6 +606,9 @@ namespace p4api.net.unit.test
 
                         u = rep.GetGroup(targetGroup);
 
+                        Assert.AreEqual(10000, u.IdleTimeout);
+
+                        u.IdleTimeout = 0;    // 0 = unset
                         u.MaxResults = 4444;
                         u.UserNames.Remove("Alice");
                         Options gFlags = new Options(GroupCmdFlags.OwnerAccess);
@@ -604,8 +616,9 @@ namespace p4api.net.unit.test
 
                         u = rep.GetGroup(targetGroup);
                         Assert.IsNotNull(u);
-                        Assert.AreEqual(u.MaxResults,4444);
+                        Assert.AreEqual(4444, u.MaxResults);
                         Assert.IsFalse(u.UserNames.Contains("Alice"));
+                        Assert.AreEqual(0, u.IdleTimeout);
                     }
                 }
                 finally
@@ -790,6 +803,7 @@ namespace p4api.net.unit.test
                         u.MaxLockTime = 102;
                         u.MaxOpenFiles = 103;
                         u.TimeOut = 104;
+                        u.IdleTimeout = 107;
                         u.PasswordTimeout = 105;
                         u.MaxMemory = 106;
 
@@ -801,12 +815,13 @@ namespace p4api.net.unit.test
 
                         Group readGroup = rep.GetGroup(targetGroup, null);
 
-                        Assert.AreEqual(createdGroup.Description, readGroup.Description.TrimEnd()); // Trim the new line chars
+                        Assert.AreEqual(createdGroup.Description, readGroup.Description.TrimEnd());
                         Assert.AreEqual(createdGroup.MaxResults, readGroup.MaxResults);
                         Assert.AreEqual(createdGroup.MaxScanRows, readGroup.MaxScanRows);
                         Assert.AreEqual(createdGroup.MaxLockTime, readGroup.MaxLockTime);
                         Assert.AreEqual(createdGroup.MaxOpenFiles, readGroup.MaxOpenFiles);
                         Assert.AreEqual(createdGroup.TimeOut, readGroup.TimeOut);
+                        Assert.AreEqual(createdGroup.IdleTimeout, readGroup.IdleTimeout);
                         Assert.AreEqual(createdGroup.PasswordTimeout, readGroup.PasswordTimeout);
                         Assert.AreEqual(createdGroup.MaxMemory, readGroup.MaxMemory);
                     }

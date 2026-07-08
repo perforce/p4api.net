@@ -583,7 +583,7 @@ namespace Perforce.P4
 		/// <summary>
 		/// Read an error list from the server by traversing the linked list.
 		/// </summary>
-		/// <param name="p4Server">Perforce server</param>
+		/// <param name="p4Server">P4 Server</param>
 		/// <param name="pObj">First error in the list</param>
 		private void Init( P4Server p4Server, IntPtr pObj )
 		{
@@ -631,7 +631,7 @@ namespace Perforce.P4
         /// <summary>
         /// Create a list from the current error results on the server
         /// </summary>
-        /// <param name="p4Server">Perforce Server</param>
+        /// <param name="p4Server">P4 Server</param>
         /// <param name="cmdId">Command id</param>
         public P4ClientErrorList( P4Server p4Server, uint cmdId )
 		{
@@ -748,7 +748,7 @@ namespace Perforce.P4
 		/// <summary>
 		/// Read an error list from the server by traversing the linked list.
 		/// </summary>
-		/// <param name="p4Server">Perforce server</param>
+		/// <param name="p4Server">P4 Server</param>
 		/// <param name="pObj">First error in the list</param>
 		private void Init(P4Server p4Server, IntPtr pObj)
 		{
@@ -804,7 +804,7 @@ namespace Perforce.P4
         /// <summary>
         /// Create a list from the current error results on the server
         /// </summary>
-        /// <param name="p4Server">Perforce Server</param>
+        /// <param name="p4Server">P4 Server</param>
         /// <param name="cmdId">Unique ID</param>
         public P4ClientInfoMessageList(P4Server p4Server, uint cmdId)
 		{

@@ -15,7 +15,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <fstream>
 #include <iostream>
 #endif
 
@@ -52,7 +51,7 @@ const char * TestZip8 = MYTESTDIR8 "\\u.tar";
 const char * utar_cmd8 = "TAR xvf u.tar";
 const char * rcp_cmd8 =  P4D " -r " MYTESTDIR8 " -jr checkpoint.1";
 const char * udb_cmd8 =  P4D " -r " MYTESTDIR8 " -xu";
-const char * p4d_cmd8 =  P4D " -p6666 -IdUnitTestServer -r " MYTESTDIR8 " -Llog";
+const char * p4d_cmd8 =  P4D " -v security=0 -p6666 -IdUnitTestServer -r " MYTESTDIR8 " -Llog";
 const char * tarBall8 = "\\u.tar";
 #endif
 
@@ -73,7 +72,7 @@ const char * TestZip8 = MYTESTDIR8 "/u.tar";
 const char * utar_cmd8 = TAR " xf u.tar";
 const char * rcp_cmd8 = P4D " -C1 -r " MYTESTDIR8 " -jr checkpoint.1";
 const char * udb_cmd8 = P4D " -C1 -r " MYTESTDIR8 " -xu";
-const char * p4d_cmd8 = P4D " -C1 -p6666 -IdUnitTestServer -r" MYTESTDIR8 " -Jjournal -Llog";
+const char * p4d_cmd8 = P4D " -C1 -v security=0 -p6666 -IdUnitTestServer -r" MYTESTDIR8 " -Jjournal -Llog";
 const char * tarBall8 = "/u.tar";
 #endif
 

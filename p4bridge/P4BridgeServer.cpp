@@ -423,18 +423,22 @@ int P4BridgeServer::connect_and_trust_int( P4ClientError **err, char* trust_flag
 	LOG_LOC();
 	P4Connection* pCon = getConnection();
 
-	// Delete the existing trust.   This command may also fail if the connection has problems
+	// Delete any existing trust entry for this port. This is best-effort
+	// cleanup, NOT a hard precondition. If the stored key has CHANGED, this
+	// command both reports "P4PORT IDENTIFICATION HAS CHANGED" *and* removes
+	// the stale entry. We must not abort on that error: doing so made
+	// trust-before-connect against a server whose certificate changed fail on
+	// the first attempt and only succeed on a retry (after the stale entry had
+	// already been removed as a side effect). Instead, reset the connection and
+	// fall through to the trust step below, which then sees an untrusted (not
+	// changed) key and can establish it in a single call. A genuine connection
+	// failure here is harmless: the trust step below will fail too and report it.
         const char *params[] = { "-d" };
 	if (!run_command("trust", 0, 1, params, 1))
 	{
-		P4ClientError* e = pCon->getUi()->GetErrorResults();
-		if ((e != NULL) && (e->Severity >= E_FAILED))
-		{
-			*err = new P4ClientError(e);  // clone the P4ClientError. It is managed by P4BridgeClient
-		}
-
+		// best-effort cleanup failed (e.g. key changed) -> reset the
+		// connection so the trust step below re-initializes it cleanly.
 		disconnect();
-		return 0;
 	}
 
     const char *args[] = { trust_flag, fingerprint };

@@ -169,6 +169,21 @@ namespace Perforce.P4
         /// <br/> 	             Revisions submitted to the path after the specified
         /// <br/> 	             changelist will not be visible.  Files matching a
         /// <br/> 	             ChangeView path may not be submitted.
+        /// <br/>
+        /// <br/>	LimitView:   Restricts the paths mapped by the View. This is helpful
+        /// <br/>	             for streams clients where the View cannot be modified in
+        /// <br/>	             the client spec.
+        /// <br/>	             The mappings may be specified in either client or depot
+        /// <br/>	             syntax, but not a combination of both.
+        /// <br/>	             Example:
+        /// <br/>	                 View:
+        /// <br/>	                     //depot1/... //ws/depot1/...
+        /// <br/>	                     //depot2/... //ws/depot2/...
+        /// <br/>	                 LimitView:
+        /// <br/>	                     //ws/depot1/path/...
+        /// <br/>	                     -//ws/....exe
+        /// <br/>	             Will limit the client's view to just files under
+        /// <br/>	             //depot1/path excluding files with the .exe extension.
         /// <br/> 
         /// <br/> 	Stream:      The stream to which this client's view will be dedicated.
         /// <br/> 		     (Files in stream paths can be submitted only by dedicated
@@ -434,6 +449,22 @@ namespace Perforce.P4
 		/// <br/> 	             Revisions submitted to the path after the specified
 		/// <br/> 	             changelist will not be visible.  Files matching a
 		/// <br/> 	             ChangeView path may not be submitted.
+		/// <br/>
+		/// <br/>	LimitView:   Restricts the paths mapped by the View. This is helpful
+		/// <br/>	             for streams clients where the View cannot be modified in
+		/// <br/>	             the client spec.
+		/// <br/>	             The mappings may be specified in either client or depot
+		/// <br/>	             syntax, but not a combination of both.
+		/// <br/>	             Example:
+		/// <br/>	                 View:
+		/// <br/>	                     //depot1/... //ws/depot1/...
+		/// <br/>	                     //depot2/... //ws/depot2/...
+		/// <br/>	                 LimitView:
+		/// <br/>	                     //ws/depot1/path/...
+		/// <br/>	                     -//ws/....exe
+		/// <br/>	             Will limit the client's view to just files under
+		/// <br/>	             //depot1/path excluding files with the .exe extension.
+		/// <br/> 
 		/// <br/> 
 		/// <br/> 	Stream:      The stream to which this client's view will be dedicated.
 		/// <br/> 		     (Files in stream paths can be submitted only by dedicated
@@ -671,6 +702,21 @@ namespace Perforce.P4
         /// <br/> 	             Revisions submitted to the path after the specified
         /// <br/> 	             changelist will not be visible.  Files matching a
         /// <br/> 	             ChangeView path may not be submitted.
+        /// <br/>
+        /// <br/>	LimitView:   Restricts the paths mapped by the View. This is helpful
+        /// <br/>	             for streams clients where the View cannot be modified in
+        /// <br/>	             the client spec.
+        /// <br/>	             The mappings may be specified in either client or depot
+        /// <br/>	             syntax, but not a combination of both.
+        /// <br/>	             Example:
+        /// <br/>	                 View:
+        /// <br/>	                     //depot1/... //ws/depot1/...
+        /// <br/>	                     //depot2/... //ws/depot2/...
+        /// <br/>	                 LimitView:
+        /// <br/>	                     //ws/depot1/path/...
+        /// <br/>	                     -//ws/....exe
+        /// <br/>	             Will limit the client's view to just files under
+        /// <br/>	             //depot1/path excluding files with the .exe extension.
         /// <br/> 
         /// <br/> 	Stream:      The stream to which this client's view will be dedicated.
         /// <br/> 		     (Files in stream paths can be submitted only by dedicated
@@ -901,6 +947,21 @@ namespace Perforce.P4
         /// <br/> 	             Revisions submitted to the path after the specified
         /// <br/> 	             changelist will not be visible.  Files matching a
         /// <br/> 	             ChangeView path may not be submitted.
+        /// <br/>
+        /// <br/>	LimitView:   Restricts the paths mapped by the View. This is helpful
+        /// <br/>	             for streams clients where the View cannot be modified in
+        /// <br/>	             the client spec.
+        /// <br/>	             The mappings may be specified in either client or depot
+        /// <br/>	             syntax, but not a combination of both.
+        /// <br/>	             Example:
+        /// <br/>	                 View:
+        /// <br/>	                     //depot1/... //ws/depot1/...
+        /// <br/>	                     //depot2/... //ws/depot2/...
+        /// <br/>	                 LimitView:
+        /// <br/>	                     //ws/depot1/path/...
+        /// <br/>	                     -//ws/....exe
+        /// <br/>	             Will limit the client's view to just files under
+        /// <br/>	             //depot1/path excluding files with the .exe extension.
         /// <br/> 
         /// <br/> 	Stream:      The stream to which this client's view will be dedicated.
         /// <br/> 		     (Files in stream paths can be submitted only by dedicated
@@ -1153,6 +1214,21 @@ namespace Perforce.P4
 		/// <br/> 	             Revisions submitted to the path after the specified
 		/// <br/> 	             changelist will not be visible.  Files matching a
 		/// <br/> 	             ChangeView path may not be submitted.
+		/// <br/>
+		/// <br/>	LimitView:   Restricts the paths mapped by the View. This is helpful
+		/// <br/>	             for streams clients where the View cannot be modified in
+		/// <br/>	             the client spec.
+		/// <br/>	             The mappings may be specified in either client or depot
+		/// <br/>	             syntax, but not a combination of both.
+		/// <br/>	             Example:
+		/// <br/>	                 View:
+		/// <br/>	                     //depot1/... //ws/depot1/...
+		/// <br/>	                     //depot2/... //ws/depot2/...
+		/// <br/>	                 LimitView:
+		/// <br/>	                     //ws/depot1/path/...
+		/// <br/>	                     -//ws/....exe
+		/// <br/>	             Will limit the client's view to just files under
+		/// <br/>	             //depot1/path excluding files with the .exe extension.
 		/// <br/> 
 		/// <br/> 	Stream:      The stream to which this client's view will be dedicated.
 		/// <br/> 		     (Files in stream paths can be submitted only by dedicated
@@ -1497,6 +1573,21 @@ namespace Perforce.P4
         /// <br/> 	             Revisions submitted to the path after the specified
         /// <br/> 	             changelist will not be visible.  Files matching a
         /// <br/> 	             ChangeView path may not be submitted.
+        /// <br/>
+        /// <br/>	LimitView:   Restricts the paths mapped by the View. This is helpful
+        /// <br/>	             for streams clients where the View cannot be modified in
+        /// <br/>	             the client spec.
+        /// <br/>	             The mappings may be specified in either client or depot
+        /// <br/>	             syntax, but not a combination of both.
+        /// <br/>	             Example:
+        /// <br/>	                 View:
+        /// <br/>	                     //depot1/... //ws/depot1/...
+        /// <br/>	                     //depot2/... //ws/depot2/...
+        /// <br/>	                 LimitView:
+        /// <br/>	                     //ws/depot1/path/...
+        /// <br/>	                     -//ws/....exe
+        /// <br/>	             Will limit the client's view to just files under
+        /// <br/>	             //depot1/path excluding files with the .exe extension.
         /// <br/> 
         /// <br/> 	Stream:      The stream to which this client's view will be dedicated.
         /// <br/> 		     (Files in stream paths can be submitted only by dedicated

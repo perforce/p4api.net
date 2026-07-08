@@ -371,5 +371,158 @@ View:
 				}
 			}
 		}
+
+		/// <summary>
+		/// A test for GetClients with --user-case-insensitive flag (AC-1 and AC-3).
+		/// AC-1: querying with upper-case user name and UserCaseInsensitive flag returns the
+		///       matching clients despite the case difference.
+		/// AC-3: querying with the same upper-case user name WITHOUT the flag returns null on
+		///       a case-sensitive server.
+		/// </summary>
+		[TestMethod()]
+		public void GetClientsUserCaseInsensitiveTest()
+		{
+			string uri = configuration.ServerPort;
+			string user = "admin";
+			string ws_client = "admin_space";
+
+			for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
+			{
+				var cptype = (Utilities.CheckpointType)i;
+				Process p4d = null;
+				Repository rep = null;
+				try
+				{
+					p4d = Utilities.DeployP4TestServer(TestDir, 6, cptype);
+					Assert.IsNotNull(p4d, "Setup Failure");
+
+					Server server = new Server(new ServerAddress(uri));
+					rep = new Repository(server);
+
+					using (Connection con = rep.Connection)
+					{
+						con.UserName = user;
+						con.Client = new Client();
+						con.Client.Name = ws_client;
+
+						bool connected = con.Connect(null);
+						Assert.IsTrue(connected);
+
+						Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+
+						// AC-1: upper-case "ADMIN" with UserCaseInsensitive flag should match
+						// the stored lower-case "admin" user and return admin's clients.
+						IList<Client> withFlag = rep.GetClients(
+							new ClientsCmdOptions(ClientsCmdFlags.UserCaseInsensitive,
+								"ADMIN", null, -1, null));
+
+						Assert.IsNotNull(withFlag,
+							"Expected clients when --user-case-insensitive is set with 'ADMIN'");
+						Assert.IsTrue(withFlag.Count >= 1,
+							"Expected at least one client owned by 'admin' (case-insensitive match on 'ADMIN')");
+						foreach (Client c in withFlag)
+						{
+							Assert.IsTrue(
+								string.Equals(c.OwnerName, "admin",
+									StringComparison.OrdinalIgnoreCase),
+								"Expected all returned clients to be owned by 'admin'");
+						}
+
+						// AC-3: same upper-case "ADMIN" WITHOUT the flag — on a case-sensitive server
+						// this returns null; on a case-insensitive server it may return results.
+						// We verify the call completes without error and that any returned clients
+						// are owned by "admin" (case-insensitively).
+						IList<Client> withoutFlag = rep.GetClients(
+							new ClientsCmdOptions(ClientsCmdFlags.None,
+								"ADMIN", null, -1, null));
+
+						// Result is server-configuration-dependent: null on a case-sensitive server,
+						// non-null on a case-insensitive server. Either is valid here.
+						if (withoutFlag != null)
+						{
+							foreach (Client c in withoutFlag)
+							{
+								Assert.IsTrue(
+									string.Equals(c.OwnerName, "admin",
+										StringComparison.OrdinalIgnoreCase),
+									"Expected all returned clients to be owned by 'admin'");
+							}
+						}
+					}
+				}
+				finally
+				{
+					Utilities.RemoveTestServer(p4d, TestDir);
+					p4d?.Dispose();
+					rep?.Dispose();
+				}
+			}
+		}
+
+		/// <summary>
+		/// A test for GetClients with --user-case-insensitive flag and a wildcard pattern (AC-2).
+		/// AC-2: querying with an upper-case wildcard pattern "A*" and UserCaseInsensitive flag
+		///       returns clients from all users whose names start with 'a' (case-insensitively),
+		///       i.e. admin, Alex, and Alice in checkpoint 6.
+		/// </summary>
+		[TestMethod()]
+		public void GetClientsUserCaseInsensitiveWildcardTest()
+		{
+			string uri = configuration.ServerPort;
+			string user = "admin";
+			string ws_client = "admin_space";
+
+			for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
+			{
+				var cptype = (Utilities.CheckpointType)i;
+				Process p4d = null;
+				Repository rep = null;
+				try
+				{
+					p4d = Utilities.DeployP4TestServer(TestDir, 6, cptype);
+					Assert.IsNotNull(p4d, "Setup Failure");
+
+					Server server = new Server(new ServerAddress(uri));
+					rep = new Repository(server);
+
+					using (Connection con = rep.Connection)
+					{
+						con.UserName = user;
+						con.Client = new Client();
+						con.Client.Name = ws_client;
+
+						bool connected = con.Connect(null);
+						Assert.IsTrue(connected);
+
+						Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+
+						// AC-2: wildcard "A*" with UserCaseInsensitive should match all users
+						// whose names start with 'a' regardless of case: admin, Alex, Alice.
+						// Checkpoint 6 has admin_space + admin_space2 (admin), alex_space (Alex),
+						// alice_space (Alice) => at least 2 clients returned.
+						IList<Client> results = rep.GetClients(
+							new ClientsCmdOptions(ClientsCmdFlags.UserCaseInsensitive,
+								"A*", null, -1, null));
+
+						Assert.IsNotNull(results,
+							"Expected clients when --user-case-insensitive is set with wildcard 'A*'");
+						Assert.IsTrue(results.Count >= 2,
+							"Expected at least 2 clients matching wildcard 'A*' case-insensitively");
+						foreach (Client c in results)
+						{
+							Assert.IsTrue(
+								c.OwnerName.StartsWith("a", StringComparison.OrdinalIgnoreCase),
+								"Expected all returned clients to be owned by a user starting with 'a'");
+						}
+					}
+				}
+				finally
+				{
+					Utilities.RemoveTestServer(p4d, TestDir);
+					p4d?.Dispose();
+					rep?.Dispose();
+				}
+			}
+		}
 	}
 }

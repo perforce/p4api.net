@@ -42,7 +42,7 @@ using System.Text;
 namespace Perforce.P4
 {
     /// <summary>
-    /// A user group on a Perforce Server, represented by a P4 Group spec.
+    /// A user group on a P4 Server, represented by a P4 Group spec.
     /// </summary>
     /// <remarks>
     /// <br/><b>p4 help group</b>
@@ -50,27 +50,24 @@ namespace Perforce.P4
     /// <br/>     group -- Change members of user group
     /// <br/> 
     /// <br/>     p4 group [-a|-A] name
-    /// <br/>     p4 group -d [-a] name
+    /// <br/>     p4 group -d [-a | -F] name
     /// <br/>     p4 group -o name
     /// <br/>     p4 group -i [-a|-A]
-    /// <br/> 
+    /// <br/>
     /// <br/> 	Create a group or modify the membership of an existing group.
     /// <br/> 	A group can contain users and other groups. The group specification
     /// <br/> 	is put into a temporary file and the editor (configured by the
     /// <br/> 	environment variable $P4EDITOR) is invoked.
-    /// <br/> 
+    /// <br/>
     /// <br/> 	A group exists when it has any users or other groups in it, and
     /// <br/> 	ceases to exist if all users and groups in it are removed.
-    /// <br/> 
-    /// <br/> 	Each group has MaxResults, MaxScanRows, and MaxLockTime fields,
-    /// <br/> 	which limit the resources committed to operations performed by
-    /// <br/> 	members of the group.  For these fields, 'unlimited' or 'unset'
-    /// <br/> 	means no limit for that	group.  An individual user's limit is the
-    /// <br/> 	highest of any group with a limit to which he belongs, unlimited if
-    /// <br/> 	any of his groups has 'unlimited' for that field, or unlimited
-    /// <br/> 	if he belongs to no group with a limit.  See 'p4 help maxresults'
-    /// <br/> 	for more information on MaxResults, MaxScanRows and MaxLockTime.
-    /// <br/> 
+    /// <br/>
+    /// <br/> 	Each group has MaxResults, MaxScanRows, MaxLockTime, MaxOpenFiles
+    /// <br/> 	and MaxMemory fields, which limit the resources committed to
+    /// <br/> 	operations performed by members of the group.  See
+    /// <br/> 	'p4 help maxresults' for more information on MaxResults, MaxScanRows,
+    /// <br/> 	MaxLockTime, MaxOpenFiles and MaxMemory.
+    /// <br/>
     /// <br/> 	Each group also has a Timeout field, which specifies how long (in
     /// <br/> 	seconds)  a 'p4 login' ticket remains valid.  A value of 'unset' or
     /// <br/> 	'unlimited' is equivalent to no timeout. An individual's timeout is
@@ -78,10 +75,19 @@ namespace Perforce.P4
     /// <br/> 	if any of his groups has 'unlimited' for the timeout value, or
     /// <br/> 	unlimited if he belongs to no group with a limit. See 'p4 help login'
     /// <br/> 	for more information.
-    /// <br/> 
+    /// <br/>
     /// <br/> 	Each group has a PasswordTimeout field, which determines how long a
     /// <br/> 	password remains valid for members of the group.
-    /// <br/> 
+    /// <br/>
+    /// <br/> 	Each group also has an IdleTimeout field, which specifies how long
+    /// <br/> 	(in seconds) after the last command a login ticket is invalidated.
+    /// <br/> 	A value of 'unset' or 'unlimited' means no idle timeout. An
+    /// <br/> 	individual's idle timeout is the highest of any group with a limit
+    /// <br/> 	to which he belongs, unlimited if any of his groups has 'unlimited'
+    /// <br/> 	for the idle timeout value, or unlimited if he belongs to no group
+    /// <br/> 	with a limit. If the value is lower than dm.user.accessupdate or
+    /// <br/> 	dm.user.accessforce, the highest of those is used instead.
+    /// <br/>
     /// <br/> 	A group may be synchronized with an LDAP group by setting the three
     /// <br/> 	fields: LdapConfig, LdapSearchQuery and LdapUserAttribute. This takes
     /// <br/> 	the LDAP configuration (see 'p4 ldap') specified by LdapConfig and uses
@@ -107,17 +113,21 @@ namespace Perforce.P4
     /// <br/> 
     /// <br/> 	The -A flag enables a user with 'admin' access to add a new group.
     /// <br/> 	Existing groups may not be modified when this flag is used.
-    /// <br/> 
+    /// <br/>
+    /// <br/> 	The -F flag, used only with -d, forces the deletion of the
+    /// <br/> 	specified group, and also removes the group from the protections
+    /// <br/> 	table and from all groups.
+    /// <br/>
     /// <br/> 	All commands that require access granted by 'p4 protect' consider a
     /// <br/> 	user's groups when calculating access levels.
-    /// <br/> 
+    /// <br/>
     /// <br/> 	'p4 group' requires 'super' access granted by 'p4 protect' unless
     /// <br/> 	invoked with the '-a' or '-A' flag by a qualified user.
-    /// <br/> 
-    /// <br/> 
+    /// <br/>
+    /// <br/>
     /// </remarks>
     /// <summary>
-    /// A group specification in a Perforce repository. 
+    /// A group specification in a Perforce repository.
     /// </summary>
     public class Group
     {
@@ -135,39 +145,56 @@ namespace Perforce.P4
         /// <summary>
         /// Limits the rows (unless 'unlimited' or 'unset') any one
         /// operation can return to the client.
+        /// Use 0 for unset (field omitted from spec), -1 for unlimited, or a positive integer.
         /// </summary>
         public int MaxResults { get; set; }
         /// <summary>
         /// Limits the rows (unless 'unlimited' or 'unset') any one
         /// operation can scan from any one database table.
+        /// Use 0 for unset (field omitted from spec), -1 for unlimited, or a positive integer.
         /// </summary>
         public int MaxScanRows { get; set; }
         /// <summary>
         /// Limits the time (in milliseconds, unless 'unlimited' or
         /// 'unset') any one operation can lock any database table when
         /// scanning data.
+        /// Use 0 for unset (field omitted from spec), -1 for unlimited, or a positive integer.
         /// </summary>
         public int MaxLockTime { get; set; }
         /// <summary>
-        /// The maximum number of files that a member of a group 
-        /// can open using a single command. 
+        /// The maximum number of files that a member of a group
+        /// can open using a single command (unless 'unlimited' or 'unset').
+        /// Use 0 for unset (field omitted from spec), -1 for unlimited, or a positive integer.
         /// </summary>
         public int MaxOpenFiles { get; set; }
-        // <summary>
+        /// <summary>
         /// Maximum amount of megabytes of random-access memory
-        /// that a command can use when run by any member of this group.
+        /// that a command can use when run by any member of this group
+        /// (unless 'unlimited' or 'unset').
+        /// Use 0 for unset (field omitted from spec), -1 for unlimited, or a positive integer.
         /// </summary>
         public int MaxMemory { get; set; }
         /// <summary>
-        /// A time (in seconds, unless 'unlimited' or 'unset')
-        /// which determines how long a 'p4 login'
+        /// A time (in seconds) which determines how long a 'p4 login'
         /// session ticket remains valid (default is 12 hours).
+        /// Use 0 for unset (field omitted from spec), -1 for unlimited, or a positive integer for seconds.
         /// </summary>
         public int TimeOut { get; set; }
+
         /// <summary>
         /// A time (in seconds, unless 'unlimited' or 'unset')
-        /// which determines how long a 'p4 password'
+        /// Specifies how long (in seconds) after the last command a login ticket is invalidated.
+        /// Use 0 for unset (field omitted from spec), -1 for unlimited, or a positive integer for seconds.
+        /// A user's effective timeout is the highest limit across their groups;
+        /// unlimited if any group is unlimited or if none of their groups has a limit.
+        /// If the value is lower than dm.user.accessupdate or dm.user.accessforce, the highest of those is used instead.
+        /// </summary>
+        public int IdleTimeout { get; set; }
+
+        /// <summary>
+        /// A time (in seconds) which determines how long a 'p4 password'
         /// password remains valid (default is unset).
+        /// Use 0 for unset (field omitted from spec), -1 for unlimited, or a positive integer for seconds.
         /// </summary>
         public int PasswordTimeout { get; set; }
         /// <summary>
@@ -206,8 +233,9 @@ namespace Perforce.P4
             MaxLockTime = -1;
             MaxOpenFiles = -1;
             MaxMemory = -1;
-            TimeOut = -1;
-            PasswordTimeout = -1;
+            TimeOut = 43200;
+            IdleTimeout = 0;
+            PasswordTimeout = 0;
             OwnerNames = null;
             UserNames = null;
             SubGroups = null;
@@ -260,6 +288,7 @@ namespace Perforce.P4
                         int maxOpenFiles,
                         int maxMemory,
                         int timeOut,
+                        int idleTimeout,
                         int passwordTimeout,
                         IList<string> ownerNames,
                         IList<string> userNames,
@@ -274,6 +303,7 @@ namespace Perforce.P4
             MaxOpenFiles = maxOpenFiles;
             MaxMemory = maxMemory;
             TimeOut = timeOut;
+            IdleTimeout = idleTimeout;
             PasswordTimeout = passwordTimeout;
             OwnerNames = ownerNames;
             UserNames = userNames;
@@ -339,51 +369,90 @@ namespace Perforce.P4
 
             if (objectInfo.ContainsKey("MaxResults"))
             {
-                int v = -1;
-                int.TryParse(objectInfo["MaxResults"], out v);
-                MaxResults = v;
+                var s = objectInfo["MaxResults"];
+                if (string.Equals(s, "unlimited", StringComparison.OrdinalIgnoreCase))
+                    MaxResults = -1;
+                else if (string.Equals(s, "unset", StringComparison.OrdinalIgnoreCase))
+                    MaxResults = 0;
+                else
+                    MaxResults = int.TryParse(s, out int v) ? v : 0;
             }
 
             if (objectInfo.ContainsKey("MaxScanRows"))
             {
-                int v = -1;
-                int.TryParse(objectInfo["MaxScanRows"], out v);
-                MaxScanRows = v;
+                var s = objectInfo["MaxScanRows"];
+                if (string.Equals(s, "unlimited", StringComparison.OrdinalIgnoreCase))
+                    MaxScanRows = -1;
+                else if (string.Equals(s, "unset", StringComparison.OrdinalIgnoreCase))
+                    MaxScanRows = 0;
+                else
+                    MaxScanRows = int.TryParse(s, out int v) ? v : 0;
             }
 
             if (objectInfo.ContainsKey("MaxLockTime"))
             {
-                int v = -1;
-                int.TryParse(objectInfo["MaxLockTime"], out v);
-                MaxLockTime = v;
+                var s = objectInfo["MaxLockTime"];
+                if (string.Equals(s, "unlimited", StringComparison.OrdinalIgnoreCase))
+                    MaxLockTime = -1;
+                else if (string.Equals(s, "unset", StringComparison.OrdinalIgnoreCase))
+                    MaxLockTime = 0;
+                else
+                    MaxLockTime = int.TryParse(s, out int v) ? v : 0;
             }
 
             if (objectInfo.ContainsKey("MaxOpenFiles"))
             {
-                int v = -1;
-                int.TryParse(objectInfo["MaxOpenFiles"], out v);
-                MaxOpenFiles = v;
+                var s = objectInfo["MaxOpenFiles"];
+                if (string.Equals(s, "unlimited", StringComparison.OrdinalIgnoreCase))
+                    MaxOpenFiles = -1;
+                else if (string.Equals(s, "unset", StringComparison.OrdinalIgnoreCase))
+                    MaxOpenFiles = 0;
+                else
+                    MaxOpenFiles = int.TryParse(s, out int v) ? v : 0;
             }
 
             if (objectInfo.ContainsKey("MaxMemory"))
             {
-                int v = -1;
-                int.TryParse(objectInfo["MaxMemory"], out v);
-                MaxMemory = v;
+                var s = objectInfo["MaxMemory"];
+                if (string.Equals(s, "unlimited", StringComparison.OrdinalIgnoreCase))
+                    MaxMemory = -1;
+                else if (string.Equals(s, "unset", StringComparison.OrdinalIgnoreCase))
+                    MaxMemory = 0;
+                else
+                    MaxMemory = int.TryParse(s, out int v) ? v : 0;
             }
 
             if (objectInfo.ContainsKey("Timeout"))
             {
-                int v = -1;
-                int.TryParse(objectInfo["Timeout"], out v);
-                TimeOut = v;
+                var s = objectInfo["Timeout"];
+                if (string.Equals(s, "unlimited", StringComparison.OrdinalIgnoreCase))
+                    TimeOut = -1;
+                else if (string.Equals(s, "unset", StringComparison.OrdinalIgnoreCase))
+                    TimeOut = 0;
+                else
+                    TimeOut = int.TryParse(s, out int v) ? v : 0;
+            }
+
+            if (objectInfo.ContainsKey("IdleTimeout"))
+            {
+                var s = objectInfo["IdleTimeout"];
+                if (string.Equals(s, "unlimited", StringComparison.OrdinalIgnoreCase))
+                    IdleTimeout = -1;
+                else if (string.Equals(s, "unset", StringComparison.OrdinalIgnoreCase))
+                    IdleTimeout = 0;
+                else
+                    IdleTimeout = int.TryParse(s, out int v) ? v : 0;
             }
 
             if (objectInfo.ContainsKey("PasswordTimeout"))
             {
-                int v = -1;
-                int.TryParse(objectInfo["PasswordTimeout"], out v);
-                PasswordTimeout = v;
+                var s = objectInfo["PasswordTimeout"];
+                if (string.Equals(s, "unlimited", StringComparison.OrdinalIgnoreCase))
+                    PasswordTimeout = -1;
+                else if (string.Equals(s, "unset", StringComparison.OrdinalIgnoreCase))
+                    PasswordTimeout = 0;
+                else
+                    PasswordTimeout = int.TryParse(s, out int v) ? v : 0;
             }
             String key = "Users0";
             if (objectInfo.ContainsKey(key))
@@ -441,6 +510,9 @@ namespace Perforce.P4
         /// #  Timeout:     A time (in seconds, unless 'unlimited' or 'unset')
         /// #               which determines how long a 'p4 login'
         /// #               session ticket remains valid (default is 12 hours).
+        /// #  IdleTimeout: A time (in seconds, unless 'unlimited' or 'unset')
+        /// #               which specifies how long after the last command a
+        /// #               login ticket is invalidated (default is unset).
         /// #  PasswordTimeout:
         /// #               A time (in seconds, unless 'unlimited' or 'unset')
         /// #               which determines how long a 'p4 password'
@@ -464,51 +536,90 @@ namespace Perforce.P4
 
             if (_baseForm.ContainsKey("MaxResults"))
             {
-                int v = -1;
-                int.TryParse(_baseForm["MaxResults"] as string, out v);
-                MaxResults = v;
+                var s = _baseForm["MaxResults"] as string;
+                if (string.Equals(s, "unlimited", StringComparison.OrdinalIgnoreCase))
+                    MaxResults = -1;
+                else if (string.Equals(s, "unset", StringComparison.OrdinalIgnoreCase))
+                    MaxResults = 0;
+                else
+                    MaxResults = int.TryParse(s, out int v) ? v : 0;
             }
 
             if (_baseForm.ContainsKey("MaxScanRows"))
             {
-                int v = -1;
-                int.TryParse(_baseForm["MaxScanRows"] as string, out v);
-                MaxScanRows = v;
+                var s = _baseForm["MaxScanRows"] as string;
+                if (string.Equals(s, "unlimited", StringComparison.OrdinalIgnoreCase))
+                    MaxScanRows = -1;
+                else if (string.Equals(s, "unset", StringComparison.OrdinalIgnoreCase))
+                    MaxScanRows = 0;
+                else
+                    MaxScanRows = int.TryParse(s, out int v) ? v : 0;
             }
 
             if (_baseForm.ContainsKey("MaxLockTime"))
             {
-                int v = -1;
-                int.TryParse(_baseForm["MaxLockTime"] as string, out v);
-                MaxLockTime = v;
+                var s = _baseForm["MaxLockTime"] as string;
+                if (string.Equals(s, "unlimited", StringComparison.OrdinalIgnoreCase))
+                    MaxLockTime = -1;
+                else if (string.Equals(s, "unset", StringComparison.OrdinalIgnoreCase))
+                    MaxLockTime = 0;
+                else
+                    MaxLockTime = int.TryParse(s, out int v) ? v : 0;
             }
 
             if (_baseForm.ContainsKey("MaxOpenFiles"))
             {
-                int v = -1;
-                int.TryParse(_baseForm["MaxOpenFiles"] as string, out v);
-                MaxOpenFiles = v;
+                var s = _baseForm["MaxOpenFiles"] as string;
+                if (string.Equals(s, "unlimited", StringComparison.OrdinalIgnoreCase))
+                    MaxOpenFiles = -1;
+                else if (string.Equals(s, "unset", StringComparison.OrdinalIgnoreCase))
+                    MaxOpenFiles = 0;
+                else
+                    MaxOpenFiles = int.TryParse(s, out int v) ? v : 0;
             }
 
             if (_baseForm.ContainsKey("MaxMemory"))
             {
-                int v = -1;
-                int.TryParse(_baseForm["MaxMemory"] as string, out v);
-                MaxMemory = v;
+                var s = _baseForm["MaxMemory"] as string;
+                if (string.Equals(s, "unlimited", StringComparison.OrdinalIgnoreCase))
+                    MaxMemory = -1;
+                else if (string.Equals(s, "unset", StringComparison.OrdinalIgnoreCase))
+                    MaxMemory = 0;
+                else
+                    MaxMemory = int.TryParse(s, out int v) ? v : 0;
             }
 
             if (_baseForm.ContainsKey("Timeout"))
             {
-                int v = -1;
-                int.TryParse(_baseForm["Timeout"] as string, out v);
-                TimeOut = v;
+                var s = _baseForm["Timeout"] as string;
+                if (string.Equals(s, "unlimited", StringComparison.OrdinalIgnoreCase))
+                    TimeOut = -1;
+                else if (string.Equals(s, "unset", StringComparison.OrdinalIgnoreCase))
+                    TimeOut = 0;
+                else
+                    TimeOut = int.TryParse(s, out int v) ? v : 0;
+            }
+
+            if (_baseForm.ContainsKey("IdleTimeout"))
+            {
+                var s = _baseForm["IdleTimeout"] as string;
+                if (string.Equals(s, "unlimited", StringComparison.OrdinalIgnoreCase))
+                    IdleTimeout = -1;
+                else if (string.Equals(s, "unset", StringComparison.OrdinalIgnoreCase))
+                    IdleTimeout = 0;
+                else
+                    IdleTimeout = int.TryParse(s, out int v) ? v : 0;
             }
 
             if (_baseForm.ContainsKey("PasswordTimeout"))
             {
-                int v = -1;
-                int.TryParse(_baseForm["PasswordTimeout"] as string, out v);
-                PasswordTimeout = v;
+                var s = _baseForm["PasswordTimeout"] as string;
+                if (string.Equals(s, "unlimited", StringComparison.OrdinalIgnoreCase))
+                    PasswordTimeout = -1;
+                else if (string.Equals(s, "unset", StringComparison.OrdinalIgnoreCase))
+                    PasswordTimeout = 0;
+                else
+                    PasswordTimeout = int.TryParse(s, out int v) ? v : 0;
             }
             if (_baseForm.ContainsKey("Users"))
             {
@@ -564,17 +675,18 @@ namespace Perforce.P4
             $"Timeout:\t{{5}}{Environment.NewLine}" +
             $"{Environment.NewLine}" +
             $"{{6}}" +
-            $"Subgroups:{Environment.NewLine}{{7}}" +
+            $"{{7}}" +
+            $"Subgroups:{Environment.NewLine}{{8}}" +
             $"{Environment.NewLine}" +
-            $"Owners:{Environment.NewLine}{{8}}" +
+            $"Owners:{Environment.NewLine}{{9}}" +
             $"{Environment.NewLine}" +
-            $"Users:{Environment.NewLine}{{9}}";
+            $"Users:{Environment.NewLine}{{10}}";
 
         private static String GroupSpecFormat55 =
             $"{Environment.NewLine}" +
-            $"Description:\t{{10}}{Environment.NewLine}" +
+            $"Description:\t{{11}}{Environment.NewLine}" +
             $"{Environment.NewLine}" +
-            $"MaxMemory:\t{{11}}{Environment.NewLine}";
+            $"MaxMemory:\t{{12}}{Environment.NewLine}";
 
         /// <summary>
         /// Convert to specification in server format
@@ -593,28 +705,34 @@ namespace Perforce.P4
         public String ToString(int apiLevel)
         {
             String subgroupsView = String.Empty;
-            if (SubGroups != null)
+            if (SubGroups != null && SubGroups.Count > 0)
             {
-                for (int idx = 0; idx < SubGroups.Count; idx++)
+                StringBuilder sb = new StringBuilder(SubGroups.Count * 20);
+                foreach (string subGroup in SubGroups)
                 {
-                    subgroupsView += $"\t{SubGroups[idx]}{Environment.NewLine}";
+                    sb.Append('\t').Append(subGroup).Append(Environment.NewLine);
                 }
+                subgroupsView = sb.ToString();
             }
             String ownersView = String.Empty;
-            if (OwnerNames != null)
+            if (OwnerNames != null && OwnerNames.Count > 0)
             {
-                for (int idx = 0; idx < OwnerNames.Count; idx++)
+                StringBuilder sb = new StringBuilder(OwnerNames.Count * 20);
+                foreach (string owner in OwnerNames)
                 {
-                    ownersView += $"\t{OwnerNames[idx]}{Environment.NewLine}";
+                    sb.Append('\t').Append(owner).Append(Environment.NewLine);
                 }
+                ownersView = sb.ToString();
             }
             String usersView = String.Empty;
-            if (UserNames != null)
+            if (UserNames != null && UserNames.Count > 0)
             {
-                for (int idx = 0; idx < UserNames.Count; idx++)
+                StringBuilder sb = new StringBuilder(UserNames.Count * 20);
+                foreach (string user in UserNames)
                 {
-                    usersView += $"\t{UserNames[idx]}{Environment.NewLine}";
+                    sb.Append('\t').Append(user).Append(Environment.NewLine);
                 }
+                usersView = sb.ToString();
             }
 
             // Server protocol for release 2022.2 is 55
@@ -624,17 +742,22 @@ namespace Perforce.P4
 
             String value = String.Format(groupSpecFormat,
                 Id,
-                (MaxResults > 0) ? MaxResults.ToString() : string.Empty,
-                (MaxScanRows > 0) ? MaxScanRows.ToString() : string.Empty,
-                (MaxLockTime > 0) ? MaxLockTime.ToString() : string.Empty,
-                (MaxOpenFiles > 0) ? MaxOpenFiles.ToString() : string.Empty,
-                (TimeOut > 0) ? TimeOut.ToString() : string.Empty,
-                (PasswordTimeout > 0) ? "PasswordTimeout:\t" + PasswordTimeout.ToString() + $"{Environment.NewLine}" + $"{Environment.NewLine}" : string.Empty,
+                MaxResults == -1 ? "unlimited" : MaxResults == 0 ? string.Empty : MaxResults.ToString(),
+                MaxScanRows == -1 ? "unlimited" : MaxScanRows == 0 ? string.Empty : MaxScanRows.ToString(),
+                MaxLockTime == -1 ? "unlimited" : MaxLockTime == 0 ? string.Empty : MaxLockTime.ToString(),
+                MaxOpenFiles == -1 ? "unlimited" : MaxOpenFiles == 0 ? string.Empty : MaxOpenFiles.ToString(),
+                TimeOut == -1 ? "unlimited" : TimeOut == 0 ? "unset" : TimeOut.ToString(),
+                IdleTimeout == -1 ? $"IdleTimeout:\tunlimited{Environment.NewLine}{Environment.NewLine}" :
+                    IdleTimeout == 0 ? $"IdleTimeout:\tunset{Environment.NewLine}{Environment.NewLine}" :
+                    $"IdleTimeout:\t{IdleTimeout}{Environment.NewLine}{Environment.NewLine}",
+                PasswordTimeout == -1 ? $"PasswordTimeout:\tunlimited{Environment.NewLine}{Environment.NewLine}" :
+                    PasswordTimeout == 0 ? $"PasswordTimeout:\tunset{Environment.NewLine}{Environment.NewLine}" :
+                    $"PasswordTimeout:\t{PasswordTimeout}{Environment.NewLine}{Environment.NewLine}",
                 subgroupsView,
                 ownersView,
                 usersView,
                 Description,
-                (MaxMemory > 0) ? MaxMemory.ToString() : string.Empty);
+                MaxMemory == -1 ? "unlimited" : MaxMemory == 0 ? string.Empty : MaxMemory.ToString());
 
             return value;
         }

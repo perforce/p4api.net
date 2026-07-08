@@ -1,7 +1,7 @@
                            Release Notes for
                 P4API.NET, the P4 API for .NET
 
-                          Version 2025.2
+                          Version 2026.1
 
 Introduction
 
@@ -60,21 +60,21 @@ Compatibility Statements
 
         Server Compatibility
 
-          This release of P4API.NET supports the P4 Server 2025.2.
+          This release of P4API.NET supports the P4 Server 2026.1.
           Older releases might work but are not supported.
 
         API Compatibility
 
-          This release of P4API.NET requires the 2025.2 P4 C/C++ API
-          (2025.2/2852709), built with Visual Studio 2019 or 
+          This release of P4API.NET requires the 2026.1 P4 C/C++ API
+          (2026.1/2972966), built with Visual Studio 2019 or
           later.
 
         C#/.NET Compatibility
 
-          This release of P4API.NET, when built from source using 
+          This release of P4API.NET, when built from source using
           p4apicore.net.sln, is compatible with '.NET Framework 4.6.2',
-          '.NET 8.0' and '.NET Standard 2.0'. Other .Net Framework, .NET Core
-          and .NET Standard versions might work, but are not supported.
+          '.NET 8.0', '.NET 10.0' and '.NET Standard 2.0'. Other .Net Framework,
+          .NET Core and .NET Standard versions might work, but are not supported.
 
         Platform Compatibility
 
@@ -83,7 +83,7 @@ Compatibility Statements
 
           Windows for Intel(x86_64)
             Windows 10,11
-            Windows Server 2019,2022
+            Windows Server 2019,2022,2025
           Mac OS 
             12.2 (x86_64)
             12,13 (ARM64)
@@ -123,7 +123,65 @@ Key to symbols used in change notes below.
         *** -- requires new p4d server program
 
 --------------------------------------------------------------------------
-New functionality in 2025.2 (2025.2/2872434) (2525/12/18) 
+New functionality in 2026.1 (2026.1/2993959) (2026/06/26)
+
+        (Job #128763) *
+            Added support for Windows Server 2025. 
+
+        #2926153,2926752,2926164 (Job #128769) *
+            Added support for .NET 10.0. 
+            
+        #2918536(Job #131248) *
+            Improved changelist spec creation performance by using
+            StringBuilder. Large changelists (~100,000 files) now complete
+            in seconds rather than minutes. 
+            
+        #2911944 (Job #129871) * 
+            Added support for the new LimitView field in the p4 client spec.
+
+        #2918446 (Job #129880) * 
+            Added support for the -v virtual merge option in the p4 merge
+            command. 
+
+        #2924402,2929126,2931993,2942350 (Job #130090) * 
+            Added support for the new IdleTimeout field in the p4 group
+            command. 
+
+        #2918536(Job #131474) *
+            Added p4 print options (-L, -Q, -B) to GetFileContentsCmdOptions.
+
+--------------------------------------------------------------------------
+Bugs fixed in 2026.1 (2026.1/2993959) (2026/06/26)
+
+        #2967956,2976516 (Job #126288) * 
+            Fixed Connection.Trust to establish trust for an SSL-enabled server port.
+
+        #2973402 (Job #128112) *
+            Fixed race condition on the global connection error pointer
+            that could cause an access violation when multiple threads
+            executed Connect() or RunCommand() concurrently.
+
+        #2905876 (Job #131473,#131494) *
+            Fixed a random crash caused by forced OpenSSL initialization
+            in libp4bridge conflicting with OpenSSL already initialized by
+            the host process (e.g. via .NET runtime SSL or LDAP libraries),
+            resulting in a race condition on the global engine lock.
+
+        #2918536 (Job #131475) *
+            Fixed the stream-spec format string for P4 Server versions
+            prior to 2020.2. Components field was incorrectly included,
+            causing a runtime format error when ParentView was None.
+
+        #2966438 (Job #122140) *
+            Resolved a StackOverflowException that could occur during 
+            error logging for operations producing multiple sequential errors.
+            
+        #2953916 (Job #133552) *
+            Added missing support for the unlimited value in the p4 group MaxResults,
+            MaxScanRows, MaxLockTime, MaxOpenFiles, and MaxMemory fields.
+
+--------------------------------------------------------------------------
+New functionality in 2025.2 (2025.2/2872434) (2025/12/18) 
 
         #2868578(Job #128781) * ** ***
             Updated P4API.NET to support 2025.2 release of P4 C/C++ API.
@@ -135,7 +193,7 @@ New functionality in 2025.2 (2025.2/2872434) (2525/12/18)
 
 
 --------------------------------------------------------------------------
-Bugs fixed in 2025.2 (2025.2/2872434) (2525/12/18) 
+Bugs fixed in 2025.2 (2025.2/2872434) (2025/12/18) 
 
         #2822770,2829560 (Job #124531) *
             Fixed native library selection in NuGet package to use RuntimeIdentifier,

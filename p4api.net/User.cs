@@ -61,7 +61,7 @@ namespace Perforce.P4
 	}
 
 	/// <summary>
-	/// A user on a Perforce Server, represented by a P4 User spec.
+	/// A user on a P4 Server, represented by a P4 User spec.
 	/// </summary>
 	/// <remarks>
 	/// <br/><b>p4 help user</b>

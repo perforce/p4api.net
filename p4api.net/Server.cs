@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 namespace Perforce.P4
 {
     /// <summary>
-    /// The address of the Perforce server.
+    /// The address of the P4 Server.
     /// </summary>
     public class ServerAddress
 	{
@@ -65,7 +65,7 @@ namespace Perforce.P4
 	}
 
 	/// <summary>
-	/// The Perforce server's version information. 
+	/// The P4 Server's version information.
 	/// </summary>
 	public class ServerVersion
 	{
@@ -123,7 +123,7 @@ namespace Perforce.P4
 
  
     /// <summary>
-    /// The Perforce server's license information.
+    /// The P4 Server's license information.
     /// </summary>
     public class ServerLicense 
     {
@@ -571,7 +571,7 @@ namespace Perforce.P4
     }
 
     /// <summary>
-    /// Defines useful metadata about a Perforce server.
+    /// Defines useful metadata about a P4 Server.
     /// </summary>
     public class ServerMetaData
 	{
@@ -790,7 +790,7 @@ namespace Perforce.P4
 	}
 	
 	/// <summary>
-	/// Represents a specific Perforce server. 
+	/// Represents a specific P4 Server.
 	/// </summary>
 	public class Server
 	{
@@ -803,7 +803,7 @@ namespace Perforce.P4
 		internal void SetState(ServerState state) { State = state; }
 
 		/// <summary>
-		/// The host:port used to connect to a Perforce server.
+		/// The host:port used to connect to a P4 Server.
 		/// </summary>
 		/// <remarks>
 		/// Note: this can be different than the value returned by the info

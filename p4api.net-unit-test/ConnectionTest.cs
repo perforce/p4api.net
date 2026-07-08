@@ -1961,6 +1961,73 @@ namespace p4api.net.unit.test
         }
 
         /// <summary>
+        /// Test that Connection.Trust works on an SSL server when called before Connect.
+        /// Trust should establish both trust and a connection via TrustAndConnect.
+        /// </summary>
+        [TestMethod()]
+        public void TrustSSLTest()
+        {
+            string uri = "ssl:" + configuration.ServerPort;
+            string user = "admin";
+            string ws_client = "admin_space";
+
+            for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
+            {
+                Utilities.CheckpointType cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                try
+                {
+                    p4d = Utilities.DeploySSLP4TestServer(TestDir, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    // Use an isolated P4TRUST file per iteration for easy cleanup
+                    P4Server.Set("P4TRUST", Path.Combine(TestDir, String.Format("TrustSSLTest.{0}.txt", i)));
+
+                    Server server = new Server(new ServerAddress(uri));
+                    using (Connection target = new Connection(server))
+                    {
+                        target.UserName = user;
+                        target.Client = new Client();
+                        target.Client.Name = ws_client;
+
+                        Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);
+
+                        // Call Trust WITHOUT a prior Connect() — this is the bug scenario
+                        TrustCmdOptions options = new TrustCmdOptions(TrustCmdFlags.AutoAccept);
+                        Assert.IsTrue(target.Trust(options, null));
+
+                        // Trust should have also established the connection via TrustAndConnect
+                        Assert.AreEqual(target.Status, ConnectionStatus.Connected);
+
+                        // Verify the connection is usable
+                        Assert.IsNotNull(target.Server.Metadata);
+
+                        Assert.IsTrue(target.Disconnect(null));
+                    }
+
+                    // Verify that a subsequent Connect (without trust flags) now succeeds
+                    // because trust was established by the first call
+                    Server server2 = new Server(new ServerAddress(uri));
+                    using (Connection target2 = new Connection(server2))
+                    {
+                        target2.UserName = user;
+                        target2.Client = new Client();
+                        target2.Client.Name = ws_client;
+
+                        Assert.IsTrue(target2.Connect(null));
+                        Assert.AreEqual(target2.Status, ConnectionStatus.Connected);
+                        Assert.IsTrue(target2.Disconnect(null));
+                    }
+                }
+                finally
+                {
+                    Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                }
+            }
+        }
+
+        /// <summary>
         ///Another test for Login
         ///</summary>
         [TestMethod()]
@@ -2062,7 +2129,25 @@ namespace p4api.net.unit.test
                         Credential cred = target.Login(pass);
                         Assert.IsNotNull(cred);
                         Assert.AreEqual(user, cred.UserName);
-                        Assert.IsTrue(target.SetPassword(pass, pass + "2"));
+
+                        // The ascii/unicode checkpoints have a passwordless admin. Under server
+                        // 2026.1 "secure by default" (dm.user.setinitialpasswd defaults to 0) an
+                        // initial password can no longer be self-set, so re-enable it on this server
+                        // (admin is super) and set the initial password with an empty old password.
+                        // The s3 checkpoint's admin already has a password ("Password"), so it keeps
+                        // the original change flow. No-op on older servers (setinitialpasswd was 1).
+                        string oldPass = pass;
+                        if (cptype != Utilities.CheckpointType.S3)
+                        {
+                            string[] cfgArgs = { "set", "dm.user.setinitialpasswd=1" };
+                            using (P4Command cfgCmd = new P4Command(target, "configure", false, cfgArgs))
+                            {
+                                cfgCmd.Run(new Options());
+                            }
+                            target.getP4Server().Reconnect();
+                            oldPass = string.Empty;
+                        }
+                        Assert.IsTrue(target.SetPassword(oldPass, pass + "2"));
                         Assert.IsTrue(target.Logout(null));
                         Assert.IsTrue(target.Disconnect(null));
                         Assert.AreEqual(target.Status, ConnectionStatus.Disconnected);

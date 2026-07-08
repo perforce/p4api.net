@@ -56,27 +56,24 @@ namespace Perforce.P4
         /// <br/>     group -- Change members of user group
         /// <br/> 
         /// <br/>     p4 group [-a|-A] name
-        /// <br/>     p4 group -d [-a] name
+        /// <br/>     p4 group -d [-a | -F] name
         /// <br/>     p4 group -o name
         /// <br/>     p4 group -i [-a|-A]
-        /// <br/> 
+        /// <br/>
         /// <br/> 	Create a group or modify the membership of an existing group.
         /// <br/> 	A group can contain users and other groups. The group specification
         /// <br/> 	is put into a temporary file and the editor (configured by the
         /// <br/> 	environment variable $P4EDITOR) is invoked.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	A group exists when it has any users or other groups in it, and
         /// <br/> 	ceases to exist if all users and groups in it are removed.
-        /// <br/> 
-        /// <br/> 	Each group has MaxResults, MaxScanRows, and MaxLockTime fields,
-        /// <br/> 	which limit the resources committed to operations performed by
-        /// <br/> 	members of the group.  For these fields, 'unlimited' or 'unset'
-        /// <br/> 	means no limit for that	group.  An individual user's limit is the
-        /// <br/> 	highest of any group with a limit to which he belongs, unlimited if
-        /// <br/> 	any of his groups has 'unlimited' for that field, or unlimited
-        /// <br/> 	if he belongs to no group with a limit.  See 'p4 help maxresults'
-        /// <br/> 	for more information on MaxResults, MaxScanRows and MaxLockTime.
-        /// <br/> 
+        /// <br/>
+        /// <br/> 	Each group has MaxResults, MaxScanRows, MaxLockTime, MaxOpenFiles
+        /// <br/> 	and MaxMemory fields, which limit the resources committed to
+        /// <br/> 	operations performed by members of the group.  See
+        /// <br/> 	'p4 help maxresults' for more information on MaxResults, MaxScanRows,
+        /// <br/> 	MaxLockTime, MaxOpenFiles and MaxMemory.
+        /// <br/>
         /// <br/> 	Each group also has a Timeout field, which specifies how long (in
         /// <br/> 	seconds)  a 'p4 login' ticket remains valid.  A value of 'unset' or
         /// <br/> 	'unlimited' is equivalent to no timeout. An individual's timeout is
@@ -84,10 +81,19 @@ namespace Perforce.P4
         /// <br/> 	if any of his groups has 'unlimited' for the timeout value, or
         /// <br/> 	unlimited if he belongs to no group with a limit. See 'p4 help login'
         /// <br/> 	for more information.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	Each group has a PasswordTimeout field, which determines how long a
         /// <br/> 	password remains valid for members of the group.
-        /// <br/> 
+        /// <br/>
+        /// <br/> 	Each group also has an IdleTimeout field, which specifies how long
+        /// <br/> 	(in seconds) after the last command a login ticket is invalidated.
+        /// <br/> 	A value of 'unset' or 'unlimited' means no idle timeout. An
+        /// <br/> 	individual's idle timeout is the highest of any group with a limit
+        /// <br/> 	to which he belongs, unlimited if any of his groups has 'unlimited'
+        /// <br/> 	for the idle timeout value, or unlimited if he belongs to no group
+        /// <br/> 	with a limit. If the value is lower than dm.user.accessupdate or
+        /// <br/> 	dm.user.accessforce, the highest of those is used instead.
+        /// <br/>
         /// <br/> 	A group may be synchronized with an LDAP group by setting the three
         /// <br/> 	fields: LdapConfig, LdapSearchQuery and LdapUserAttribute. This takes
         /// <br/> 	the LDAP configuration (see 'p4 ldap') specified by LdapConfig and uses
@@ -113,14 +119,18 @@ namespace Perforce.P4
         /// <br/> 
         /// <br/> 	The -A flag enables a user with 'admin' access to add a new group.
         /// <br/> 	Existing groups may not be modified when this flag is used.
-        /// <br/> 
+        /// <br/>
+        /// <br/> 	The -F flag, used only with -d, forces the deletion of the
+        /// <br/> 	specified group, and also removes the group from the protections
+        /// <br/> 	table and from all groups.
+        /// <br/>
         /// <br/> 	All commands that require access granted by 'p4 protect' consider a
         /// <br/> 	user's groups when calculating access levels.
-        /// <br/> 
+        /// <br/>
         /// <br/> 	'p4 group' requires 'super' access granted by 'p4 protect' unless
         /// <br/> 	invoked with the '-a' or '-A' flag by a qualified user.
-        /// <br/> 
-        /// <br/> 
+        /// <br/>
+        /// <br/>
         /// </remarks>
         /// <example>               
         ///     To create the group 'Mygroup' with the owner 'Bob' and a user 'Ted' 

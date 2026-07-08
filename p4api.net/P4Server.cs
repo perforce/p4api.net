@@ -75,7 +75,7 @@ namespace Perforce.P4
     /// <summary>
     /// P4Server
     ///
-    /// Represents the connection to a Perforce Server using the the P4 Bridge
+    /// Represents the connection to a P4 Server using the the P4 Bridge
     /// DLL. It wraps the calls exported by the DLL and transforms the data
     /// types exported by the DLL as native C#.NET data types.
     /// </summary>
@@ -101,19 +101,19 @@ namespace Perforce.P4
                     if (_lastResultsCache != null && _lastResultsCache.TryGetValue(threadId, out var result))
                     {
                         return result;
+                    }
+                    return null;
                 }
-                return null;
-            }
             }
             internal set
             {
                 int threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
                 lock (_lastResultsCacheLock)
                 {
-                if (_lastResultsCache == null)
-                {
-                    _lastResultsCache = new Dictionary<int, P4CommandResult>();
-                }
+                    if (_lastResultsCache == null)
+                    {
+                        _lastResultsCache = new Dictionary<int, P4CommandResult>();
+                    }
                     if (_lastResultsCache.Count > 32)
                     {
                         // if the results cache is getting large, throw away anything older than 10 seconds
@@ -195,6 +195,7 @@ namespace Perforce.P4
 
         private static P4CallBacks.LogMessageDelegate logfn = new P4CallBacks.LogMessageDelegate(LogBridgeMessage);
         private static IntPtr pLogFn = IntPtr.Zero; // contains pinned pointer for the bridge
+                                                    // P4Server.cs (inside P4Server class)
 
         /// <summary>
         /// Progress callback delegates and registration.
@@ -267,7 +268,7 @@ namespace Perforce.P4
         ///		or a p4config file if one exists.
         /// </summary>
         /// <param name="cwd">Current working Directory. Can be null/blank if
-        ///		not connecting to the Perforce server using a P4Config file.</param>
+        ///		not connecting to the P4 Server using a P4Config file.</param>
         public P4Server(String cwd)
             : this(null, null, null, null, cwd)
         {
@@ -285,7 +286,7 @@ namespace Perforce.P4
         ///     connection. Can be null/blank if only running commands that do
         ///     not require a login.</param>
         /// <param name="cwd">Current working Directory. Can be null/blank if
-        ///		not connecting to the Perforce server using a P4Config file.</param>
+        ///		not connecting to the P4 Server using a P4Config file.</param>
         internal P4Server(String server,
                          String user,
                          String pass,
@@ -482,12 +483,13 @@ namespace Perforce.P4
             // won't know if the client supports Unicode until after connect
             // returns
             using (PinnedByteArray pUser = MarshalStringToIntPtr(user),
+                                   pPass = MarshalStringToIntPtr(pass),
                                    pClient = MarshalStringToIntPtr(ws_client))
             {
                 if (logfn != null)
                     pLogFn = Marshal.GetFunctionPointerForDelegate(logfn);
 
-                pServer = P4Bridge.TrustedConnectW(server, pUser, IntPtr.Zero, pClient, trust_flag, fingerprint, pLogFn);
+                pServer = P4Bridge.TrustedConnectW(server, pUser, pPass, pClient, trust_flag, fingerprint, pLogFn);
             }
 
             if (pServer == IntPtr.Zero)

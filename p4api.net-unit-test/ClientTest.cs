@@ -309,6 +309,147 @@ namespace p4api.net.unit.test
         }
 
         /// <summary>
+        /// A test for LimitView in FromTaggedOutput
+        /// </summary>
+        [TestMethod()]
+        public void FromTaggedOutputLimitViewTest()
+        {
+            Client target = new Client();
+            Perforce.P4.TaggedObject workspaceInfo = new Perforce.P4.TaggedObject();
+            workspaceInfo["Client"] = "clientName";
+            workspaceInfo["Update"] = "2010/01/02 03:04:05";
+            workspaceInfo["Access"] = "2011/02/03 04:05:06";
+            workspaceInfo["Owner"] = "JoeOwner";
+            workspaceInfo["Options"] = "allwrite noclobber compress unlocked modtime normdir noaltsync";
+            workspaceInfo["SubmitOptions"] = "revertunchanged+reopen";
+            workspaceInfo["LineEnd"] = "LOCAL";
+            workspaceInfo["Root"] = "C:\\clientname";
+            workspaceInfo["Host"] = "MissManners";
+            workspaceInfo["Description"] = "Miss Manners client";
+            workspaceInfo["View0"] = "//depot/main/p4/... //dbarbee_win-dbarbee/main/p4/...";
+            workspaceInfo["View1"] = "-//usr/... //dbarbee_win-dbarbee/usr/...";
+            workspaceInfo["LimitView0"] = "//dbarbee_win-dbarbee/main/p4/...";
+            workspaceInfo["LimitView1"] = "-//dbarbee_win-dbarbee/main/p4/test.exe";
+
+            target.FromClientCmdTaggedOutput(workspaceInfo);
+
+            Assert.IsNotNull(target.LimitView);
+            Assert.AreEqual(2, target.LimitView.Count);
+            Assert.AreEqual("//dbarbee_win-dbarbee/main/p4/...", target.LimitView[0]);
+            Assert.AreEqual("-//dbarbee_win-dbarbee/main/p4/test.exe", target.LimitView[1]);
+        }
+
+        /// <summary>
+        /// A test for LimitView in Parse
+        /// </summary>
+        [TestMethod()]
+        public void ParseLimitViewTest()
+        {
+            Client target = new Client();
+            string spec =
+                "Client:\tclientName\r\n\r\nUpdate:\t2010/01/02 03:04:05\r\n\r\nAccess:\t2011/02/03 04:05:06\r\n\r\n" +
+                "Owner:\tJoeOwner\r\n\r\nHost:\tMissManners\r\n\r\nDescription:\r\n\tMiss Manners client\r\n\r\n" +
+                "Root:\tC:\\clientname\r\n\r\nOptions:\tallwrite noclobber compress unlocked modtime normdir noaltsync\r\n\r\n" +
+                "SubmitOptions:\trevertunchanged+reopen\r\n\r\nLineEnd:\tLocal\r\n\r\n" +
+                "View:\r\n\t//depot/main/p4/... //dbarbee_win-dbarbee/main/p4/...\r\n\t-//usr/... //dbarbee_win-dbarbee/usr/...\r\n\r\n" +
+                "LimitView:\r\n\t//dbarbee_win-dbarbee/main/p4/...\r\n\t-//dbarbee_win-dbarbee/main/p4/test.exe\r\n";
+
+            bool result = target.Parse(spec);
+
+            Assert.IsTrue(result);
+            Assert.IsNotNull(target.LimitView);
+            Assert.AreEqual(2, target.LimitView.Count);
+            Assert.AreEqual("//dbarbee_win-dbarbee/main/p4/...", target.LimitView[0]);
+            Assert.AreEqual("-//dbarbee_win-dbarbee/main/p4/test.exe", target.LimitView[1]);
+        }
+
+        /// <summary>
+        /// A test for ToString with LimitView
+        /// </summary>
+        [TestMethod()]
+        public void ToStringLimitViewTest()
+        {
+            Client target = new Client();
+            target.Name = "clientName";
+            target.Updated = new DateTime(2010, 1, 2, 3, 4, 5);
+            target.Accessed = new DateTime(2011, 2, 3, 4, 5, 6);
+            target.OwnerName = "JoeOwner";
+            target.Options = (ClientOption.AllWrite | ClientOption.Compress | ClientOption.ModTime);
+            target.SubmitOptions = new ClientSubmitOptions(true, SubmitType.RevertUnchanged);
+            target.LineEnd = LineEnd.Local;
+            target.Root = "C:\\clientname";
+            target.Host = "MissManners";
+            target.Description = "Miss Manners client";
+
+            target.ViewMap = new ViewMap(new string[]
+            {
+                "	//depot/main/p4/... //dbarbee_win-dbarbee/main/p4/...",
+                "-//usr/... //dbarbee_win-dbarbee/usr/...",
+                "+//spec/... //dbarbee_win-dbarbee/spec/..."
+            });
+
+            target.LimitView = new List<string>();
+            target.LimitView.Add("//dbarbee_win-dbarbee/main/p4/...");
+            target.LimitView.Add("-//dbarbee_win-dbarbee/main/p4/test.exe");
+
+            string actual = target.ToString();
+
+            Assert.IsTrue(actual.Contains("LimitView:"));
+            Assert.IsTrue(actual.Contains("//dbarbee_win-dbarbee/main/p4/..."));
+            Assert.IsTrue(actual.Contains("-//dbarbee_win-dbarbee/main/p4/test.exe"));
+        }
+
+        /// <summary>
+        /// A test for LimitView using depot path syntax (//depot/...) in FromTaggedOutput and Parse.
+        /// LimitView supports both depot syntax and client syntax.
+        /// </summary>
+        [TestMethod()]
+        public void LimitViewDepotPathSyntaxTest()
+        {
+            // Tagged output with depot-syntax paths
+            Client target = new Client();
+            var workspaceInfo = new Perforce.P4.TaggedObject();
+            workspaceInfo["Client"] = "clientName";
+            workspaceInfo["Update"] = "2010/01/02 03:04:05";
+            workspaceInfo["Access"] = "2011/02/03 04:05:06";
+            workspaceInfo["Owner"] = "JoeOwner";
+            workspaceInfo["Options"] = "allwrite noclobber compress unlocked modtime normdir noaltsync";
+            workspaceInfo["SubmitOptions"] = "revertunchanged+reopen";
+            workspaceInfo["LineEnd"] = "LOCAL";
+            workspaceInfo["Root"] = "C:\\clientname";
+            workspaceInfo["Host"] = "MissManners";
+            workspaceInfo["Description"] = "Miss Manners client";
+            workspaceInfo["View0"] = "//depot/main/p4/... //dbarbee_win-dbarbee/main/p4/...";
+            workspaceInfo["LimitView0"] = "//depot/main/p4/...";
+            workspaceInfo["LimitView1"] = "-//depot/main/p4/test.exe";
+
+            target.FromClientCmdTaggedOutput(workspaceInfo);
+
+            Assert.IsNotNull(target.LimitView);
+            Assert.AreEqual(2, target.LimitView.Count);
+            Assert.AreEqual("//depot/main/p4/...", target.LimitView[0]);
+            Assert.AreEqual("-//depot/main/p4/test.exe", target.LimitView[1]);
+
+            // Parse with depot-syntax paths
+            Client target2 = new Client();
+            string spec =
+                "Client:\tclientName\r\n\r\nUpdate:\t2010/01/02 03:04:05\r\n\r\nAccess:\t2011/02/03 04:05:06\r\n\r\n" +
+                "Owner:\tJoeOwner\r\n\r\nHost:\tMissManners\r\n\r\nDescription:\r\n\tMiss Manners client\r\n\r\n" +
+                "Root:\tC:\\clientname\r\n\r\nOptions:\tallwrite noclobber compress unlocked modtime normdir noaltsync\r\n\r\n" +
+                "SubmitOptions:\trevertunchanged+reopen\r\n\r\nLineEnd:\tLocal\r\n\r\n" +
+                "View:\r\n\t//depot/main/p4/... //dbarbee_win-dbarbee/main/p4/...\r\n\r\n" +
+                "LimitView:\r\n\t//depot/main/p4/...\r\n\t-//depot/main/p4/test.exe\r\n";
+
+            bool result = target2.Parse(spec);
+
+            Assert.IsTrue(result);
+            Assert.IsNotNull(target2.LimitView);
+            Assert.AreEqual(2, target2.LimitView.Count);
+            Assert.AreEqual("//depot/main/p4/...", target2.LimitView[0]);
+            Assert.AreEqual("-//depot/main/p4/test.exe", target2.LimitView[1]);
+        }
+
+        /// <summary>
         ///A test for AltRootsStr
         ///</summary>
         [TestMethod()]
@@ -1254,7 +1395,7 @@ namespace p4api.net.unit.test
         }
 
         /// <summary>
-        ///A test for IntegrateFiles for the 
+        /// A test for IntegrateFiles for the 
         /// "p4 integrate [options] fromFile[revRange] toFile"
         /// version of integrate for progress handler
         /// </summary>
@@ -5030,8 +5171,14 @@ namespace p4api.net.unit.test
                         Options pFlags = new SyncFilesCmdOptions(SyncFilesCmdFlags.None, 0, 4, 10, 0, 100);
                         IList<FileSpec> pFiles = con.Client.SyncFiles(pFlags, parallelFileSpecArray);
 
+
                         Assert.IsNotNull(pFiles);
                         Assert.AreEqual(fileCount, pFiles.Count);
+
+                        Options pFlagsTest = new SyncFilesCmdOptions(SyncFilesCmdFlags.None, 0, 4, 10, 0, 100);
+                        FileSpec fromFile = new FileSpec(new DepotPath("//depot/parallel/file106.dat#none"), null);
+                        IList<FileSpec> pFilesTest = con.Client.SyncFiles(pFlagsTest, fromFile);
+
                     }
                 }
                 catch (P4Exception ex)
@@ -5239,7 +5386,7 @@ namespace p4api.net.unit.test
                     int ksyncTimeValue = 150; // Sample sync time value
                     SyncFilesCmdFlags sflags = SyncFilesCmdFlags.ServerOnly;
                     Options pFlags = new SyncFilesCmdOptions(sflags, 0, 4, 10, 0, 100, 0, ksyncTimeValue);
-                    
+
                     IList<FileSpec> pFiles = con.Client.SyncFiles(pFlags, parallelFileSpecArray);
 
                     Assert.IsNotNull(pFiles);
@@ -6136,7 +6283,7 @@ namespace p4api.net.unit.test
 			}
 		}
 
-		/// <summary>
+        /// <summary>
         /// A test for UnshelveFiles for progress handler
         /// </summary>
         [TestMethod()]
@@ -6266,9 +6413,9 @@ namespace p4api.net.unit.test
         }
 
         /// <summary>
-		///A test for GetClientFileMappings
-		///</summary>
-		[TestMethod()]
+        ///A test for GetClientFileMappings
+        ///</summary>
+        [TestMethod()]
 		public void GetClientFileMappingsTest()
 		{
             string uri = configuration.ServerPort;
@@ -6464,6 +6611,79 @@ namespace p4api.net.unit.test
 					Utilities.RemoveTestServer(p4d, TestDir);
                     p4d?.Dispose();
                     rep?.Dispose();
+				}
+			}
+		}
+
+		/// <summary>
+		///A test for MergeFiles with the Virtual (-v) flag
+		///</summary>
+		[TestMethod()]
+		public void MergeFilesVirtualTest()
+		{
+			string uri = configuration.ServerPort;
+			string user = "admin";
+			string pass = string.Empty;
+			string ws_client = "admin_space";
+
+			for (int i = 0; i < 1; i++) // run once for ascii, once for unicode
+			{
+				Utilities.CheckpointType cptype = (Utilities.CheckpointType)i;
+				Process p4d = null;
+				Repository rep = null;
+				try
+				{
+					p4d = Utilities.DeployP4TestServer(TestDir, 2, cptype);
+					Assert.IsNotNull(p4d, "Setup Failure");
+
+					Server server = new Server(new ServerAddress(uri));
+					rep = new Repository(server);
+
+					using (Connection con = rep.Connection)
+					{
+						con.UserName = user;
+						con.Client = new Client();
+						con.Client.Name = ws_client;
+						Assert.AreEqual(con.Status, ConnectionStatus.Disconnected);
+
+						Assert.AreEqual(con.Server.State, ServerState.Unknown);
+
+						Assert.IsTrue(con.Connect(null));
+
+						Assert.AreEqual(con.Server.State, ServerState.Online);
+
+						Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+
+						Assert.AreEqual("admin", con.Client.OwnerName);
+
+						FileSpec fromFile = new FileSpec(new DepotPath("//depot/TestData/Numbers.txt"), null);
+						FileSpec toFile = new FileSpec(new DepotPath("//depot/TestData42/Numbers.txt"), null);
+
+						Options cFlags = new Options(
+							MergeFilesCmdFlags.Virtual, null, null, null, -1, -1
+							);
+						IList<FileSpec> rFiles = con.Client.MergeFiles(cFlags, fromFile, toFile);
+
+						Assert.IsNotNull(rFiles);
+						Assert.AreEqual(1, rFiles.Count);
+
+						fromFile = new FileSpec(new DepotPath("//depot/TestData/*"), null);
+						toFile = new FileSpec(new DepotPath("//depot/TestData44/*"), null);
+
+						cFlags = new Options(
+							MergeFilesCmdFlags.Virtual, null, null, null, -1, 2
+							);
+						rFiles = con.Client.MergeFiles(cFlags, fromFile, toFile);
+
+						Assert.IsNotNull(rFiles);
+						Assert.AreEqual(2, rFiles.Count);
+					}
+				}
+				finally
+				{
+					Utilities.RemoveTestServer(p4d, TestDir);
+					p4d?.Dispose();
+					rep?.Dispose();
 				}
 			}
 		}

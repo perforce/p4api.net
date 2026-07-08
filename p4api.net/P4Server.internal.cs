@@ -46,7 +46,7 @@ namespace Perforce.P4
 	/// <summary>
 	/// P4Server
 	/// 
-	/// Represents the connection to a Perforce Server using the the P4 Bridge 
+	/// Represents the connection to a P4 Server using the the P4 Bridge
 	/// DLL. It wraps the calls exported by the DLL and transforms the data
 	/// types exported by the DLL as native C#.NET data types.
 	/// </summary>

@@ -94,7 +94,7 @@ namespace Perforce.P4
         /// </summary>
         Tangent = 0x0020,
         /// <summary>
-        /// An 'extension' depot stores files related to Helix Core
+        /// An 'extension' depot stores files related to P4
         /// Extensions.  See 'p4 help extension'.
         /// </summary>
         Extension = 0x0040,

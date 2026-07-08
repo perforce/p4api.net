@@ -290,7 +290,7 @@ namespace Perforce.P4
 
 
         /// <summary>
-        /// Convert to a Perforce server compatible string for a workspace spec
+        /// Convert to a P4 Server compatible string for a workspace spec
         /// </summary>
         /// <returns></returns>
         public override String ToString()

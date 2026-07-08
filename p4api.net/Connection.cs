@@ -60,7 +60,7 @@ namespace Perforce.P4
     }
 
     /// <summary>
-    /// Represents the logical connection between a specific Perforce
+    /// Represents the logical connection between a specific P4
     /// Server instance and a specific client application.
     /// </summary>
     public class Connection : IDisposable
@@ -829,7 +829,7 @@ namespace Perforce.P4
         }
 
         /// <summary>
-        /// Run a Login on the Perforce Server
+        /// Run a Login on the P4 Server
         /// </summary>
         /// <param name="password">User' password</param>
         /// <param name="options">Login options (see remarks in help file)</param>
@@ -963,7 +963,7 @@ namespace Perforce.P4
         }
 
         /// <summary>
-        /// Login to the Perforce Server
+        /// Login to the P4 Server
         /// </summary>
         /// <param name="password">User' password</param>
         /// <param name="options">Login options (see remarks in help file)</param>
@@ -1015,7 +1015,7 @@ namespace Perforce.P4
         }
 
         /// <summary>
-        /// Automate the Login to the Perforce Server
+        /// Automate the Login to the P4 Server
         /// </summary>
         /// <param name="password">User password</param>
         /// <returns>Success/Failure</returns>
@@ -1239,7 +1239,7 @@ namespace Perforce.P4
         }
 
         /// <summary>
-        /// Logout of the Perforce server
+        /// Logout of the P4 Server
         /// </summary>
         /// <param name="options">Logout options (see remarks in help file)</param>
         /// <param name="user">user name to log out, (requires Super access)</param>
@@ -1334,6 +1334,24 @@ namespace Perforce.P4
         /// </remarks>
         public bool Trust(Options options, string fingerprint)
         {
+            
+            if (!connectionEstablished() || Status != ConnectionStatus.Connected)
+            {
+                string trustFlag = null;
+                if (options != null)
+                {
+                    foreach (string key in new[] { "-y", "-n", "-d", "-f", "-i", "-l", "-r" })
+                    {
+                        if (options.ContainsKey(key))
+                        {
+                            trustFlag = key;
+                            break;
+                        }
+                    }
+                }
+                return TrustAndConnect(null, trustFlag, fingerprint);
+            }
+
             using (P4Command trustCmd = string.IsNullOrEmpty(fingerprint)
                 ? new P4Command(this, "trust", false)
                 : new P4Command(this, "trust", false, fingerprint))
@@ -1350,7 +1368,7 @@ namespace Perforce.P4
         }
 
         /// <summary>
-        /// Set the current user's password on the Perforce server.
+        /// Set the current user's password on the P4 Server.
         /// </summary>
         /// <param name="OldPassword">User's old password</param>
         /// <param name="NewPassword">User's new password</param>
@@ -1392,7 +1410,7 @@ namespace Perforce.P4
         }
 
         /// <summary>
-        /// Set the a user's password on the Perforce server.
+        /// Set the a user's password on the P4 Server.
         /// </summary>
         /// <param name="OldPassword">User's old password</param>
         /// <param name="NewPassword">User's new password</param>

@@ -54,42 +54,42 @@ namespace Perforce.P4
             {
 			cmd.DataSet = change.ToString();
 
-		    if (options == null)
-			{
-				options = new Options();
-			}
-
-			options["-i"] = null;
-
-			P4CommandResult results = cmd.Run(options);
-			if (results.Success)
-			{
-				// If this a new change that was saved, we need  to parse out the new changelist Id
-				if (change.Id == -1)
+				if (options == null)
 				{
-					int newId = -1;
+					options = new Options();
+				}
+
+				options["-i"] = null;
+
+				P4CommandResult results = cmd.Run(options);
+				if (results.Success)
+				{
+					// If this a new change that was saved, we need  to parse out the new changelist Id
+					if (change.Id == -1)
+					{
+						int newId = -1;
 						foreach (var info in results.InfoOutput)
 						{
 							// Splitting the message into words
 							var words = info.Message.Split(' ');
 							// Looking for the pattern "Change <number>"
 							if (words.Length >= 1 && words[0] == "Change" && int.TryParse(words[1], out newId))
-					{
-						Changelist newChange = GetChangelist(newId);
-						return newChange;
+							{
+								Changelist newChange = GetChangelist(newId);
+								return newChange;
+							}
+						}
 					}
+
+					return GetChangelist(change.Id);
 				}
-					}
+				else
+				{
+					P4Exception.Throw(results.ErrorList);
+				}
 
-				return GetChangelist(change.Id);
+				return null;
 			}
-			else
-			{
-				P4Exception.Throw(results.ErrorList);
-			}
-
-			return null;
-		}
         }
 
 		/// <summary>
@@ -186,13 +186,13 @@ namespace Perforce.P4
 		/// <br/>
 		/// <br/>
 		/// </remarks>
-        /// <example>
-        ///		To create a new empty changelist object:
-        ///		<code>
-        ///		    Changelist c = Repository.NewChangelist();
-        ///		</code>
-        /// </example>
-        public Changelist NewChangelist()
+		/// <example>
+		///		To create a new empty changelist object:
+		///		<code>
+		///		    Changelist c = Repository.NewChangelist();
+		///		</code>
+		/// </example>
+		public Changelist NewChangelist()
 		{
 			Changelist c = new Changelist();
 
@@ -1022,7 +1022,7 @@ namespace Perforce.P4
         /// <br/>   attribute of the changelist is set to 'true' but 'ShelvedFiles'
         /// <br/>   is empty.
         /// <br/>        
-        /// <br/>   To retrieve the list of Perforce Helix shelved files:
+        /// <br/>   To retrieve the list of P4 shelved files:
         /// <br/>   The 'GetChangelist' function takes 'DescribeCmdOptions' as one of the parameters. For example:
         ///         <code>
         ///         var descOptions = new DescribeCmdOptions(DescribeChangelistCmdFlags.Shelved, 0, 0);

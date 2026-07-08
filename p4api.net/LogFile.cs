@@ -109,7 +109,7 @@ namespace Perforce.P4
         }
 
         /// <summary>
-        /// Log an Exception 
+        /// Log an Exception
         /// </summary>
         /// <param name="category">Category of the exception</param>
         /// <param name="ex">The Exception to log</param>
@@ -117,18 +117,36 @@ namespace Perforce.P4
         {
             try
             {
-                String msg = $"{ex.GetType().ToString()}:{ex.Message}{Environment.NewLine}{ex.StackTrace}";
-                LogMessage(0, category, msg);
+                // Use an iterative approach to avoid stack overflow on deep exception chains.
+                // P4Exception.NextError can form a very long linked list (e.g. one node per
+                // "Can't clobber writable file" error), which previously caused a
+                // StackOverflowException through unbounded recursion.
+                var visited = new HashSet<Exception>();
+                var queue = new Queue<KeyValuePair<string, Exception>>();
+                queue.Enqueue(new KeyValuePair<string, Exception>(category, ex));
 
-				if (ex.InnerException != null)
-					LogException("Inner Exception", ex.InnerException);
+                while (queue.Count > 0)
+                {
+                    KeyValuePair<string, Exception> entry = queue.Dequeue();
+                    string currentCategory = entry.Key;
+                    Exception currentEx = entry.Value;
 
-				P4Exception p4ex = ex as P4Exception;
-				if ((p4ex != null) && (p4ex.NextError != null))
-				{
-					LogException("Next Exception", p4ex.NextError);
-				}
-			}
+                    if (currentEx == null || !visited.Add(currentEx))
+                        continue;
+
+                    String msg = $"{currentEx.GetType().ToString()}:{currentEx.Message}{Environment.NewLine}{currentEx.StackTrace}";
+                    LogMessage(0, currentCategory, msg);
+
+                    if (currentEx.InnerException != null)
+                        queue.Enqueue(new KeyValuePair<string, Exception>("Inner Exception", currentEx.InnerException));
+
+                    P4Exception p4ex = currentEx as P4Exception;
+                    if ((p4ex != null) && (p4ex.NextError != null))
+                    {
+                        queue.Enqueue(new KeyValuePair<string, Exception>("Next Exception", p4ex.NextError));
+                    }
+                }
+            }
             catch { } // never fail because of an error writing a log message
         }
 

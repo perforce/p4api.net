@@ -647,6 +647,156 @@ namespace p4api.net.unit.test
         }
 
         /// <summary>
+        ///A test for GetLabels with UserCaseInsensitive flag and server configuration handling
+        ///</summary>
+        [TestMethod()]
+        public void GetLabelsUserCaseInsensitiveAndServerConfigTest()
+        {
+            string uri = configuration.ServerPort;
+            string user = "admin";
+            string pass = string.Empty;
+            string ws_client = "admin_space";
+
+            for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
+            {
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
+                try
+                {
+                    p4d = Utilities.DeployP4TestServer(TestDir, 9, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
+
+                    using (Connection con = rep.Connection)
+                    {
+                        con.UserName = user;
+                        con.Client = new Client();
+                        con.Client.Name = ws_client;
+
+                        bool connected = con.Connect(null);
+                        Assert.IsTrue(connected);
+
+                        Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+
+                        // Create test users Alice and Bob (requires superuser force flag)
+                        Options forceOpts = new Options();
+                        forceOpts["-f"] = null;
+
+                        User alice = new User();
+                        alice.Id = "Alice";
+                        alice.FullName = "Alice User";
+                        alice.EmailAddress = "alice@test.com";
+                        rep.CreateUser(alice, forceOpts);
+
+                        User bob = new User();
+                        bob.Id = "Bob";
+                        bob.FullName = "Bob User";
+                        bob.EmailAddress = "bob@test.com";
+                        rep.CreateUser(bob, forceOpts);
+
+                        // Create labels owned by Alice and Bob
+                        Label aliceLabel = new Label();
+                        aliceLabel.Id = "alice_label";
+                        aliceLabel.Owner = "Alice";
+                        aliceLabel.Description = "Label owned by Alice";
+                        aliceLabel.ViewMap = new ViewMap();
+                        aliceLabel.ViewMap.Add("//depot/...");
+                        rep.CreateLabel(aliceLabel, null);
+
+                        Label bobLabel = new Label();
+                        bobLabel.Id = "bob_label";
+                        bobLabel.Owner = "Bob";
+                        bobLabel.Description = "Label owned by Bob";
+                        bobLabel.ViewMap = new ViewMap();
+                        bobLabel.ViewMap.Add("//depot/...");
+                        rep.CreateLabel(bobLabel, null);
+
+                        // AC-1: Test case-insensitive user filtering with lowercase "alice"
+                        LabelsCmdOptions opts = new LabelsCmdOptions(
+                            LabelsCmdFlags.UserCaseInsensitive, "alice", null, 50, null, null);
+                        IList<Label> labels = rep.GetLabels(opts);
+
+                        Assert.IsNotNull(labels, "Case-insensitive match should find Alice's label");
+                        Assert.AreEqual(1, labels.Count);
+                        Assert.AreEqual("Alice", labels[0].Owner);
+                        Assert.AreEqual("alice_label", labels[0].Id);
+
+                        // AC-1: Test case-insensitive user filtering with uppercase "ALICE"
+                        opts = new LabelsCmdOptions(
+                            LabelsCmdFlags.UserCaseInsensitive, "ALICE", null, 50, null, null);
+                        labels = rep.GetLabels(opts);
+
+                        Assert.IsNotNull(labels, "Case-insensitive match should find Alice's label");
+                        Assert.AreEqual(1, labels.Count);
+                        Assert.AreEqual("Alice", labels[0].Owner);
+                        Assert.AreEqual("alice_label", labels[0].Id);
+
+                        // AC-2: Test wildcard pattern with case-insensitive matching - full wildcard
+                        opts = new LabelsCmdOptions(
+                            LabelsCmdFlags.UserCaseInsensitive, "*", null, 50, null, null);
+                        labels = rep.GetLabels(opts);
+
+                        Assert.IsNotNull(labels);
+                        bool foundAlice = false;
+                        bool foundBob = false;
+                        foreach (Label lbl in labels)
+                        {
+                            if (lbl.Owner == "Alice" && lbl.Id == "alice_label")
+                                foundAlice = true;
+                            if (lbl.Owner == "Bob" && lbl.Id == "bob_label")
+                                foundBob = true;
+                        }
+                        Assert.IsTrue(foundAlice, "Should find Alice's label in wildcard results");
+                        Assert.IsTrue(foundBob, "Should find Bob's label in wildcard results");
+                        Assert.IsTrue(labels.Count >= 2, "Should return at least Alice and Bob's labels");
+
+                        // AC-2: Test case-insensitive wildcard pattern matching against owner names
+                        opts = new LabelsCmdOptions(
+                            LabelsCmdFlags.UserCaseInsensitive, "ali*", null, 50, null, null);
+                        labels = rep.GetLabels(opts);
+
+                        Assert.IsNotNull(labels, "Pattern 'ali*' should match owner 'Alice' case-insensitively");
+                        Assert.AreEqual(1, labels.Count);
+                        Assert.AreEqual("Alice", labels[0].Owner);
+
+                        // AC-2: Test uppercase pattern matching against mixed-case owner
+                        opts = new LabelsCmdOptions(
+                            LabelsCmdFlags.UserCaseInsensitive, "AL*", null, 50, null, null);
+                        labels = rep.GetLabels(opts);
+
+                        Assert.IsNotNull(labels, "Pattern 'AL*' should match owner 'Alice' case-insensitively");
+                        Assert.AreEqual(1, labels.Count);
+                        Assert.AreEqual("Alice", labels[0].Owner);
+
+                        // Test without UserCaseInsensitive flag: lowercase "alice" vs owner "Alice".
+                        // On a case-sensitive server returns null; on case-insensitive server may return results. Either is valid.
+                        opts = new LabelsCmdOptions(
+                            LabelsCmdFlags.None, "alice", null, 50, null, null);
+                        labels = rep.GetLabels(opts);
+
+                        if (labels != null)
+                        {
+                            foreach (Label lbl in labels)
+                            {
+                                Assert.IsTrue(lbl.Owner.Equals("Alice", StringComparison.OrdinalIgnoreCase),
+                                    "Returned labels should be owned by Alice");
+                            }
+                        }
+                    }
+                }
+                finally
+                {
+                    Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
+                }
+            }
+        }
+
+        /// <summary>
         ///A test for GetLabelWithGlobalOption
         ///</summary>
         [TestMethod()]

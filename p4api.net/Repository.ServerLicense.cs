@@ -23,7 +23,7 @@ namespace Perforce.P4
         /// <br/> 	Info lists information about the current client (user name,
         /// <br/> 	Update the Perforce license file.This command requires a valid
         /// <br/> 	license file in the Perforce root directory.Typically this command
-        /// <br/> 	lets an administrator add extra licensed users to the Perforce server
+        /// <br/> 	lets an administrator add extra licensed users to the P4 Server
         /// <br/> 	without having to shut the server down and copy the license file to
         /// <br/> 	the server root.
         /// <br/> 	
@@ -129,7 +129,7 @@ namespace Perforce.P4
         /// <br/> 	Info lists information about the current client (user name,
         /// <br/> 	Update the Perforce license file.This command requires a valid
         /// <br/> 	license file in the Perforce root directory.Typically this command
-        /// <br/> 	lets an administrator add extra licensed users to the Perforce server
+        /// <br/> 	lets an administrator add extra licensed users to the P4 Server
         /// <br/> 	without having to shut the server down and copy the license file to
         /// <br/> 	the server root.
         /// <br/> 	

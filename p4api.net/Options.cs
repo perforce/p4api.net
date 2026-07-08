@@ -532,7 +532,7 @@ namespace Perforce.P4
         /// <br/> 	The -k flag updates metadata without transferring files to the
         /// <br/> 	workspace. This option can be used to tell the server that files in
         /// <br/> 	a client workspace are already editable, even if they are not in the
-        /// <br/> 	client view. Typically this flag is used to correct the Perforce
+        /// <br/> 	client view. Typically this flag is used to correct the P4
         /// <br/> 	server when it is wrong about the state of files in the client
         /// <br/> 	workspace, but incorrect use of this option can result in inaccurate
         /// <br/> 	file status information.
@@ -607,7 +607,7 @@ namespace Perforce.P4
         /// <br/> 	The -k flag updates metadata without transferring files to the
         /// <br/> 	workspace. This option can be used to tell the server that files in
         /// <br/> 	a client workspace are already editable, even if they are not in the
-        /// <br/> 	client view. Typically this flag is used to correct the Perforce
+        /// <br/> 	client view. Typically this flag is used to correct the P4
         /// <br/> 	server when it is wrong about the state of files in the client
         /// <br/> 	workspace, but incorrect use of this option can result in inaccurate
         /// <br/> 	file status information.
@@ -5536,7 +5536,14 @@ namespace Perforce.P4
         /// 	arguments may be given to further restrict the scope of the target
         /// 	file set. -r is ignored when -s is used.
         /// </summary>
-        SourceBranch = 0x0008
+        SourceBranch = 0x0008,
+        /// <summary>
+        /// 	The -v flag causes a 'virtual' merge that does not modify client
+        /// 	workspace files unless target files need to be resolved.
+        /// 	After submitting a virtual integration, 'p4 sync' can be used to
+        /// 	update the workspace.
+        /// </summary>
+        Virtual = 0x0010
     }
     public partial class Options
     {
@@ -5547,8 +5554,10 @@ namespace Perforce.P4
         /// <br/> 
         /// <br/>     p4 merge [options] [-F] [--from stream] [toFile][revRange]
         /// <br/>     p4 merge [options] fromFile[revRange] toFile
+        /// <br/>     p4 merge [options] [-As | -Af] -S stream [-P parent] [-r]
+        /// <br/> 	               [toFile[rev] ...]
         /// <br/> 
-        /// <br/> 	options: -c changelist# -m max -n -Ob -q
+        /// <br/> 	options: -c changelist# -F -K -m max -n -Ob -q -v
         /// <br/> 
         /// <br/> 	'p4 merge' merges changes from one set of files (the 'source') into 
         /// <br/> 	another (the 'target'). It is a simplified form of the 'p4 integrate'
@@ -5618,6 +5627,11 @@ namespace Perforce.P4
                 this["-n"] = null;
             }
 
+            if ((flags & MergeFilesCmdFlags.Virtual) != 0)
+            {
+                this["-v"] = null;
+            }
+
             if (maxItems >= 0)
             {
                 this["-m"] = maxItems.ToString();
@@ -5666,8 +5680,10 @@ namespace Perforce.P4
         /// <br/> 
         /// <br/>     p4 merge [options] [-F] [--from stream] [toFile][revRange]
         /// <br/>     p4 merge [options] fromFile[revRange] toFile
+        /// <br/>     p4 merge [options] [-As | -Af] -S stream [-P parent] [-r]
+        /// <br/> 	               [toFile[rev] ...]
         /// <br/> 
-        /// <br/> 	options: -c changelist# -m max -n -Ob -q
+        /// <br/> 	options: -c changelist# -F -K -m max -n -Ob -q -v
         /// <br/> 
         /// <br/> 	'p4 merge' merges changes from one set of files (the 'source') into 
         /// <br/> 	another (the 'target'). It is a simplified form of the 'p4 integrate'
@@ -10514,7 +10530,7 @@ namespace Perforce.P4
         /// <br/> 	[-Ox -Rx -Sx] [-A pattern] [-U] file[rev] ...
         /// <br/> 
         /// <br/> 	Fstat lists information about files, one line per field.  Fstat is
-        /// <br/> 	intended for use in Perforce API applications, where the output can
+        /// <br/> 	intended for use in P4 API applications, where the output can
         /// <br/> 	be accessed as variables, but its output is also suitable for parsing
         /// <br/> 	from the client command output in scripts.
         /// <br/> 
@@ -10830,7 +10846,7 @@ namespace Perforce.P4
         /// <br/> 	[-Ox -Rx -Sx] [-A pattern] [-U] file[rev] ...
         /// <br/> 
         /// <br/> 	Fstat lists information about files, one line per field.  Fstat is
-        /// <br/> 	intended for use in Perforce API applications, where the output can
+        /// <br/> 	intended for use in P4 API applications, where the output can
         /// <br/> 	be accessed as variables, but its output is also suitable for parsing
         /// <br/> 	from the client command output in scripts.
         /// <br/> 
@@ -11220,18 +11236,22 @@ namespace Perforce.P4
         /// </summary>
         /// <param name="flags"></param>
         /// <param name="localFile"></param>
+        /// <param name="lineEnding">Explicitly sets the line ending for text files: 'unix', 'win', or 'mac' (-L).</param>
+        /// <param name="charset">Overrides P4CHARSET for unicode files (-Q).</param>
+        /// <param name="filesysUtf8bom">Overrides filesys.utf8bom setting for utf8 files (-B). Pass 0 to suppress BOM, 1 to include it.</param>
         /// <remarks>
         /// <br/><b>p4 help print</b>
         /// <br/> 
         /// <br/>     print -- Write a depot file to standard output
         /// <br/> 
-        /// <br/>     p4 print [-a -A -k -o localFile -q -m max] file[revRange] ...
+        /// <br/>     p4 print [-a -A -K -o localFile -q -m max 
+        /// <br/> 	      -Q charset -B utf8bom -L line-ending] file[revRange] ...
         /// <br/>     p4 print -U unloadfile ...
         /// <br/> 
-        /// <br/> 	Retrieve the contents of a depot file to the client's standard output.
+        /// <br/> 	Retrieve the contents of a depot file or the value of an attribute
+        /// <br/> 	of the depot file to the client's standard output.
         /// <br/> 	The file is not synced.  If file is specified using client syntax,
-        /// <br/> 	Perforce uses the client view to determine the corresponding depot
-        /// <br/> 	file.
+        /// <br/> 	P4 uses the client view to determine the corresponding depot file.
         /// <br/> 
         /// <br/> 	By default, the head revision is printed.  If the file argument
         /// <br/> 	includes a revision, the specified revision is printed.  If the
@@ -11245,10 +11265,22 @@ namespace Perforce.P4
         /// <br/> 
         /// <br/> 	The -A flag prints files in archive depots.
         /// <br/> 
-        /// <br/> 	The -k flag suppresses keyword expansion.
+        /// <br/> 	The -K flag suppresses keyword expansion (this replaced the -k flag
+        /// <br/> 	in 2022.1, which is now an alias for -K for backwards compatibility).
+        /// <br/> 
+        /// <br/> 	The -L flag allows the line ending of textual files to be explicitly
+        /// <br/> 	specified as either 'unix', 'win' or 'mac'.
+        /// <br/> 
+        /// <br/> 	The -Q flag allows the charset for unicode type files to be explicitly
+        /// <br/> 	specified, overriding the connection's P4CHARSET but not override the
+        /// <br/> 	charset of unicode files with versioned charsets.
+        /// <br/> 
+        /// <br/> 	The -B flag overrides the client-side 'filesys.utf8bom' setting,
+        /// <br/> 	controlling the presence of the byte-order-mark in utf8 type files.
         /// <br/> 
         /// <br/> 	The -o localFile flag redirects the output to the specified file on
-        /// <br/> 	the client filesystem.
+        /// <br/> 	the client filesystem. Multiple files may be written by using wildcards
+        /// <br/> 	in the localFile argument that match wildcards in the file argument.
         /// <br/> 
         /// <br/> 	The -q flag suppresses the initial line that displays the file name
         /// <br/> 	and revision.
@@ -11260,7 +11292,7 @@ namespace Perforce.P4
         /// <br/> 
         /// <br/> 
         /// </remarks>
-        public Options(GetFileContentsCmdFlags flags, string localFile)
+        public Options(GetFileContentsCmdFlags flags, string localFile, string lineEnding = null, string charset = null, int? filesysUtf8bom = null)
         {
             if ((flags & GetFileContentsCmdFlags.AllRevisions) != 0)
             {
@@ -11277,6 +11309,21 @@ namespace Perforce.P4
                 this["-o"] = localFile;
             }
 
+            if (String.IsNullOrEmpty(lineEnding) != true)
+            {
+                this["-L"] = lineEnding;
+            }
+
+            if (String.IsNullOrEmpty(charset) != true)
+            {
+                this["-Q"] = charset;
+            }
+
+            if (filesysUtf8bom != null && 0 <= filesysUtf8bom)
+            {
+                this["-B"] = filesysUtf8bom.ToString();
+            }
+
         }
     }
 
@@ -11290,18 +11337,22 @@ namespace Perforce.P4
         /// </summary>
         /// <param name="flags"></param>
         /// <param name="localFile"></param>
+        /// <param name="lineEnding">Explicitly sets the line ending for text files: 'unix', 'win', or 'mac' (-L).</param>
+        /// <param name="charset">Overrides P4CHARSET for unicode files (-Q).</param>
+        /// <param name="filesysUtf8bom">Overrides filesys.utf8bom setting for utf8 files (-B). Pass 0 to suppress BOM, 1 to include it.</param>
         /// <remarks>
         /// <br/><b>p4 help print</b>
         /// <br/> 
         /// <br/>     print -- Write a depot file to standard output
         /// <br/> 
-        /// <br/>     p4 print [-a -A -k -o localFile -q -m max] file[revRange] ...
+        /// <br/>     p4 print [-a -A -K -o localFile -q -m max 
+        /// <br/> 	      -Q charset -B utf8bom -L line-ending] file[revRange] ...
         /// <br/>     p4 print -U unloadfile ...
         /// <br/> 
-        /// <br/> 	Retrieve the contents of a depot file to the client's standard output.
+        /// <br/> 	Retrieve the contents of a depot file or the value of an attribute
+        /// <br/> 	of the depot file to the client's standard output.
         /// <br/> 	The file is not synced.  If file is specified using client syntax,
-        /// <br/> 	Perforce uses the client view to determine the corresponding depot
-        /// <br/> 	file.
+        /// <br/> 	P4 uses the client view to determine the corresponding depot file.
         /// <br/> 
         /// <br/> 	By default, the head revision is printed.  If the file argument
         /// <br/> 	includes a revision, the specified revision is printed.  If the
@@ -11315,10 +11366,22 @@ namespace Perforce.P4
         /// <br/> 
         /// <br/> 	The -A flag prints files in archive depots.
         /// <br/> 
-        /// <br/> 	The -k flag suppresses keyword expansion.
+        /// <br/> 	The -K flag suppresses keyword expansion (this replaced the -k flag
+        /// <br/> 	in 2022.1, which is now an alias for -K for backwards compatibility).
+        /// <br/> 
+        /// <br/> 	The -L flag allows the line ending of textual files to be explicitly
+        /// <br/> 	specified as either 'unix', 'win' or 'mac'.
+        /// <br/> 
+        /// <br/> 	The -Q flag allows the charset for unicode type files to be explicitly
+        /// <br/> 	specified, overriding the connection's P4CHARSET but not override the
+        /// <br/> 	charset of unicode files with versioned charsets.
+        /// <br/> 
+        /// <br/> 	The -B flag overrides the client-side 'filesys.utf8bom' setting,
+        /// <br/> 	controlling the presence of the byte-order-mark in utf8 type files.
         /// <br/> 
         /// <br/> 	The -o localFile flag redirects the output to the specified file on
-        /// <br/> 	the client filesystem.
+        /// <br/> 	the client filesystem. Multiple files may be written by using wildcards
+        /// <br/> 	in the localFile argument that match wildcards in the file argument.
         /// <br/> 
         /// <br/> 	The -q flag suppresses the initial line that displays the file name
         /// <br/> 	and revision.
@@ -11330,8 +11393,8 @@ namespace Perforce.P4
         /// <br/> 
         /// <br/> 
         /// </remarks>
-        public GetFileContentsCmdOptions(GetFileContentsCmdFlags flags, string localFile)
-            : base(flags, localFile) { }
+        public GetFileContentsCmdOptions(GetFileContentsCmdFlags flags, string localFile, string lineEnding = null, string charset = null, int? filesysUtf8bom = null)
+            : base(flags, localFile, lineEnding, charset, filesysUtf8bom) { }
     }
 
     /// <summary>
@@ -12786,7 +12849,7 @@ namespace Perforce.P4
         /// <br/> 	Info lists information about the current client (user name,
         /// <br/> 	Update the Perforce license file.This command requires a valid
         /// <br/> 	license file in the Perforce root directory.Typically this command
-        /// <br/> 	lets an administrator add extra licensed users to the Perforce server
+        /// <br/> 	lets an administrator add extra licensed users to the P4 Server
         /// <br/> 	without having to shut the server down and copy the license file to
         /// <br/> 	the server root.
         /// <br/> 	
@@ -12859,7 +12922,7 @@ namespace Perforce.P4
         /// <br/> 	Info lists information about the current client (user name,
         /// <br/> 	Update the Perforce license file.This command requires a valid
         /// <br/> 	license file in the Perforce root directory.Typically this command
-        /// <br/> 	lets an administrator add extra licensed users to the Perforce server
+        /// <br/> 	lets an administrator add extra licensed users to the P4 Server
         /// <br/> 	without having to shut the server down and copy the license file to
         /// <br/> 	the server root.
         /// <br/> 	

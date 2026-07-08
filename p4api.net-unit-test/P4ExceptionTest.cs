@@ -152,5 +152,55 @@ namespace p4api.net.unit.test
             }
             Assert.IsTrue( passed, "Did not throw an exception >= MinThrowLevel" );
         }
+
+        /// <summary>
+        /// Regression test for P4APINET-653: LogException must not stack-overflow when
+        /// P4Exception.NextError forms a very long linked list (e.g. many
+        /// "Can't clobber writable file" errors returned by the server).
+        /// </summary>
+        [TestMethod()]
+        public void LogException_DeepNextErrorChain_DoesNotThrow()
+        {
+            // Build a 10,000-deep NextError chain to reproduce the original overflow
+            const int chainDepth = 10000;
+            P4Exception head = new P4Exception(ErrorSeverity.E_FAILED, "Can't clobber writable file: file0");
+            for (int i = 1; i < chainDepth; i++)
+            {
+                head = new P4Exception(ErrorSeverity.E_FAILED,
+                    $"Can't clobber writable file: file{i}", head);
+            }
+
+            bool passed = true;
+            try
+            {
+                LogFile.LogException("test", head);
+            }
+            catch
+            {
+                passed = false;
+            }
+            Assert.IsTrue(passed, "LogException threw an exception on a deep NextError chain");
+        }
+
+        /// <summary>
+        /// Regression test for P4APINET-653: LogException with a null InnerException
+        /// should complete without throwing.
+        /// </summary>
+        [TestMethod()]
+        public void LogException_NullInnerException_DoesNotThrow()
+        {
+            P4Exception ex = new P4Exception(ErrorSeverity.E_FAILED, "Test error");
+
+            bool passed = true;
+            try
+            {
+                LogFile.LogException("test", ex);
+            }
+            catch
+            {
+                passed = false;
+            }
+            Assert.IsTrue(passed, "LogException threw an exception with null InnerException");
+        }
     }
 }

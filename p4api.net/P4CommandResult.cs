@@ -41,7 +41,7 @@ using System.Text;
 namespace Perforce.P4
 {
 	/// <summary>
-	/// Class representing the results of executing a command on a Perforce Server.
+	/// Class representing the results of executing a command on a P4 Server.
 	/// </summary>
 	public class P4CommandResult
 	{

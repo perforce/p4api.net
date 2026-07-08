@@ -70,7 +70,7 @@ static bool dll_initialized = false;
 CONSTRUCTOR void initializer()
 {
 	Error e;
-	P4Libraries::Initialize(P4LIBRARIES_INIT_P4 | P4LIBRARIES_INIT_OPENSSL, &e);
+	P4Libraries::Initialize(P4LIBRARIES_INIT_P4, &e);
 
 	signal(SIGINT, SIG_DFL); // unset the default set by global signaler in C++ (which exits)
 	signaler.Disable(); // disable the global signaler at runtime
@@ -81,7 +81,7 @@ CONSTRUCTOR void initializer()
 DESTRUCTOR void destructor()
 {
 	Error e;
-	P4Libraries::Shutdown(P4LIBRARIES_INIT_P4 | P4LIBRARIES_INIT_OPENSSL, &e);
+	P4Libraries::Shutdown(P4LIBRARIES_INIT_P4, &e);
 		}
 
 #if defined OS_NT
@@ -108,8 +108,17 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 }
 #endif
 
-// If there is a connection error, keep a copy so the client can fetch it later
-P4ClientError * connectionError = nullptr;
+// If there is a connection error, keep a copy so the client can fetch it later.
+//
+// P4APINET-707: thread_local. Each thread gets its own slot. The connect that stores
+// the error and the GetConnectionError() read that consumes it always run on the same
+// OS thread (a P4Server is pinned to one thread - see P4Server.RunCommand's owner check),
+// so a connect/RunCommand on another thread can no longer free or overwrite this thread's
+// error. This removes BOTH the use-after-free crash and the cross-thread "wrong/lost
+// error" clobbering, with no lock and no ABI change. It is a raw pointer (trivially
+// destructible), so no per-thread destructor runs at thread exit - which sidesteps the
+// only tricky corner of thread_local in a dynamically loaded (P/Invoke) library.
+thread_local P4ClientError * connectionError = nullptr;
 
 extern "C"
 {

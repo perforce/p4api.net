@@ -2,7 +2,7 @@
 
 # p4api.net
 
-P4API.NET is a wrapper for the Helix Core C/C++ API to be used in C# and other .NET languages.
+P4API.NET is a wrapper for the P4 C/C++ API to be used in C# and other .NET languages.
 
 [BUILD.md](BUILD.md)
 [P4Bridge.md](p4bridge/P4Bridge.md)

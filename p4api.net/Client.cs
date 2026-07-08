@@ -460,6 +460,13 @@ namespace Perforce.P4
 		/// </summary>
 		public IList<string> ChangeView { get; set; }
 
+		/// <summary>
+		/// Restricts the depot paths mapped by the View field (2025.2 and later).
+		/// Reduces the number of files transferred to the client workspace in a sync.
+		/// Valid for both stream and non-stream clients.
+		/// </summary>
+		public IList<string> LimitView { get; set; }
+
 		private ClientOptionEnum _options = ClientOption.None;
 
         /// <summary>
@@ -622,35 +629,6 @@ namespace Perforce.P4
 				}
 			}
 
-			idx = 0;
-			key = String.Format("View{0}", idx);
-			if (workspaceInfo.ContainsKey(key))
-			{
-				ViewMap = new ViewMap();
-				while (workspaceInfo.ContainsKey(key))
-				{
-					ViewMap.Add(workspaceInfo[key]);
-					idx++;
-					key = String.Format("View{0}", idx);
-				}
-			}
-			else
-			{
-				ViewMap = null;
-			}
-
-			idx = 0;
-			key = String.Format("ChangeView{0}", idx);
-			if (workspaceInfo.ContainsKey(key))
-			{
-				ChangeView = new List<String>();
-				while (workspaceInfo.ContainsKey(key))
-				{
-					ChangeView.Add(workspaceInfo[key]);
-					idx++;
-					key = String.Format("ChangeView{0}", idx);
-				}
-		}
 		}
 
 
@@ -757,6 +735,19 @@ namespace Perforce.P4
 					key = String.Format("ChangeView{0}", idx);
 				}
 		}
+
+			idx = 0;
+			key = String.Format("LimitView{0}", idx);
+			if (workspaceInfo.ContainsKey(key))
+			{
+				LimitView = new List<String>();
+				while (workspaceInfo.ContainsKey(key))
+				{
+					LimitView.Add(workspaceInfo[key]);
+					idx++;
+					key = String.Format("LimitView{0}", idx);
+				}
+			}
 		}
 		#endregion
 		#region client spec support
@@ -851,11 +842,23 @@ namespace Perforce.P4
 			{
 				if (_baseForm["ChangeView"] is IList<string>)
 				{
-					ChangeView = _baseForm["ChnageView"] as IList<string>;
+					ChangeView = _baseForm["ChangeView"] as IList<string>;
 				}
 				else if (_baseForm["ChangeView"] is SimpleList<string>)
 				{
 					ChangeView = (List<string>)((SimpleList<string>)_baseForm["ChangeView"]);
+				}
+			}
+
+			if (_baseForm.ContainsKey("LimitView"))
+			{
+				if (_baseForm["LimitView"] is IList<string>)
+				{
+					LimitView = _baseForm["LimitView"] as IList<string>;
+				}
+				else if (_baseForm["LimitView"] is SimpleList<string>)
+				{
+					LimitView = (List<string>)((SimpleList<string>)_baseForm["LimitView"]);
 				}
 			}
 
@@ -938,7 +941,8 @@ namespace Perforce.P4
 													"{14}" +
 													"{15}" +
 													"View:\n" +
-													"\t{16}\n";
+													"\t{16}\n" +
+													"{17}";
 		private String AltRootsStr
 		{
 			get
@@ -964,6 +968,21 @@ namespace Perforce.P4
 					for (int idx = 0; idx < ChangeView.Count; idx++)
 					{
                         value += ChangeView[idx] + $"{Environment.NewLine}";
+					}
+				}
+				return value;
+			}
+		}
+		private String LimitViewStr
+		{
+			get
+			{
+				String value = String.Empty;
+				if ((LimitView != null) && (LimitView.Count > 0))
+				{
+					for (int idx = 0; idx < LimitView.Count; idx++)
+					{
+						value += LimitView[idx] + $"{Environment.NewLine}";
 					}
 				}
 				return value;
@@ -1018,6 +1037,12 @@ namespace Perforce.P4
 			{
                 tmpViewStr = FormBase.FormatMultilineField(ViewMap.ToString());
 			}
+			String tmpLimitViewStr = String.Empty;
+			if (!String.IsNullOrEmpty(LimitViewStr))
+			{
+				tmpLimitViewStr = FormBase.FormatMultilineField(LimitViewStr.ToString());
+				tmpLimitViewStr = "\nLimitView:\t" + tmpLimitViewStr;
+			}
 			String tmpStreamStr = String.Empty;
 			if (Stream != null)
 			{
@@ -1043,7 +1068,7 @@ namespace Perforce.P4
 				_options.ToString(apiLevel),
 				SubmitOptions.ToString(),
 				_lineEnd.ToString(), _clientType.ToString(), tmpStreamStr, tmpStreamAtChangeStr,
-				tmpServerIDStr, tmpChangeViewStr, tmpViewStr);
+				tmpServerIDStr, tmpChangeViewStr, tmpViewStr, tmpLimitViewStr);
 			return value;
 		}
 		#endregion
@@ -1411,7 +1436,7 @@ namespace Perforce.P4
 		/// <br/> 	The -k flag updates metadata without transferring files to the
 		/// <br/> 	workspace. This option can be used to tell the server that files in
 		/// <br/> 	a client workspace are already editable, even if they are not in the
-		/// <br/> 	client view. Typically this flag is used to correct the Perforce
+		/// <br/> 	client view. Typically this flag is used to correct the P4
 		/// <br/> 	server when it is wrong about the state of files in the client
 		/// <br/> 	workspace, but incorrect use of this option can result in inaccurate
 		/// <br/> 	file status information.

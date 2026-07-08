@@ -317,5 +317,201 @@ namespace p4api.net.unit.test
 				}
 			}
 		}
+
+        /// <summary>
+        /// AC-1: GetBranchSpecs with --user-case-insensitive returns branches owned
+        /// by "alice" when searched with "Alice" on a case-sensitive server.
+        /// </summary>
+        [TestMethod()]
+        public void GetBranchSpecsUserCaseInsensitiveTest()
+        {
+            string uri = configuration.ServerPort;
+            string user = "admin";
+            string ws_client = "admin_space";
+
+            for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
+            {
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
+                try
+                {
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
+
+                    using (Connection con = rep.Connection)
+                    {
+                        con.UserName = user;
+                        con.Client = new Client();
+                        con.Client.Name = ws_client;
+
+                        bool connected = con.Connect(null);
+                        Assert.IsTrue(connected);
+                        Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+
+                        // Create a branch spec owned by "alice" (all lowercase)
+                        BranchSpec b = new BranchSpec();
+                        b.Id = "alice-branch";
+                        b.Owner = "alice";
+                        b.Description = "branch owned by alice";
+                        b.ViewMap = new ViewMap();
+                        b.ViewMap.Add("//depot/main/... //depot/alice/...");
+                        rep.CreateBranchSpec(b, null);
+
+                        // Search with "Alice" (uppercase A) and the UserCaseInsensitive
+                        // flag – the server is case-sensitive but the flag makes the user
+                        // filter case-insensitive, so alice's branch must be returned.
+                        Options bFlags = new Options(BranchSpecsCmdFlags.UserCaseInsensitive, "Alice", "", -1);
+                        IList<BranchSpec> branches = rep.GetBranchSpecs(bFlags);
+
+                        Assert.IsNotNull(branches);
+                        Assert.AreEqual(1, branches.Count);
+                        Assert.AreEqual("alice-branch", branches[0].Id);
+                    }
+                }
+                finally
+                {
+                    Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
+                }
+            }
+        }
+
+        /// <summary>
+        /// AC-2: GetBranchSpecs with --user-case-insensitive and a wildcard user
+        /// pattern returns branches from all case-insensitively matched owners.
+        /// </summary>
+        [TestMethod()]
+        public void GetBranchSpecsUserCaseInsensitiveWildcardTest()
+        {
+            string uri = configuration.ServerPort;
+            string user = "admin";
+            string ws_client = "admin_space";
+
+            for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
+            {
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
+                try
+                {
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
+
+                    using (Connection con = rep.Connection)
+                    {
+                        con.UserName = user;
+                        con.Client = new Client();
+                        con.Client.Name = ws_client;
+
+                        bool connected = con.Connect(null);
+                        Assert.IsTrue(connected);
+                        Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+
+                        // Create branch specs owned by two different users
+                        BranchSpec b1 = new BranchSpec();
+                        b1.Id = "alice-main-branch";
+                        b1.Owner = "alice";
+                        b1.Description = "branch owned by alice";
+                        b1.ViewMap = new ViewMap();
+                        b1.ViewMap.Add("//depot/main/... //depot/alice/...");
+                        rep.CreateBranchSpec(b1, null);
+
+                        BranchSpec b2 = new BranchSpec();
+                        b2.Id = "alex-main-branch";
+                        b2.Owner = "alex";
+                        b2.Description = "branch owned by alex";
+                        b2.ViewMap = new ViewMap();
+                        b2.ViewMap.Add("//depot/main/... //depot/alex/...");
+                        rep.CreateBranchSpec(b2, null);
+
+                        // Wildcard "Al*" with UserCaseInsensitive should match both
+                        // "alice" and "alex" (both start with 'al', case-insensitive).
+                        // The pre-existing "admin" branch does not start with 'al' and
+                        // should not be included.
+                        Options bFlags = new Options(BranchSpecsCmdFlags.UserCaseInsensitive, "Al*", "", -1);
+                        IList<BranchSpec> branches = rep.GetBranchSpecs(bFlags);
+
+                        Assert.IsNotNull(branches);
+                        Assert.AreEqual(2, branches.Count);
+                    }
+                }
+                finally
+                {
+                    Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
+                }
+            }
+        }
+
+        /// <summary>
+        /// AC-3: GetBranchSpecs WITHOUT --user-case-insensitive returns no results
+        /// when the supplied user value differs in case from the actual branch owner
+        /// on a case-sensitive server.
+        /// </summary>
+        [TestMethod()]
+        public void GetBranchSpecsCaseSensitiveNoMatchTest()
+        {
+            string uri = configuration.ServerPort;
+            string user = "admin";
+            string ws_client = "admin_space";
+
+            for (int i = 0; i < 2; i++) // run once for ascii, once for unicode
+            {
+                var cptype = (Utilities.CheckpointType)i;
+                Process p4d = null;
+                Repository rep = null;
+                try
+                {
+                    p4d = Utilities.DeployP4TestServer(TestDir, 8, cptype);
+                    Assert.IsNotNull(p4d, "Setup Failure");
+
+                    Server server = new Server(new ServerAddress(uri));
+                    rep = new Repository(server);
+
+                    using (Connection con = rep.Connection)
+                    {
+                        con.UserName = user;
+                        con.Client = new Client();
+                        con.Client.Name = ws_client;
+
+                        bool connected = con.Connect(null);
+                        Assert.IsTrue(connected);
+                        Assert.AreEqual(con.Status, ConnectionStatus.Connected);
+
+                        // Create a branch spec owned by "alice" (all lowercase)
+                        BranchSpec b = new BranchSpec();
+                        b.Id = "alice-branch";
+                        b.Owner = "alice";
+                        b.Description = "branch owned by alice";
+                        b.ViewMap = new ViewMap();
+                        b.ViewMap.Add("//depot/main/... //depot/alice/...");
+                        rep.CreateBranchSpec(b, null);
+
+                        // Search for a user that does not own any branch spec, WITHOUT the
+                        // UserCaseInsensitive flag.  The -u filter must not return the branch
+                        // owned by "alice", regardless of the server's case-sensitivity setting.
+                        Options bFlags = new Options(BranchSpecsCmdFlags.None, "zzz_no_such_user", "", -1);
+                        IList<BranchSpec> branches = rep.GetBranchSpecs(bFlags);
+
+                        Assert.IsNull(branches);
+                    }
+                }
+                finally
+                {
+                    Utilities.RemoveTestServer(p4d, TestDir);
+                    p4d?.Dispose();
+                    rep?.Dispose();
+                }
+            }
+        }
     }
 }

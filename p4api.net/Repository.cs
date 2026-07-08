@@ -8,7 +8,7 @@ namespace Perforce.P4
 {
 
     /// <summary>
-    /// Represents a Perforce server and connection.
+    /// Represents a P4 Server and connection.
     /// </summary>
     public partial class Repository : IDisposable
     {
@@ -25,13 +25,13 @@ namespace Perforce.P4
             multithreaded = _multithreaded;
         }
         /// <summary>
-        /// Represents a specific Perforce server.
+        /// Represents a specific P4 Server.
         /// </summary>
 		public Server Server { get; private set; }
 
         private Connection _connection;
         /// <summary>
-        /// Represents the logical connection between a specific Perforce Server
+        /// Represents the logical connection between a specific P4 Server
         /// instance and a specific client application.
         /// </summary>
         public Connection Connection
@@ -319,7 +319,7 @@ namespace Perforce.P4
         /// <br/> 	[-Ox -Rx -Sx] [-A pattern] [-U] file[rev] ...
         /// <br/>
         /// <br/> 	Fstat lists information about files, one line per field.  Fstat is
-        /// <br/> 	intended for use in Perforce API applications, where the output can
+        /// <br/> 	intended for use in P4 API applications, where the output can
         /// <br/> 	be accessed as variables, but its output is also suitable for parsing
         /// <br/> 	from the client command output in scripts.
         /// <br/>
@@ -575,7 +575,7 @@ namespace Perforce.P4
 		/// <br/> 	[-Ox -Rx -Sx] [-A pattern] [-U] file[rev] ...
 		/// <br/>
 		/// <br/> 	Fstat lists information about files, one line per field.  Fstat is
-		/// <br/> 	intended for use in Perforce API applications, where the output can
+		/// <br/> 	intended for use in P4 API applications, where the output can
 		/// <br/> 	be accessed as variables, but its output is also suitable for parsing
 		/// <br/> 	from the client command output in scripts.
 		/// <br/>
@@ -2593,7 +2593,7 @@ namespace Perforce.P4
         /// <br/> 	options: -a -i -n -A &lt;num&gt; -B &lt;num&gt; -C &lt;num&gt; -t -s (-v|-l|-L) (-F|-G)
         /// <br/>
         /// <br/> 	Searches files for lines that match the specified regular expression,
-        /// <br/> 	which can contain wildcards.  The parser used by the Perforce server
+        /// <br/> 	which can contain wildcards.  The parser used by the P4 Server
         /// <br/> 	is based on V8 regexp and might not be compatible with later parsers,
         /// <br/> 	but the majority of functionality is available.
         /// <br/>

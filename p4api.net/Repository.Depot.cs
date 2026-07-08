@@ -86,8 +86,7 @@ namespace Perforce.P4
 		/// <br/> 		     A 'stream' depot is a local depot dedicated to the
 		/// <br/> 		     storage of files in a stream.
 		/// <br/> 
-		/// <br/> 		     A 'remote' depot refers to files in another Perforce
-		/// <br/> 		     server.
+		/// <br/> 		     A 'remote' depot refers to files in another P4 server.
 		/// <br/> 
 		/// <br/> 		     A 'spec' depot automatically archives all edited forms
 		/// <br/> 		     (branch, change, client, depot, group, job, jobspec,
@@ -232,8 +231,7 @@ namespace Perforce.P4
 		/// <br/> 		     A 'stream' depot is a local depot dedicated to the
 		/// <br/> 		     storage of files in a stream.
 		/// <br/> 
-		/// <br/> 		     A 'remote' depot refers to files in another Perforce
-		/// <br/> 		     server.
+		/// <br/> 		     A 'remote' depot refers to files in another P4 server.
 		/// <br/> 
 		/// <br/> 		     A 'spec' depot automatically archives all edited forms
 		/// <br/> 		     (branch, change, client, depot, group, job, jobspec,
@@ -347,8 +345,7 @@ namespace Perforce.P4
 		/// <br/> 		     A 'stream' depot is a local depot dedicated to the
 		/// <br/> 		     storage of files in a stream.
 		/// <br/> 
-		/// <br/> 		     A 'remote' depot refers to files in another Perforce
-		/// <br/> 		     server.
+		/// <br/> 		     A 'remote' depot refers to files in another P4 server.
 		/// <br/> 
 		/// <br/> 		     A 'spec' depot automatically archives all edited forms
 		/// <br/> 		     (branch, change, client, depot, group, job, jobspec,
@@ -460,8 +457,7 @@ namespace Perforce.P4
 		/// <br/> 		     A 'stream' depot is a local depot dedicated to the
 		/// <br/> 		     storage of files in a stream.
 		/// <br/> 
-		/// <br/> 		     A 'remote' depot refers to files in another Perforce
-		/// <br/> 		     server.
+		/// <br/> 		     A 'remote' depot refers to files in another P4 server.
 		/// <br/> 
 		/// <br/> 		     A 'spec' depot automatically archives all edited forms
 		/// <br/> 		     (branch, change, client, depot, group, job, jobspec,
@@ -605,8 +601,7 @@ namespace Perforce.P4
 		/// <br/> 		     A 'stream' depot is a local depot dedicated to the
 		/// <br/> 		     storage of files in a stream.
 		/// <br/> 
-		/// <br/> 		     A 'remote' depot refers to files in another Perforce
-		/// <br/> 		     server.
+		/// <br/> 		     A 'remote' depot refers to files in another P4 server.
 		/// <br/> 
 		/// <br/> 		     A 'spec' depot automatically archives all edited forms
 		/// <br/> 		     (branch, change, client, depot, group, job, jobspec,
@@ -816,8 +811,7 @@ namespace Perforce.P4
 		/// <br/> 		     A 'stream' depot is a local depot dedicated to the
 		/// <br/> 		     storage of files in a stream.
 		/// <br/> 
-		/// <br/> 		     A 'remote' depot refers to files in another Perforce
-		/// <br/> 		     server.
+		/// <br/> 		     A 'remote' depot refers to files in another P4 server.
 		/// <br/> 
 		/// <br/> 		     A 'spec' depot automatically archives all edited forms
 		/// <br/> 		     (branch, change, client, depot, group, job, jobspec,

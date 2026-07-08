@@ -43,7 +43,7 @@ namespace Perforce.P4
     /// <summary>
     /// A multithreaded manager for P4Server.  A P4Server instance should not be shared between threads;
     /// instead, either create a P4Server in each thread where you need a connection, or a create a global P4ServerMT and call P4ServerMT.getThread()
-    /// from the thread context to get a thread-safe connection to a Perforce server.
+    /// from the thread context to get a thread-safe connection to a P4 Server.
     /// </summary>
     public class P4ServerMT : IDisposable
     {
@@ -108,7 +108,7 @@ namespace Perforce.P4
         /// Create a handler for later creation of P4Server using the provided parameters
         /// </summary>
         /// <param name="cwd">Current working Directory. Can be null/blank if 
-        ///		not connecting to the Perforce server using a P4Config file.</param>
+        ///		not connecting to the P4 Server using a P4Config file.</param>
         public P4ServerMT(string cwd)
         {
             this.cwd = cwd;
