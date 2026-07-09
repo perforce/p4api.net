@@ -35,7 +35,6 @@
     <file src="..\p4bridge\out\osx-Release\libp4bridge.dylib" target="runtimes\osx-x64\native"/>
     <file src="..\LICENSE.txt" target="" />
     <file src="p4api.net.core.targets" target="build" />
+    <file src="p4api.net.core.targets" target="buildTransitive" />
   </files>
 </package>
-
-
