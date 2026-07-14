@@ -16,10 +16,6 @@ if (WIN32)
   set(CMAKE_SHARED_LIBRARY_PREFIX "")
 endif()
 
-# Setup project to use C# utilities
-INCLUDE(CSharpUtils)
-
-
 ADD_LIBRARY(P4ApiNetLib SHARED 
 	BranchSpec.cs
 	BridgeInterfaceClasses.cs
