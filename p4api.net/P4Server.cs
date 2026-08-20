@@ -737,8 +737,11 @@ namespace Perforce.P4
 
             if (pServer == IntPtr.Zero)
             {
-
                 ConnectionError = ConnectionErrorInt;
+                if (ConnectionError == null)
+                {
+                    ConnectionError = new P4ClientError(ErrorSeverity.E_FATAL, string.Format("Unknown error reconnecting to server, {0}", _server));
+                }
                 P4Exception.Throw(ConnectionError);
                 return;
             }
