@@ -100,6 +100,8 @@ download from here: [Microsoft .NET Downloads](https://dotnet.microsoft.com/down
 in the p4api.net root folder run
 `dotnet build p4apicore.net.sln`
 
+When `MyKey.snk` is not present, Debug builds of the library and unit tests are unsigned so the solution can be built locally. This is for development only; Release builds and packages remain signed and require `MyKey.snk`.
+
  This will create The .NET DLL in `p4api.net\bin\Debug\net80\p4api.net.dll`, `p4api.net\bin\Debug\net10.0\p4api.net.dll`, `p4api.net\bin\Debug\net462\p4api.net.dll`, `p4api.net\bin\Debug\netstandard2.0\p4api.net.dll`
  And the Unit test in `\p4api.net-unit-test\bin\Debug\net80\p4api.net-unit-test.dll`, `\p4api.net-unit-test\bin\Debug\net10.0\p4api.net-unit-test.dll`, `\p4api.net-unit-test\bin\Debug\net462\p4api.net-unit-test.dll`, `\p4api.net-unit-test\bin\Debug\netstandard2.0\p4api.net-unit-test.dll`
  It will also copy the p4bridge.dll from the appropriate place in the ../p4bridge output into the default output directory.

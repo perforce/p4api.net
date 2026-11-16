@@ -13,7 +13,8 @@
     <NoWarn>$(NoWarn);SYSLIB0006</NoWarn>
   </PropertyGroup>
   <PropertyGroup>
-    <SignAssembly>true</SignAssembly>
+    <SignAssembly Condition="'$(Configuration)' == 'Debug' and !Exists('MyKey.snk')">false</SignAssembly>
+    <SignAssembly Condition="'$(Configuration)' != 'Debug' or Exists('MyKey.snk')">true</SignAssembly>
     <AssemblyOriginatorKeyFile>MyKey.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
